@@ -958,18 +958,10 @@ function sendInvoiceEmail(invoiceId, inv, btn) {
       if (!masterEmails.length) {
         return Promise.reject(new Error("NO_MASTER_EMAIL"));
       }
-      return fetch(inv.pdfUrl);
-    })
-    .then(function (r) { return r.blob(); })
-    .then(function (blob) {
-      return new Promise(function (resolve, reject) {
-        var reader = new FileReader();
-        reader.onloadend = function () { resolve(reader.result.split(",")[1]); };
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
-    })
-    .then(function (pdfBase64) {
+      // Hand the Cloud Function a URL instead of embedding the PDF's bytes:
+      // nodemailer fetches "path" itself server-side, and a multi-MB base64
+      // string wouldn't fit in a Firestore document (1 MiB limit) anyway --
+      // that's what was throwing "invalid nested entity" here before.
       var safeInvoiceNo = inv.invoiceNo.replace(/[^\w.-]+/g, "_");
       var dateObj = new Date(inv.date + "T00:00:00");
       var dateStr = dateObj.toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" });
@@ -980,7 +972,7 @@ function sendInvoiceEmail(invoiceId, inv, btn) {
           html: "<p>Invoice <strong>" + inv.invoiceNo + "</strong> for " + (inv.buyer ? inv.buyer.name : "") + ", dated " + dateStr + ".</p>" +
             "<p>Net amount: " + formatCurrency(inv.net || 0) + "</p>" +
             "<p><a href=\"" + inv.pdfUrl + "\">View PDF</a></p>",
-          attachments: [{ filename: safeInvoiceNo + ".pdf", content: pdfBase64, encoding: "base64" }]
+          attachments: [{ filename: safeInvoiceNo + ".pdf", path: inv.pdfUrl }]
         }
       }).then(function () {
         return updateDoc(doc(db, "invoices", invoiceId), { emailedTo: masterEmails, status: "sent" });
