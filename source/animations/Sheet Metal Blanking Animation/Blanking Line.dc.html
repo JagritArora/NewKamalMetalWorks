@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/modernist-26887839-b2d2-4aec-8696-7367d491d14b/styles.css">
+  <style>
+    html, body { margin: 0; padding: 0; background: #f3f2f2; }
+    a { color: #ec3013; text-decoration: none; }
+    a:hover { color: #c42409; }
+  </style>
+  <script>window.OM_SCENES = '[{"name":"Feed","dur":1.96,"desc":"A steel strip rides in on conveyor 1 toward press 01"},{"name":"Align1","dur":1.04,"desc":"Conveyor 1 stops and datum marks confirm the strip is aligned under the blanking die","nat":0.77},{"name":"Blank","dur":2.03,"desc":"Press 01 descends and shears the outer profile only - the blank has no holes"},{"name":"Transfer","dur":3.04,"desc":"The blank crosses the roller bridge onto conveyor 2 while the skeleton tips into the scrap bin","nat":1.61},{"name":"Align2","dur":1.53,"desc":"Conveyor 2 stops and the blank is aligned under the punching tool","nat":0.77},{"name":"Punch","dur":1.89,"desc":"Press 02 descends and punches four holes and the central slot - slugs drop through the die"},{"name":"Transfer2","dur":1.61,"desc":"The punched flat part crosses the second roller transfer onto conveyor 3 as the camera glides to press 03"},{"name":"Align3","dur":1.4,"desc":"Conveyor 3 stops and datum marks plus bend lines confirm the part is centred over the V-die","nat":0.77},{"name":"Bend","dur":2.87,"desc":"Press 03 descends on the centre of the flat part - the centre band is formed down and both wings rotate up"},{"name":"Exit","dur":1.19,"desc":"Press 03 retracts and the formed two-wing component is lifted clear of the die"},{"name":"Transfer3","dur":1.61,"desc":"The bent component crosses the third roller transfer into the finishing booth as the camera glides to station 04"},{"name":"Align4","dur":1.23,"desc":"The component stops centred in the coating booth under the spray gun","nat":0.7},{"name":"Coat","dur":3.4,"desc":"Fine powder sprays across the part and the surface builds from raw metal to a satin graphite finish","nat":3.78},{"name":"Polish","dur":2.1,"desc":"A soft polishing head passes over the coated component and a sheen travels across the surface"},{"name":"Reset","dur":1.82,"desc":"The finished component conveys out as the camera pulls wide over all four stations and pushes back to press 01"}]';</script>
+  <script>window.OM_PLAYBACK = '{"mode":"loop"}';</script>
+  <script>window.TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+    "dark": true,
+    "labels": true,
+    "bendAngle": 42,
+    "coatColor": "#2c3a46",
+    "powder": 80,
+    "gloss": 0.85,
+    "accent": "#ec3013",
+    "motionEditor": true
+  }/*EDITMODE-END*/;</script>
+</helmet>
+<x-import component-from-global-scope="BlankingLine" from="./animations-v3.jsx ./tweaks-panel.jsx ./blanking-scene.jsx" hint-size="100%,100%"></x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}"></script>
+</body>
+</html>

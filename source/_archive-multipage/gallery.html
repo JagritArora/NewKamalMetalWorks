@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Gallery | New Kamal Metal Works</title>
+<meta name="description" content="Photos of the New Kamal Metal Works facility, machines, and finished sheet metal components." />
+<link rel="stylesheet" href="css/styles.css" />
+<link rel="stylesheet" href="css/animations.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container nav">
+    <a href="index.html" class="brand">New Kamal <span>Metal Works</span></a>
+    <nav>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="operations.html">Operations</a></li>
+        <li><a href="materials.html">Materials</a></li>
+        <li><a href="gallery.html" aria-current="page">Gallery</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+    </nav>
+    <div class="nav-right">
+      <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">🌙</button>
+      <button class="nav-toggle" id="nav-toggle" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="page-hero">
+    <div class="container">
+      <div class="eyebrow" style="color:var(--accent);font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:.8rem;">Gallery</div>
+      <h1>Our facility &amp; finished work.</h1>
+      <p>Photos of the factory floor, equipment, and completed components will appear here once shared.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="gallery-grid">
+        <div class="gallery-placeholder">Factory photo<br>placeholder</div>
+        <div class="gallery-placeholder">Machine photo<br>placeholder</div>
+        <div class="gallery-placeholder">Finished part<br>placeholder</div>
+        <div class="gallery-placeholder">Finished part<br>placeholder</div>
+        <div class="gallery-placeholder">Factory photo<br>placeholder</div>
+        <div class="gallery-placeholder">Machine photo<br>placeholder</div>
+      </div>
+      <p class="placeholder-note" style="margin-top:28px;">Drop photos into <code>assets/images/</code> and I'll wire each one into this grid in place of the placeholders.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <h4>New Kamal Metal Works</h4>
+        <p>ISO-certified sheet metal component manufacturing for industrial clients.</p>
+      </div>
+      <div>
+        <h4>Navigate</h4>
+        <div class="footer-links">
+          <a href="about.html">About</a>
+          <a href="operations.html">Operations</a>
+          <a href="materials.html">Materials</a>
+          <a href="contact.html">Contact</a>
+        </div>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <div class="footer-links">
+          <a href="contact.html">Get in touch</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">&copy; <span id="year"></span> New Kamal Metal Works. All rights reserved.</div>
+  </div>
+</footer>
+
+<script src="js/theme.js"></script>
+<script src="js/nav.js"></script>
+<script src="js/animations.js"></script>
+<script>document.getElementById("year").textContent = new Date().getFullYear();</script>
+</body>
+</html>

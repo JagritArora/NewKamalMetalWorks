@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/modernist-26887839-b2d2-4aec-8696-7367d491d14b/styles.css">
+  <style>
+    html, body { margin: 0; padding: 0; background: #f3f2f2; }
+    a { color: #ec3013; text-decoration: none; }
+    a:hover { color: #c42409; }
+  </style>
+  <script>window.OM_SCENES = '[{"name":"Feed","dur":2.2,"desc":"A steel strip rides in on conveyor 1 toward press 01"},{"name":"Align1","dur":1,"desc":"Conveyor 1 stops and datum marks confirm the strip is aligned under the blanking die"},{"name":"Blank","dur":1.8,"desc":"Press 01 descends and shears the outer profile only - the blank has no holes"},{"name":"Transfer","dur":2.2,"desc":"The blank crosses the roller bridge onto conveyor 2 while the skeleton tips into the scrap bin"},{"name":"Align2","dur":0.8,"desc":"Conveyor 2 stops and the blank is aligned under the punching tool"},{"name":"Punch","dur":1.6,"desc":"Press 02 descends and punches the holes and slot - slugs drop through the die"},{"name":"Exit","dur":2.4,"desc":"Press 02 retracts and the finished component runs out as the next strip enters"}]';</script>
+  <script>window.OM_PLAYBACK = '{"mode":"loop"}';</script>
+  <script>window.TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+    "dark": true,
+    "labels": true,
+    "accent": "#201e1d",
+    "motionEditor": false
+  }/*EDITMODE-END*/;</script>
+</helmet>
+<x-import component-from-global-scope="BlankingLine" from="./animations-v3.jsx ./tweaks-panel.jsx ./blanking-scene.jsx" hint-size="100%,100%"></x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}"></script>
+</body>
+</html>

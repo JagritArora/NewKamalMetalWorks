@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/modernist-26887839-b2d2-4aec-8696-7367d491d14b/styles.css">
+  <style>
+    html, body { margin: 0; padding: 0; background: #f3f2f2; }
+    a { color: #ec3013; text-decoration: none; }
+    a:hover { color: #c42409; }
+  </style>
+  <script>window.OM_SCENES = '[{"name":"Feed","dur":2.2,"desc":"A flat sheet rides in on the conveyor from the left toward the embossing press"},{"name":"Align","dur":0.8,"desc":"The conveyor stops and datum marks position the sheet under the press - the boss footprint is marked on its surface"},{"name":"Descend","dur":1.1,"desc":"The female pressure ring descends and seats on the sheet around the form area"},{"name":"Form","dur":0.9,"desc":"The press strokes and the male pad drives a raised bevelled boss out of the sheet surface"},{"name":"Dwell","dur":0.5,"desc":"The press dwells at the bottom of the stroke to set the form"},{"name":"Retract","dur":1,"desc":"The tooling retracts and the formed sheet springs back slightly"},{"name":"Reveal","dur":1.2,"desc":"The camera holds on the finished 3D emboss"},{"name":"Exit","dur":1.8,"desc":"The embossed sheet conveys out of the press to the right"},{"name":"Reset","dur":0.8,"desc":"The cell clears and the next flat sheet feeds in - the loop closes without a cut"}]';</script>
+  <script>window.OM_PLAYBACK = '{"mode":"loop"}';</script>
+  <script>window.TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+    "dark": true,
+    "labels": true,
+    "accent": "#ec3013",
+    "embossHeight": 34,
+    "motionEditor": false
+  }/*EDITMODE-END*/;</script>
+</helmet>
+<x-import component-from-global-scope="EmbossingStroke" from="./animations-v3.jsx ./tweaks-panel.jsx ./embossing-scene.jsx" hint-size="100%,100%"></x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}"></script>
+</body>
+</html>

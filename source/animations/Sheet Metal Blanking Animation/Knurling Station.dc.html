@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/modernist-26887839-b2d2-4aec-8696-7367d491d14b/styles.css">
+  <style>
+    html, body { margin: 0; padding: 0; background: #f3f2f2; }
+    a { color: #ec3013; text-decoration: none; }
+    a:hover { color: #c42409; }
+  </style>
+  <script>window.OM_SCENES = '[{"name":"Feed","dur":2,"desc":"A smooth cylindrical workpiece rides in from the left on the conveyor"},{"name":"Align","dur":0.8,"desc":"The conveyor stops and the cylinder seats into the two driven rollers at the station"},{"name":"Engage","dur":0.7,"desc":"The cylinder starts turning and the patterned knurling wheel moves in to contact its surface"},{"name":"Knurl","dur":3,"desc":"The wheel presses and rolls against the turning surface - the diamond knurl is cold formed around the middle band"},{"name":"Retract","dur":0.8,"desc":"The wheel lifts clear and the cylinder stops turning"},{"name":"Exit","dur":2.2,"desc":"The conveyor restarts and the finished knurled cylinder travels out to the right"},{"name":"Reset","dur":1.5,"desc":"The station clears and the next smooth cylinder feeds in - the loop closes without a cut"}]';</script>
+  <script>window.OM_PLAYBACK = '{"mode":"loop"}';</script>
+  <script>window.TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+    "dark": true,
+    "labels": true,
+    "accent": "#ec3013",
+    "wraps": 1.15,
+    "motionEditor": false
+  }/*EDITMODE-END*/;</script>
+</helmet>
+<x-import component-from-global-scope="KnurlingStation" from="./animations-v3.jsx ./tweaks-panel.jsx ./knurling-scene.jsx" hint-size="100%,100%"></x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}"></script>
+</body>
+</html>

@@ -1,0 +1,160 @@
+/* Shared stage */
+.op-anim {
+  position: relative;
+  width: 140px;
+  height: 100px;
+  margin: 0 auto;
+}
+.op-anim,
+.op-anim * { animation-play-state: paused; }
+.op-anim.is-active,
+.op-anim.is-active * { animation-play-state: running; }
+
+/* ===================== CUTTING ===================== */
+.op-anim--cutting .sheet {
+  position: absolute;
+  top: 40px;
+  width: 62px;
+  height: 20px;
+  background: var(--text-muted);
+  opacity: 0.35;
+}
+.op-anim--cutting .sheet-left {
+  left: 8px;
+  border-radius: 3px 0 0 3px;
+  animation: cutSeparateLeft 3.2s ease-in-out infinite;
+}
+.op-anim--cutting .sheet-right {
+  right: 8px;
+  border-radius: 0 3px 3px 0;
+  animation: cutSeparateRight 3.2s ease-in-out infinite;
+}
+.op-anim--cutting .laser {
+  position: absolute;
+  top: 20px;
+  left: 8px;
+  width: 2px;
+  height: 60px;
+  background: var(--spark);
+  box-shadow: 0 0 8px var(--spark);
+  animation: cutLaser 3.2s ease-in-out infinite;
+}
+
+@keyframes cutLaser {
+  0%   { left: 8px; opacity: 1; }
+  45%  { left: 124px; opacity: 1; }
+  50%  { left: 124px; opacity: 0; }
+  95%  { left: 8px; opacity: 0; }
+  100% { left: 8px; opacity: 1; }
+}
+@keyframes cutSeparateLeft {
+  0%, 45%  { transform: translateX(0); }
+  60%, 90% { transform: translateX(-10px); }
+  100%     { transform: translateX(0); }
+}
+@keyframes cutSeparateRight {
+  0%, 45%  { transform: translateX(0); }
+  60%, 90% { transform: translateX(10px); }
+  100%     { transform: translateX(0); }
+}
+
+/* ===================== PUNCHING ===================== */
+.op-anim--punching .base-sheet {
+  position: absolute;
+  bottom: 22px;
+  left: 20px;
+  width: 100px;
+  height: 16px;
+  background: var(--text-muted);
+  opacity: 0.35;
+  border-radius: 2px;
+}
+.op-anim--punching .hole {
+  position: absolute;
+  bottom: 26px;
+  left: 62px;
+  width: 14px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--bg);
+  opacity: 0;
+  animation: punchHole 2.4s ease-in-out infinite;
+}
+.op-anim--punching .punch-head {
+  position: absolute;
+  top: 6px;
+  left: 58px;
+  width: 22px;
+  height: 34px;
+  background: var(--accent);
+  border-radius: 3px;
+  animation: punchMove 2.4s cubic-bezier(.6,0,.4,1) infinite;
+}
+.op-anim--punching .die {
+  position: absolute;
+  bottom: 14px;
+  left: 55px;
+  width: 28px;
+  height: 8px;
+  background: var(--border);
+  border-radius: 2px;
+}
+
+@keyframes punchMove {
+  0%, 15%   { top: 6px; }
+  40%       { top: 44px; }
+  55%       { top: 44px; }
+  80%, 100% { top: 6px; }
+}
+@keyframes punchHole {
+  0%, 38%  { opacity: 0; transform: scale(0.4); }
+  45%, 85% { opacity: 1; transform: scale(1); }
+  95%, 100%{ opacity: 0; transform: scale(0.4); }
+}
+
+/* ===================== BENDING ===================== */
+.op-anim--bending {
+  perspective: 260px;
+}
+.op-anim--bending .bend-wrap {
+  position: absolute;
+  left: 50%;
+  top: 40px;
+  transform: translateX(-50%);
+  display: flex;
+}
+.op-anim--bending .flap {
+  width: 58px;
+  height: 14px;
+  background: var(--accent);
+  opacity: 0.9;
+}
+.op-anim--bending .flap-left {
+  border-radius: 3px 0 0 3px;
+}
+.op-anim--bending .flap-right {
+  border-radius: 0 3px 3px 0;
+  transform-origin: left center;
+  animation: bendFold 2.6s ease-in-out infinite;
+}
+
+@keyframes bendFold {
+  0%, 20%   { transform: rotateY(0deg); }
+  55%, 80%  { transform: rotateY(-100deg); }
+  100%      { transform: rotateY(0deg); }
+}
+
+/* ===================== SIMPLE ICON (stub ops) ===================== */
+.op-anim--icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.op-anim--icon svg {
+  width: 56px;
+  height: 56px;
+  stroke: var(--accent);
+  fill: none;
+  stroke-width: 1.6;
+  opacity: 0.85;
+}

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/modernist-26887839-b2d2-4aec-8696-7367d491d14b/styles.css">
+  <style>
+    html, body { margin: 0; padding: 0; background: #f3f2f2; }
+    a { color: #ec3013; text-decoration: none; }
+    a:hover { color: #c42409; }
+  </style>
+  <script>window.OM_SCENES = '[{"name":"Feed","dur":2.2,"desc":"A thick sheet-metal component with an existing hole rides in on the conveyor from the left"},{"name":"Align","dur":0.8,"desc":"The conveyor stops, datum marks position the part and the tap aligns over the existing hole"},{"name":"Tap","dur":2.5,"desc":"The tap rotates and feeds down into the hole - the internal thread forms progressively from the top toward the bottom"},{"name":"Dwell","dur":0.7,"desc":"The tap reaches full depth and dwells - the complete internal thread is engaged"},{"name":"Withdraw","dur":1.3,"desc":"Rotation reverses and the tap backs out of the newly formed thread"},{"name":"Reveal","dur":1.2,"desc":"The view tilts slightly and holds on the finished internally threaded hole"},{"name":"Exit","dur":1.8,"desc":"The threaded component conveys out of the cell to the right"},{"name":"Reset","dur":0.8,"desc":"The cell clears and the next component feeds in - the loop closes without a cut"}]';</script>
+  <script>window.OM_PLAYBACK = '{"mode":"loop"}';</script>
+  <script>window.TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+    "dark": true,
+    "labels": true,
+    "accent": "#ec3013",
+    "turns": 4,
+    "motionEditor": false
+  }/*EDITMODE-END*/;</script>
+</helmet>
+<x-import component-from-global-scope="ThreadingStroke" from="./animations-v3.jsx ./tweaks-panel.jsx ./threading-scene.jsx" hint-size="100%,100%"></x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}"></script>
+</body>
+</html>

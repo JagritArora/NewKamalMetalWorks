@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Operations | New Kamal Metal Works</title>
+<meta name="description" content="Explore the sheet metal operations offered by New Kamal Metal Works: cutting, punching, notching, bending, plating and threading." />
+<link rel="stylesheet" href="css/styles.css" />
+<link rel="stylesheet" href="css/animations.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container nav">
+    <a href="index.html" class="brand">New Kamal <span>Metal Works</span></a>
+    <nav>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="operations.html" aria-current="page">Operations</a></li>
+        <li><a href="materials.html">Materials</a></li>
+        <li><a href="gallery.html">Gallery</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+    </nav>
+    <div class="nav-right">
+      <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">🌙</button>
+      <button class="nav-toggle" id="nav-toggle" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="page-hero">
+    <div class="container">
+      <div class="eyebrow" style="color:var(--accent);font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:.8rem;">Operations</div>
+      <h1>Every process, under one roof.</h1>
+      <p>From raw sheet to finished component &mdash; cutting, punching, notching, bending, plating and threading, all handled in-house for consistent quality across large orders.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="ops-grid">
+
+        <div class="op-card">
+          <div class="op-stage op-anim op-anim--cutting">
+            <div class="sheet sheet-left"></div>
+            <div class="sheet sheet-right"></div>
+            <div class="laser"></div>
+          </div>
+          <h3>Cutting</h3>
+          <p>Straight and profile cuts across sheet thicknesses, sized to spec before further processing.</p>
+        </div>
+
+        <div class="op-card">
+          <div class="op-stage op-anim op-anim--punching">
+            <div class="base-sheet"></div>
+            <div class="die"></div>
+            <div class="hole"></div>
+            <div class="punch-head"></div>
+          </div>
+          <h3>Punching</h3>
+          <p>Repeatable hole and cutout punching for high-volume component runs.</p>
+        </div>
+
+        <div class="op-card">
+          <div class="op-stage op-anim op-anim--bending">
+            <div class="bend-wrap">
+              <div class="flap flap-left"></div>
+              <div class="flap flap-right"></div>
+            </div>
+          </div>
+          <h3>Bending</h3>
+          <p>Press-brake bending to precise angles for enclosures, brackets, and structural parts.</p>
+        </div>
+
+        <div class="op-card stub">
+          <div class="op-stage op-anim op-anim--icon">
+            <svg viewBox="0 0 64 64"><path d="M8 44 L8 12 L40 12 L40 24 L48 24 L48 12 L56 12 L56 44 Z"/></svg>
+          </div>
+          <h3>Notching</h3>
+          <p>Edge and corner notching for clean fit-up before welding or assembly.</p>
+          <span class="badge-soon">Animation coming soon</span>
+        </div>
+
+        <div class="op-card stub">
+          <div class="op-stage op-anim op-anim--icon">
+            <svg viewBox="0 0 64 64"><rect x="10" y="10" width="44" height="30" rx="2"/><circle cx="22" cy="46" r="2"/><circle cx="32" cy="50" r="2"/><circle cx="42" cy="46" r="2"/><path d="M6 46 Q32 40 58 46"/></svg>
+          </div>
+          <h3>Plating</h3>
+          <p>Surface plating applied for corrosion resistance and finish consistency.</p>
+          <span class="badge-soon">Animation coming soon</span>
+        </div>
+
+        <div class="op-card stub">
+          <div class="op-stage op-anim op-anim--icon">
+            <svg viewBox="0 0 64 64"><line x1="32" y1="6" x2="32" y2="58"/><path d="M20 12 Q32 18 44 12"/><path d="M20 22 Q32 28 44 22"/><path d="M20 32 Q32 38 44 32"/><path d="M20 42 Q32 48 44 42"/><path d="M20 52 Q32 58 44 52"/></svg>
+          </div>
+          <h3>Threading</h3>
+          <p>Precision threading for fasteners and threaded mounting points.</p>
+          <span class="badge-soon">Animation coming soon</span>
+        </div>
+
+      </div>
+
+      <p class="placeholder-note" style="margin-top:36px;">More operations, tolerances, and machine specs can be added here once details are shared &mdash; e.g. sheet thickness ranges, max sheet size, tolerance levels, and equipment list.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <h4>New Kamal Metal Works</h4>
+        <p>ISO-certified sheet metal component manufacturing for industrial clients.</p>
+      </div>
+      <div>
+        <h4>Navigate</h4>
+        <div class="footer-links">
+          <a href="about.html">About</a>
+          <a href="operations.html">Operations</a>
+          <a href="materials.html">Materials</a>
+          <a href="contact.html">Contact</a>
+        </div>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <div class="footer-links">
+          <a href="contact.html">Get in touch</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">&copy; <span id="year"></span> New Kamal Metal Works. All rights reserved.</div>
+  </div>
+</footer>
+
+<script src="js/theme.js"></script>
+<script src="js/nav.js"></script>
+<script src="js/animations.js"></script>
+<script>document.getElementById("year").textContent = new Date().getFullYear();</script>
+</body>
+</html>

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Contact | New Kamal Metal Works</title>
+<meta name="description" content="Get in touch with New Kamal Metal Works to request a quote for sheet metal component manufacturing." />
+<link rel="stylesheet" href="css/styles.css" />
+<link rel="stylesheet" href="css/animations.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container nav">
+    <a href="index.html" class="brand">New Kamal <span>Metal Works</span></a>
+    <nav>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="operations.html">Operations</a></li>
+        <li><a href="materials.html">Materials</a></li>
+        <li><a href="gallery.html">Gallery</a></li>
+        <li><a href="contact.html" aria-current="page">Contact</a></li>
+      </ul>
+    </nav>
+    <div class="nav-right">
+      <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">🌙</button>
+      <button class="nav-toggle" id="nav-toggle" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="page-hero">
+    <div class="container">
+      <div class="eyebrow" style="color:var(--accent);font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:.8rem;">Contact</div>
+      <h1>Let's talk about your component needs.</h1>
+      <p>Share a few details and we'll follow up with a quote.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container contact-grid">
+      <div class="contact-details">
+        <h3>Address</h3>
+        <p class="placeholder-note">Factory address to be added here.</p>
+
+        <h3>Phone</h3>
+        <p class="placeholder-note">Phone / WhatsApp number to be added here.</p>
+
+        <h3>Email</h3>
+        <p class="placeholder-note">Email address to be added here.</p>
+
+        <h3>Hours</h3>
+        <p>Mon &ndash; Sat, 9:00 AM &ndash; 6:00 PM</p>
+      </div>
+
+      <div>
+        <form class="contact-form" id="contact-form">
+          <div>
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" required />
+          </div>
+          <div>
+            <label for="company">Company</label>
+            <input type="text" id="company" name="company" />
+          </div>
+          <div>
+            <label for="phone">Phone</label>
+            <input type="tel" id="phone" name="phone" required />
+          </div>
+          <div>
+            <label for="message">What do you need manufactured?</label>
+            <textarea id="message" name="message" placeholder="Material, quantity, and any specs..." required></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">Send Inquiry</button>
+          <p class="form-note" id="form-note">This form isn't connected to email yet &mdash; we'll wire it up (or point it to WhatsApp/email) once hosting is set up.</p>
+        </form>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <h4>New Kamal Metal Works</h4>
+        <p>ISO-certified sheet metal component manufacturing for industrial clients.</p>
+      </div>
+      <div>
+        <h4>Navigate</h4>
+        <div class="footer-links">
+          <a href="about.html">About</a>
+          <a href="operations.html">Operations</a>
+          <a href="materials.html">Materials</a>
+          <a href="contact.html">Contact</a>
+        </div>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <div class="footer-links">
+          <a href="contact.html">Get in touch</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">&copy; <span id="year"></span> New Kamal Metal Works. All rights reserved.</div>
+  </div>
+</footer>
+
+<script src="js/theme.js"></script>
+<script src="js/nav.js"></script>
+<script src="js/animations.js"></script>
+<script>
+document.getElementById("year").textContent = new Date().getFullYear();
+document.getElementById("contact-form").addEventListener("submit", function (e) {
+  e.preventDefault();
+  document.getElementById("form-note").textContent = "Thanks! (Form submission isn't wired up yet in this local preview.)";
+});
+</script>
+</body>
+</html>
