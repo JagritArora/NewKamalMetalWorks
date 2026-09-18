@@ -25,8 +25,10 @@
 <meta name="description" content="ISO 9001:2015 certified manufacturer of precision sheet metal components, pressed and stamped parts and fabricated assemblies. Blanking, punching, bending and plating under one roof, with dies designed and built in-house. Faridabad, Haryana, since 1999." />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/main.css?v=31" />
+<link rel="stylesheet" href="css/main.css?v=37" />
 </head>
 <body>
 
@@ -40,6 +42,7 @@
     <li><a href="#quality">Quality</a></li>
     <li><a href="#about">About</a></li>
     <li><a href="#contact">Contact</a></li>
+    <li><a href="login.html" class="nav-login">Login</a></li>
   </ul>
   <button class="nav-toggle" id="nav-toggle" aria-label="Toggle menu"><span></span><span></span><span></span></button>
 </nav>
@@ -486,7 +489,39 @@
 <script src="js/scenes/threading-scene.js?v=4"></script>
 <script src="js/scenes/notching-scene.js?v=5"></script>
 <script src="js/scenes/knurling-scene.js?v=5"></script>
-<script src="js/main.js?v=15"></script>
+<script src="js/main.js?v=16"></script>
 <script>document.getElementById("year").textContent = new Date().getFullYear();</script>
+<script type="module">
+// A signed-in client shouldn't have to re-enter their login ID and password
+// just because they navigated back to the main site -- Firebase's session
+// persists on its own (no expiry we're setting), so this just reflects that
+// in the nav: swap "Login" for "My Profile" and send it straight to the
+// welcome page instead of through the sign-in form.
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+
+var firebaseConfig = {
+  apiKey: "AIzaSyDkEyDAOah5XzAOVjUux9SLhH60To2oTKs",
+  authDomain: "new-kamal-metal-works.firebaseapp.com",
+  projectId: "new-kamal-metal-works",
+  storageBucket: "new-kamal-metal-works.firebasestorage.app",
+  messagingSenderId: "595817400572",
+  appId: "1:595817400572:web:8617eb7419e5049524af79"
+};
+
+var auth = getAuth(initializeApp(firebaseConfig));
+
+onAuthStateChanged(auth, function (user) {
+  document.querySelectorAll(".nav-login").forEach(function (link) {
+    if (user) {
+      link.textContent = "My Profile";
+      link.setAttribute("href", "welcome.html");
+    } else {
+      link.textContent = "Login";
+      link.setAttribute("href", "login.html");
+    }
+  });
+});
+</script>
 </body>
 </html>

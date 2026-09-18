@@ -547,12 +547,16 @@ function initScrollRestore() {
   var saved = 0;
   if (reload) {
     try { saved = parseInt(sessionStorage.getItem(KEY), 10) || 0; } catch (e) { saved = 0; }
-  }
 
-  // A stale #hash from an earlier nav click would otherwise silently
-  // override the restored position on this and every future reload.
-  if (window.location.hash) {
-    history.replaceState(null, "", window.location.pathname + window.location.search);
+    // A stale #hash from an earlier nav click would otherwise silently
+    // override the restored position on this and every future reload.
+    // This only applies to an actual reload -- a fresh incoming
+    // navigation with a #hash (e.g. a "Contact us" link from another
+    // page) is a real, intentional target and must be left alone so the
+    // browser's native scroll-to-fragment can do its job below.
+    if (window.location.hash) {
+      history.replaceState(null, "", window.location.pathname + window.location.search);
+    }
   }
 
   if (!reload || !saved) {

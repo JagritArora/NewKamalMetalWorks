@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sign in | New Kamal Metal Works</title>
+<meta name="description" content="Client sign-in for New Kamal Metal Works." />
+<meta name="robots" content="noindex" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/main.css?v=37" />
+</head>
+<body class="login-page">
+
+<nav class="site-nav">
+  <a href="index.html#hero" class="brand">New Kamal <span>Metal Works</span></a>
+  <a href="index.html" class="login-back">&larr; Back to website</a>
+</nav>
+
+<main class="login-shell">
+  <div class="login-card login-enter">
+    <span class="login-kicker">Client access</span>
+    <h1 class="login-heading">Sign in</h1>
+    <p class="login-sub">Enter your login ID and password to view your orders and quotations.</p>
+
+    <form class="login-form" id="login-form" novalidate>
+      <div class="login-field">
+        <label for="login-id">Login ID</label>
+        <input type="email" id="login-id" name="loginId" autocomplete="username" placeholder="you@example.com" required />
+      </div>
+
+      <div class="login-field">
+        <label for="login-password">Password</label>
+        <div class="login-password-wrap">
+          <input type="password" id="login-password" name="password" autocomplete="current-password" required />
+          <button type="button" class="login-password-toggle" id="login-password-toggle" aria-label="Show password">
+            <svg class="login-eye-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary login-submit" id="login-submit-btn">Log in</button>
+
+      <p class="login-status" id="login-status" role="status" aria-live="polite"></p>
+    </form>
+
+    <p class="login-footnote" id="login-footnote">Don&rsquo;t have access yet? <a href="index.html#contact">Contact us</a> to set up a client account.</p>
+  </div>
+</main>
+
+<footer class="login-footer">
+  <p>&copy; <span id="year"></span> New Kamal Metal Works, Faridabad. All rights reserved.</p>
+</footer>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+
+var firebaseConfig = {
+  apiKey: "AIzaSyDkEyDAOah5XzAOVjUux9SLhH60To2oTKs",
+  authDomain: "new-kamal-metal-works.firebaseapp.com",
+  projectId: "new-kamal-metal-works",
+  storageBucket: "new-kamal-metal-works.firebasestorage.app",
+  messagingSenderId: "595817400572",
+  appId: "1:595817400572:web:8617eb7419e5049524af79"
+};
+
+var app = initializeApp(firebaseConfig);
+var auth = getAuth(app);
+
+var toggle = document.getElementById("login-password-toggle");
+var pwd = document.getElementById("login-password");
+if (toggle && pwd) {
+  toggle.addEventListener("click", function () {
+    var isHidden = pwd.type === "password";
+    pwd.type = isHidden ? "text" : "password";
+    toggle.setAttribute("aria-label", isHidden ? "Hide password" : "Show password");
+    toggle.classList.toggle("is-visible", isHidden);
+  });
+}
+
+var form = document.getElementById("login-form");
+var status = document.getElementById("login-status");
+var submitBtn = document.getElementById("login-submit-btn");
+
+function showStatus(message) {
+  status.textContent = message;
+  status.classList.add("is-visible");
+}
+
+// Human-readable text for Firebase's error codes, instead of surfacing
+// the raw "Firebase: Error (auth/...)" string to visitors.
+function friendlyError(err) {
+  var code = err && err.code;
+  if (code === "auth/invalid-email") return "That doesn't look like a valid email address.";
+  if (code === "auth/user-not-found" || code === "auth/invalid-credential" || code === "auth/wrong-password") {
+    return "Incorrect login ID or password.";
+  }
+  if (code === "auth/too-many-requests") return "Too many attempts. Please wait a moment and try again.";
+  if (code === "auth/network-request-failed") return "Network error — check your connection and try again.";
+  return "Something went wrong signing in. Please try again.";
+}
+
+if (form) {
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
+    var email = document.getElementById("login-id").value.trim();
+    var password = document.getElementById("login-password").value;
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Signing in…";
+    status.classList.remove("is-visible");
+
+    signInWithEmailAndPassword(auth, email, password)
+      .catch(function (err) {
+        showStatus(friendlyError(err));
+      })
+      .finally(function () {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Log in";
+      });
+  });
+}
+
+// Already signed in (or just signed in) -- this page's only job is the
+// gate, so hand off to the profile page rather than showing anything here.
+onAuthStateChanged(auth, function (user) {
+  if (user) {
+    window.location.replace("profile.html");
+  }
+});
+
+document.getElementById("year").textContent = new Date().getFullYear();
+</script>
+</body>
+</html>

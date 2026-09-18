@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Your profile | New Kamal Metal Works</title>
+<meta name="description" content="Client profile for New Kamal Metal Works." />
+<meta name="robots" content="noindex" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/main.css?v=37" />
+</head>
+<body class="login-page">
+
+<nav class="site-nav">
+  <a href="index.html#hero" class="brand">New Kamal <span>Metal Works</span></a>
+  <button type="button" class="login-back login-logout-link" id="profile-logout">Log out</button>
+</nav>
+
+<main class="login-shell">
+  <div class="login-card login-enter" id="profile-card" hidden>
+    <span class="login-kicker">Client access</span>
+    <h1 class="login-heading">Your profile</h1>
+    <p class="login-sub" id="profile-email-line"></p>
+
+    <div class="login-empty" id="profile-empty" hidden>
+      <p class="login-sub">No profile information on file yet. Add your details below so we have them on hand for your orders and quotations.</p>
+    </div>
+
+    <form class="login-form" id="profile-form">
+      <div class="login-field">
+        <label for="profile-fullname">Full name</label>
+        <input type="text" id="profile-fullname" name="fullName" autocomplete="name" required />
+      </div>
+      <div class="login-field">
+        <label for="profile-company">Company name</label>
+        <input type="text" id="profile-company" name="company" autocomplete="organization" required />
+      </div>
+      <div class="login-field">
+        <label for="profile-phone">Phone</label>
+        <input type="tel" id="profile-phone" name="phone" autocomplete="tel" placeholder="1234567890" required />
+      </div>
+
+      <button type="submit" class="btn btn-primary login-submit" id="profile-save-btn">Save profile</button>
+
+      <p class="login-status" id="profile-status" role="status" aria-live="polite"></p>
+    </form>
+  </div>
+
+  <div class="login-card login-enter login-loading-card" id="profile-loading">
+    <div class="login-spinner" aria-hidden="true"><span></span><span></span><span></span></div>
+    <p class="login-sub">Loading your profile&hellip;</p>
+  </div>
+</main>
+
+<footer class="login-footer">
+  <p>&copy; <span id="year"></span> New Kamal Metal Works, Faridabad. All rights reserved.</p>
+</footer>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import {
+  initializeFirestore,
+  doc,
+  getDoc,
+  setDoc,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+var firebaseConfig = {
+  apiKey: "AIzaSyDkEyDAOah5XzAOVjUux9SLhH60To2oTKs",
+  authDomain: "new-kamal-metal-works.firebaseapp.com",
+  projectId: "new-kamal-metal-works",
+  storageBucket: "new-kamal-metal-works.firebasestorage.app",
+  messagingSenderId: "595817400572",
+  appId: "1:595817400572:web:8617eb7419e5049524af79"
+};
+
+var app = initializeApp(firebaseConfig);
+var auth = getAuth(app);
+// Plain in-memory cache (no IndexedDB persistence) -- persistence was a
+// known source of hangs in some browsers (Safari private browsing / strict
+// tracking prevention in particular), and welcome.html already avoids a
+// second Firestore round trip via sessionStorage, so it wasn't buying much.
+//
+// experimentalForceLongPolling skips Firestore's default connection-type
+// auto-detection, which tries a streaming connection first and only falls
+// back after a timeout if something in the network path (a proxy, firewall,
+// or certain ISPs) silently blocks it.
+var db = initializeFirestore(app, {
+  experimentalForceLongPolling: true
+});
+
+var profileCard = document.getElementById("profile-card");
+var loadingCard = document.getElementById("profile-loading");
+var emailLine = document.getElementById("profile-email-line");
+var emptyNote = document.getElementById("profile-empty");
+var form = document.getElementById("profile-form");
+var saveBtn = document.getElementById("profile-save-btn");
+var status = document.getElementById("profile-status");
+var logoutBtn = document.getElementById("profile-logout");
+
+var fields = {
+  fullName: document.getElementById("profile-fullname"),
+  company: document.getElementById("profile-company"),
+  phone: document.getElementById("profile-phone")
+};
+
+logoutBtn.addEventListener("click", function () { signOut(auth); });
+
+function showStatus(message) {
+  status.textContent = message;
+  status.classList.add("is-visible");
+}
+
+var currentUid = null;
+
+form.addEventListener("submit", function (e) {
+  e.preventDefault();
+  if (!currentUid) return;
+  saveBtn.disabled = true;
+  saveBtn.textContent = "Saving…";
+  status.classList.remove("is-visible");
+
+  var fullNameValue = fields.fullName.value.trim();
+
+  setDoc(doc(db, "profiles", currentUid), {
+    fullName: fullNameValue,
+    company: fields.company.value.trim(),
+    phone: fields.phone.value.trim(),
+    updatedAt: serverTimestamp()
+  }).then(function () {
+    showStatus("Saved.");
+    emptyNote.hidden = true;
+    try { sessionStorage.setItem("nkmw-fullname", fullNameValue); } catch (e) {}
+    setTimeout(function () { window.location.href = "welcome.html"; }, 700);
+  }).catch(function () {
+    showStatus("Couldn't save just now — please try again.");
+  }).finally(function () {
+    saveBtn.disabled = false;
+    saveBtn.textContent = "Save profile";
+  });
+});
+
+onAuthStateChanged(auth, function (user) {
+  if (!user) {
+    window.location.replace("login.html");
+    return;
+  }
+  currentUid = user.uid;
+  emailLine.textContent = "Signed in as " + user.email + ".";
+
+  var wantsEdit = new URLSearchParams(window.location.search).has("edit");
+
+  // A hard cap so a blocked/throttled connection to Firestore (a proxy,
+  // firewall, VPN or certain ISPs can silently swallow the request) shows
+  // something within a few seconds instead of leaving the spinner running
+  // indefinitely -- if this fires, we assume no data rather than guess.
+  var timedOut = false;
+  var timeoutId = setTimeout(function () {
+    timedOut = true;
+    showStatus("Couldn't reach the server just now — showing a blank form. Check your connection and reload to try again.");
+    emptyNote.hidden = false;
+    loadingCard.hidden = true;
+    profileCard.hidden = false;
+  }, 8000);
+
+  getDoc(doc(db, "profiles", user.uid)).then(function (snap) {
+    clearTimeout(timeoutId);
+    if (timedOut) return;
+    if (snap.exists()) {
+      var data = snap.data();
+      if (!wantsEdit) {
+        // Already have profile info on file -- this page's form is only
+        // for the one-time "no data yet" case (or an explicit edit), so
+        // skip straight to the welcome page rather than showing it again.
+        try { sessionStorage.setItem("nkmw-fullname", data.fullName || ""); } catch (e) {}
+        window.location.replace("welcome.html");
+        return;
+      }
+      fields.fullName.value = data.fullName || "";
+      fields.company.value = data.company || "";
+      fields.phone.value = data.phone || "";
+      emptyNote.hidden = true;
+    } else {
+      emptyNote.hidden = false;
+    }
+    loadingCard.hidden = true;
+    profileCard.hidden = false;
+  }).catch(function () {
+    clearTimeout(timeoutId);
+    if (timedOut) return;
+    showStatus("Couldn't load your profile just now — please refresh.");
+    loadingCard.hidden = true;
+    profileCard.hidden = false;
+  });
+});
+
+document.getElementById("year").textContent = new Date().getFullYear();
+</script>
+</body>
+</html>
