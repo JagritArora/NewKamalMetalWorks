@@ -443,6 +443,18 @@ function initCapabilityScenes() {
   });
   if (!entries.length) return;
 
+  // has-scene hides each panel's static fallback icon immediately above, but
+  // the rAF loop below only ever draws the *active* panel. Without this, every
+  // other panel's <svg> sits empty (blank) until it becomes active at least
+  // once -- reading as "missing" rather than just idle -- so every panel gets
+  // one frame drawn up front.
+  (function paintInitialFrames() {
+    var theme = NKMWTheme.get();
+    entries.forEach(function (entry) {
+      if (entry) entry.api.render(entry.svg, 0, { dark: theme.isDark, accent: theme.accent });
+    });
+  })();
+
   var activeIndex = 0;
   var rafId = null;
   var sectionVisible = false;
