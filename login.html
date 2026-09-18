@@ -10,8 +10,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/main.css?v=37" />
+<link rel="stylesheet" href="css/main.css?v=38" />
 </head>
 <body class="login-page">
 
@@ -23,10 +24,16 @@
 <main class="login-shell">
   <div class="login-card login-enter">
     <span class="login-kicker">Client access</span>
-    <h1 class="login-heading">Sign in</h1>
-    <p class="login-sub">Enter your login ID and password to view your orders and quotations.</p>
 
-    <form class="login-form" id="login-form" novalidate>
+    <div class="login-tabs" role="tablist" aria-label="Sign in or create an account">
+      <button type="button" class="login-tab is-active" id="tab-signin" role="tab" aria-selected="true" aria-controls="signin-form">Sign in</button>
+      <button type="button" class="login-tab" id="tab-signup" role="tab" aria-selected="false" aria-controls="signup-form">Create account</button>
+    </div>
+
+    <h1 class="login-heading" id="login-heading">Sign in</h1>
+    <p class="login-sub" id="login-sub">Enter your login ID and password to view your orders and quotations.</p>
+
+    <form class="login-form" id="signin-form" novalidate>
       <div class="login-field">
         <label for="login-id">Login ID</label>
         <input type="email" id="login-id" name="loginId" autocomplete="username" placeholder="you@example.com" required />
@@ -36,7 +43,7 @@
         <label for="login-password">Password</label>
         <div class="login-password-wrap">
           <input type="password" id="login-password" name="password" autocomplete="current-password" required />
-          <button type="button" class="login-password-toggle" id="login-password-toggle" aria-label="Show password">
+          <button type="button" class="login-password-toggle" data-toggle-for="login-password" aria-label="Show password">
             <svg class="login-eye-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
           </button>
         </div>
@@ -47,7 +54,55 @@
       <p class="login-status" id="login-status" role="status" aria-live="polite"></p>
     </form>
 
-    <p class="login-footnote" id="login-footnote">Don&rsquo;t have access yet? <a href="index.html#contact">Contact us</a> to set up a client account.</p>
+    <form class="login-form" id="signup-form" novalidate hidden>
+      <div class="login-field" id="signup-email-field">
+        <label for="signup-email">Login ID</label>
+        <input type="email" id="signup-email" name="loginId" autocomplete="username" placeholder="you@example.com" required />
+        <p class="login-field-error" id="signup-email-error" hidden>Enter a valid email address, like you@example.com.</p>
+      </div>
+
+      <div class="login-field">
+        <label for="signup-fullname">Full name</label>
+        <input type="text" id="signup-fullname" name="fullName" autocomplete="name" required />
+      </div>
+
+      <div class="login-field">
+        <label for="signup-company">Company name</label>
+        <input type="text" id="signup-company" name="company" autocomplete="organization" required />
+      </div>
+
+      <div class="login-field">
+        <label for="signup-phone">Phone</label>
+        <input type="tel" id="signup-phone" name="phone" autocomplete="tel" placeholder="1234567890" required />
+      </div>
+
+      <div class="login-field">
+        <label for="signup-password">Password</label>
+        <div class="login-password-wrap">
+          <input type="password" id="signup-password" name="password" autocomplete="new-password" minlength="6" required />
+          <button type="button" class="login-password-toggle" data-toggle-for="signup-password" aria-label="Show password">
+            <svg class="login-eye-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="login-field" id="signup-confirm-field">
+        <label for="signup-confirm">Confirm password</label>
+        <div class="login-password-wrap">
+          <input type="password" id="signup-confirm" autocomplete="new-password" minlength="6" required />
+          <button type="button" class="login-password-toggle" data-toggle-for="signup-confirm" aria-label="Show password">
+            <svg class="login-eye-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <p class="login-field-error" id="signup-confirm-error" hidden>Passwords don't match.</p>
+      </div>
+
+      <button type="submit" class="btn btn-primary login-submit" id="signup-submit-btn">Create account</button>
+
+      <p class="login-status" id="signup-status" role="status" aria-live="polite"></p>
+    </form>
+
+    <p class="login-footnote" id="login-footnote">Need help? <a href="index.html#contact">Contact us</a>.</p>
   </div>
 </main>
 
@@ -60,9 +115,16 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/fireba
 import {
   getAuth,
   signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   onAuthStateChanged,
   signOut
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import {
+  initializeFirestore,
+  doc,
+  setDoc,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 var firebaseConfig = {
   apiKey: "AIzaSyDkEyDAOah5XzAOVjUux9SLhH60To2oTKs",
@@ -75,25 +137,53 @@ var firebaseConfig = {
 
 var app = initializeApp(firebaseConfig);
 var auth = getAuth(app);
+var db = initializeFirestore(app, { experimentalForceLongPolling: true });
 
-var toggle = document.getElementById("login-password-toggle");
-var pwd = document.getElementById("login-password");
-if (toggle && pwd) {
-  toggle.addEventListener("click", function () {
-    var isHidden = pwd.type === "password";
-    pwd.type = isHidden ? "text" : "password";
-    toggle.setAttribute("aria-label", isHidden ? "Hide password" : "Show password");
-    toggle.classList.toggle("is-visible", isHidden);
+// Wire every show/hide password button generically, since the sign-up
+// form now has two password fields alongside the original sign-in one.
+document.querySelectorAll(".login-password-toggle").forEach(function (btn) {
+  var input = document.getElementById(btn.getAttribute("data-toggle-for"));
+  if (!input) return;
+  btn.addEventListener("click", function () {
+    var isHidden = input.type === "password";
+    input.type = isHidden ? "text" : "password";
+    btn.setAttribute("aria-label", isHidden ? "Hide password" : "Show password");
+    btn.classList.toggle("is-visible", isHidden);
   });
+});
+
+// ---- Tabs ----
+var tabSignin = document.getElementById("tab-signin");
+var tabSignup = document.getElementById("tab-signup");
+var signinForm = document.getElementById("signin-form");
+var signupForm = document.getElementById("signup-form");
+var heading = document.getElementById("login-heading");
+var sub = document.getElementById("login-sub");
+
+function activateTab(name) {
+  var isSignup = name === "signup";
+  tabSignin.classList.toggle("is-active", !isSignup);
+  tabSignin.setAttribute("aria-selected", String(!isSignup));
+  tabSignup.classList.toggle("is-active", isSignup);
+  tabSignup.setAttribute("aria-selected", String(isSignup));
+  signinForm.hidden = isSignup;
+  signupForm.hidden = !isSignup;
+  heading.textContent = isSignup ? "Create your account" : "Sign in";
+  sub.textContent = isSignup
+    ? "Set a password and tell us a bit about your company so we can process your orders and quotations."
+    : "Enter your login ID and password to view your orders and quotations.";
 }
 
-var form = document.getElementById("login-form");
+tabSignin.addEventListener("click", function () { activateTab("signin"); });
+tabSignup.addEventListener("click", function () { activateTab("signup"); });
+
+// ---- Sign in ----
 var status = document.getElementById("login-status");
 var submitBtn = document.getElementById("login-submit-btn");
 
-function showStatus(message) {
-  status.textContent = message;
-  status.classList.add("is-visible");
+function showStatus(el, message) {
+  el.textContent = message;
+  el.classList.add("is-visible");
 }
 
 // Human-readable text for Firebase's error codes, instead of surfacing
@@ -109,35 +199,128 @@ function friendlyError(err) {
   return "Something went wrong signing in. Please try again.";
 }
 
-if (form) {
-  form.addEventListener("submit", function (e) {
-    e.preventDefault();
-    if (!form.checkValidity()) {
-      form.reportValidity();
-      return;
-    }
-    var email = document.getElementById("login-id").value.trim();
-    var password = document.getElementById("login-password").value;
+signinForm.addEventListener("submit", function (e) {
+  e.preventDefault();
+  if (!signinForm.checkValidity()) {
+    signinForm.reportValidity();
+    return;
+  }
+  var email = document.getElementById("login-id").value.trim();
+  var password = document.getElementById("login-password").value;
 
-    submitBtn.disabled = true;
-    submitBtn.textContent = "Signing in…";
-    status.classList.remove("is-visible");
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Signing in…";
+  status.classList.remove("is-visible");
 
-    signInWithEmailAndPassword(auth, email, password)
-      .catch(function (err) {
-        showStatus(friendlyError(err));
-      })
-      .finally(function () {
-        submitBtn.disabled = false;
-        submitBtn.textContent = "Log in";
-      });
-  });
+  signInWithEmailAndPassword(auth, email, password)
+    .catch(function (err) {
+      showStatus(status, friendlyError(err));
+    })
+    .finally(function () {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Log in";
+    });
+});
+
+// ---- Sign up ----
+var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+var signupEmailInput = document.getElementById("signup-email");
+var signupEmailField = document.getElementById("signup-email-field");
+var signupEmailError = document.getElementById("signup-email-error");
+var signupPasswordInput = document.getElementById("signup-password");
+var signupConfirmInput = document.getElementById("signup-confirm");
+var signupConfirmField = document.getElementById("signup-confirm-field");
+var signupConfirmError = document.getElementById("signup-confirm-error");
+var signupStatus = document.getElementById("signup-status");
+var signupSubmitBtn = document.getElementById("signup-submit-btn");
+
+function validateSignupEmail() {
+  var value = signupEmailInput.value.trim();
+  var ok = EMAIL_RE.test(value);
+  signupEmailField.classList.toggle("has-error", !ok && value !== "");
+  signupEmailError.hidden = ok || value === "";
+  return ok;
+}
+signupEmailInput.addEventListener("blur", validateSignupEmail);
+signupEmailInput.addEventListener("input", function () {
+  if (signupEmailField.classList.contains("has-error")) validateSignupEmail();
+});
+
+function validateSignupConfirm() {
+  var value = signupConfirmInput.value;
+  var ok = value !== "" && value === signupPasswordInput.value;
+  signupConfirmField.classList.toggle("has-error", !ok && value !== "");
+  signupConfirmError.hidden = ok || value === "";
+  return ok;
+}
+signupConfirmInput.addEventListener("blur", validateSignupConfirm);
+signupConfirmInput.addEventListener("input", function () {
+  if (signupConfirmField.classList.contains("has-error")) validateSignupConfirm();
+});
+
+function friendlySignupError(err) {
+  var code = err && err.code;
+  if (code === "auth/email-already-in-use") return "An account with this email already exists — sign in instead.";
+  if (code === "auth/invalid-email") return "That doesn't look like a valid email address.";
+  if (code === "auth/weak-password") return "Choose a password with at least 6 characters.";
+  if (code === "auth/network-request-failed") return "Network error — check your connection and try again.";
+  return "Something went wrong creating your account. Please try again.";
 }
 
-// Already signed in (or just signed in) -- this page's only job is the
-// gate, so hand off to the profile page rather than showing anything here.
+// Set while the sign-up flow itself is handling navigation, so the generic
+// onAuthStateChanged redirect below doesn't race it to profile.html before
+// the freshly-created profile document has actually been written.
+var suppressAutoRedirect = false;
+
+signupForm.addEventListener("submit", function (e) {
+  e.preventDefault();
+
+  var emailOk = validateSignupEmail();
+  var confirmOk = validateSignupConfirm();
+  if (!signupForm.checkValidity()) {
+    signupForm.reportValidity();
+    return;
+  }
+  if (!emailOk || !confirmOk) return;
+
+  var email = signupEmailInput.value.trim();
+  var password = signupPasswordInput.value;
+  var fullName = document.getElementById("signup-fullname").value.trim();
+  var company = document.getElementById("signup-company").value.trim();
+  var phone = document.getElementById("signup-phone").value.trim();
+
+  suppressAutoRedirect = true;
+  signupSubmitBtn.disabled = true;
+  signupSubmitBtn.textContent = "Creating account…";
+  signupStatus.classList.remove("is-visible");
+
+  createUserWithEmailAndPassword(auth, email, password).then(function (cred) {
+    return setDoc(doc(db, "profiles", cred.user.uid), {
+      fullName: fullName,
+      company: company,
+      phone: phone,
+      role: "client",
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+  }).then(function () {
+    try {
+      sessionStorage.setItem("nkmw-fullname", fullName);
+      sessionStorage.setItem("nkmw-role", "client");
+    } catch (err) {}
+    window.location.replace("welcome.html");
+  }).catch(function (err) {
+    suppressAutoRedirect = false;
+    showStatus(signupStatus, friendlySignupError(err));
+    signupSubmitBtn.disabled = false;
+    signupSubmitBtn.textContent = "Create account";
+  });
+});
+
+// Already signed in (or just signed in via the sign-in tab) -- this page's
+// only job is the gate, so hand off to the profile page rather than
+// showing anything here. The sign-up flow above handles its own redirect.
 onAuthStateChanged(auth, function (user) {
-  if (user) {
+  if (user && !suppressAutoRedirect) {
     window.location.replace("profile.html");
   }
 });
