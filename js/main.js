@@ -129,6 +129,7 @@ function initProcessBelt() {
   if (reduceMotion || isMobile || !gsapReady || !api || !svg) {
     track.classList.add("is-static");
     stageCopies.forEach(function (el) { el.classList.add("is-active"); });
+    initStaticBeltScene(scene, svg, api, reduceMotion);
     return;
   }
 
@@ -164,6 +165,52 @@ function initProcessBelt() {
   });
 
   update(trigger.progress);
+}
+
+// The static/mobile fallback still shows the press-line scene -- just as a
+// small looping preview above the stacked station cards instead of a
+// scroll-scrubbed, viewport-pinned background, since pinning a 600vh track
+// doesn't translate to normal phone scrolling. Runs the same render()
+// the desktop version uses, looping across the full authored timeline
+// (including its camera-reset move) so it plays as a seamless loop, only
+// while the panel is actually on screen.
+function initStaticBeltScene(scene, svg, api, reduceMotion) {
+  if (!scene || !svg || !api) return;
+  scene.classList.add("is-active");
+
+  var isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  var accent = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#C4501C";
+
+  if (reduceMotion) {
+    api.render(svg, (api.END_T || api.TOTAL) * 0.5, { dark: isDark, accent: accent, labels: false });
+    return;
+  }
+
+  var rafId = null;
+  var visible = false;
+  var startTime = null;
+
+  function frame(now) {
+    if (startTime === null) startTime = now;
+    var t = ((now - startTime) / 1000) % api.TOTAL;
+    api.render(svg, t, { dark: isDark, accent: accent, labels: false });
+    rafId = requestAnimationFrame(frame);
+  }
+  function play() { if (!rafId && visible) rafId = requestAnimationFrame(frame); }
+  function pause() { if (rafId) { cancelAnimationFrame(rafId); rafId = null; } }
+
+  if (typeof IntersectionObserver !== "undefined") {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        visible = entry.isIntersecting;
+        if (visible) play(); else pause();
+      });
+    }, { threshold: 0.1 });
+    io.observe(scene);
+  } else {
+    visible = true;
+    play();
+  }
 }
 
 // Shared lookup so both the carousel's autoplay timing and the scene

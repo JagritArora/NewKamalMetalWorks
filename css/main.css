@@ -441,28 +441,51 @@ p { margin: 0; text-wrap: pretty; }
   max-width: 36ch;
 }
 
-/* Static / reduced-motion / mobile fallback: no pin, no pan, just stacked reading order */
+/* Static / reduced-motion / mobile fallback: no pin, no pan -- the preview
+   loop up top plus the four stations as a 2x2 tile grid underneath it, so
+   the whole line reads in one glance instead of a long station-by-station
+   scroll. */
 .process-track.is-static { height: auto; }
 .process-track.is-static .process-sticky {
   position: static;
   height: auto;
-  display: block;
   overflow: visible;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 32px 24px;
 }
-.process-track.is-static .belt-scene { display: none; }
+/* The pinned, scroll-scrubbed scene doesn't translate to a normal-scrolling
+   phone, so the fallback shows it instead as a small looping preview panel
+   sitting above the station tiles -- same rendered animation, just playing
+   on its own timer instead of being driven by scroll position. */
+.process-track.is-static .belt-scene {
+  grid-column: 1 / -1;
+  position: static;
+  inset: auto;
+  display: block;
+  opacity: 1;
+  aspect-ratio: 16 / 10;
+  width: 100%;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--line);
+  overflow: hidden;
+  background: #050505;
+}
 .process-track.is-static .stage-copy {
   position: static;
   opacity: 1;
   transform: none;
   transition: none;
   pointer-events: auto;
-  padding: 48px 24px;
-  border-top: 1px solid var(--line);
   display: block;
+  padding: 18px 16px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
 }
 .process-track.is-static .stage-copy-body {
-  max-width: 620px;
-  margin: 0 auto;
+  max-width: 100%;
   text-align: left !important;
   background: none;
   border: none;
@@ -470,6 +493,16 @@ p { margin: 0; text-wrap: pretty; }
   padding: 0;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
+}
+.process-track.is-static .stage-name { margin-top: 6px; font-size: 1.05rem; }
+.process-track.is-static .stage-desc {
+  margin-top: 8px;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 /* ================= Capabilities slider =================
@@ -1384,18 +1417,35 @@ p { margin: 0; text-wrap: pretty; }
   .process-sticky {
     position: static !important;
     height: auto !important;
-    display: block !important;
     overflow: visible !important;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    padding: 32px 24px;
   }
-  .belt-scene { display: none !important; }
+  .belt-scene {
+    grid-column: 1 / -1;
+    position: static !important;
+    inset: auto !important;
+    display: block !important;
+    opacity: 1 !important;
+    aspect-ratio: 16 / 10;
+    width: 100%;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--line);
+    overflow: hidden;
+    background: #050505;
+  }
   .stage-copy {
     position: static !important;
     opacity: 1 !important;
     transform: none !important;
     pointer-events: auto !important;
-    padding: 48px 24px;
-    border-top: 1px solid var(--line);
     display: block !important;
+    padding: 18px 16px;
+    background: var(--surface-sunken);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
   }
   .stage-copy-body {
     max-width: 100%;
@@ -1407,6 +1457,16 @@ p { margin: 0; text-wrap: pretty; }
     padding: 0;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
+  }
+  .stage-name { margin-top: 6px; font-size: 1.05rem; }
+  .stage-desc {
+    margin-top: 8px;
+    font-size: 0.82rem;
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 5;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 }
 
