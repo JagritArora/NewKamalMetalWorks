@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/main.css?v=38" />
+<link rel="stylesheet" href="css/main.css?v=40" />
 </head>
 <body class="login-page">
 
@@ -163,6 +163,16 @@ form.addEventListener("submit", function (e) {
 onAuthStateChanged(auth, function (user) {
   if (!user) {
     window.location.replace("login.html");
+    return;
+  }
+  if (!user.emailVerified) {
+    // A stray verified-in-another-tab / stale-session edge case -- the
+    // sign-in and sign-up flows on login.html already block unverified
+    // accounts from getting here in the first place, but bounce out
+    // cleanly if one slips through (e.g. a bookmarked direct link).
+    signOut(auth).then(function () {
+      window.location.replace("login.html?unverified=1");
+    });
     return;
   }
   currentUid = user.uid;

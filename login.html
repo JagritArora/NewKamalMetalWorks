@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/main.css?v=38" />
+<link rel="stylesheet" href="css/main.css?v=40" />
 </head>
 <body class="login-page">
 
@@ -25,7 +25,7 @@
   <div class="login-card login-enter">
     <span class="login-kicker">Client access</span>
 
-    <div class="login-tabs" role="tablist" aria-label="Sign in or create an account">
+    <div class="login-tabs" id="login-tabs" role="tablist" aria-label="Sign in or create an account">
       <button type="button" class="login-tab is-active" id="tab-signin" role="tab" aria-selected="true" aria-controls="signin-form">Sign in</button>
       <button type="button" class="login-tab" id="tab-signup" role="tab" aria-selected="false" aria-controls="signup-form">Create account</button>
     </div>
@@ -49,9 +49,26 @@
         </div>
       </div>
 
+      <div class="login-forgot-row">
+        <button type="button" class="login-forgot-link" id="forgot-password-link">Forgot password?</button>
+      </div>
+
       <button type="submit" class="btn btn-primary login-submit" id="login-submit-btn">Log in</button>
 
       <p class="login-status" id="login-status" role="status" aria-live="polite"></p>
+    </form>
+
+    <form class="login-form" id="reset-form" novalidate hidden>
+      <div class="login-field">
+        <label for="reset-email">Login ID</label>
+        <input type="email" id="reset-email" name="loginId" autocomplete="email" placeholder="you@example.com" required />
+      </div>
+
+      <button type="submit" class="btn btn-primary login-submit" id="reset-submit-btn">Send reset link</button>
+
+      <p class="login-status" id="reset-status" role="status" aria-live="polite"></p>
+
+      <button type="button" class="login-forgot-link" id="back-to-signin-link">&larr; Back to sign in</button>
     </form>
 
     <form class="login-form" id="signup-form" novalidate hidden>
@@ -116,6 +133,8 @@ import {
   getAuth,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  sendEmailVerification,
+  sendPasswordResetEmail,
   onAuthStateChanged,
   signOut
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
@@ -153,10 +172,12 @@ document.querySelectorAll(".login-password-toggle").forEach(function (btn) {
 });
 
 // ---- Tabs ----
+var loginTabs = document.getElementById("login-tabs");
 var tabSignin = document.getElementById("tab-signin");
 var tabSignup = document.getElementById("tab-signup");
 var signinForm = document.getElementById("signin-form");
 var signupForm = document.getElementById("signup-form");
+var resetForm = document.getElementById("reset-form");
 var heading = document.getElementById("login-heading");
 var sub = document.getElementById("login-sub");
 
@@ -176,6 +197,15 @@ function activateTab(name) {
 
 tabSignin.addEventListener("click", function () { activateTab("signin"); });
 tabSignup.addEventListener("click", function () { activateTab("signup"); });
+
+if (new URLSearchParams(window.location.search).has("unverified")) {
+  showStatus(document.getElementById("login-status"), "Please verify your email before signing in. Check your inbox for the verification link.");
+}
+
+// Set while a form handler itself is controlling navigation (sign in or
+// sign up), so the generic onAuthStateChanged listener below doesn't race
+// it and redirect based on a still-unverified or half-written account.
+var suppressAutoRedirect = false;
 
 // ---- Sign in ----
 var status = document.getElementById("login-status");
@@ -208,18 +238,95 @@ signinForm.addEventListener("submit", function (e) {
   var email = document.getElementById("login-id").value.trim();
   var password = document.getElementById("login-password").value;
 
+  suppressAutoRedirect = true;
   submitBtn.disabled = true;
   submitBtn.textContent = "Signing in…";
   status.classList.remove("is-visible");
 
-  signInWithEmailAndPassword(auth, email, password)
-    .catch(function (err) {
-      showStatus(status, friendlyError(err));
-    })
-    .finally(function () {
-      submitBtn.disabled = false;
-      submitBtn.textContent = "Log in";
-    });
+  signInWithEmailAndPassword(auth, email, password).then(function (cred) {
+    if (!cred.user.emailVerified) {
+      // Re-send a fresh link on every blocked attempt, since this also
+      // covers accounts created by hand in the console (or from before
+      // this check existed) that never got an original verification email.
+      return sendEmailVerification(cred.user).catch(function () {}).then(function () {
+        return signOut(auth);
+      }).then(function () {
+        suppressAutoRedirect = false;
+        document.getElementById("login-password").value = "";
+        showStatus(status, "Please verify your email before signing in — we've sent a verification link to " + email + ". Check your inbox, then sign in again.");
+      });
+    }
+    suppressAutoRedirect = false;
+    window.location.replace("profile.html");
+  }).catch(function (err) {
+    suppressAutoRedirect = false;
+    showStatus(status, friendlyError(err));
+  }).finally(function () {
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Log in";
+  });
+});
+
+// ---- Forgot password ----
+var resetEmailInput = document.getElementById("reset-email");
+var resetStatus = document.getElementById("reset-status");
+var resetSubmitBtn = document.getElementById("reset-submit-btn");
+var forgotLink = document.getElementById("forgot-password-link");
+var backToSigninLink = document.getElementById("back-to-signin-link");
+
+function showResetView() {
+  loginTabs.hidden = true;
+  signinForm.hidden = true;
+  signupForm.hidden = true;
+  resetForm.hidden = false;
+  heading.textContent = "Reset your password";
+  sub.textContent = "Enter your login ID and we'll email you a link to set a new password.";
+  resetStatus.classList.remove("is-visible");
+  resetEmailInput.value = document.getElementById("login-id").value.trim();
+}
+
+function showSigninView() {
+  loginTabs.hidden = false;
+  resetForm.hidden = true;
+  activateTab("signin");
+}
+
+forgotLink.addEventListener("click", showResetView);
+backToSigninLink.addEventListener("click", showSigninView);
+
+resetForm.addEventListener("submit", function (e) {
+  e.preventDefault();
+  if (!resetForm.checkValidity()) {
+    resetForm.reportValidity();
+    return;
+  }
+  var email = resetEmailInput.value.trim();
+
+  resetSubmitBtn.disabled = true;
+  resetSubmitBtn.textContent = "Sending…";
+  resetStatus.classList.remove("is-visible");
+
+  // Same confirmation message whether or not the account exists, so this
+  // form can't be used to check which emails are registered.
+  var CONFIRMATION = "If an account exists for that email, we've sent a link to reset your password.";
+
+  sendPasswordResetEmail(auth, email).then(function () {
+    showStatus(resetStatus, CONFIRMATION);
+  }).catch(function (err) {
+    var code = err && err.code;
+    if (code === "auth/user-not-found") {
+      showStatus(resetStatus, CONFIRMATION);
+    } else if (code === "auth/invalid-email") {
+      showStatus(resetStatus, "That doesn't look like a valid email address.");
+    } else if (code === "auth/too-many-requests") {
+      showStatus(resetStatus, "Too many attempts. Please wait a moment and try again.");
+    } else {
+      showStatus(resetStatus, "Something went wrong. Please try again.");
+    }
+  }).finally(function () {
+    resetSubmitBtn.disabled = false;
+    resetSubmitBtn.textContent = "Send reset link";
+  });
 });
 
 // ---- Sign up ----
@@ -267,11 +374,6 @@ function friendlySignupError(err) {
   return "Something went wrong creating your account. Please try again.";
 }
 
-// Set while the sign-up flow itself is handling navigation, so the generic
-// onAuthStateChanged redirect below doesn't race it to profile.html before
-// the freshly-created profile document has actually been written.
-var suppressAutoRedirect = false;
-
 signupForm.addEventListener("submit", function (e) {
   e.preventDefault();
 
@@ -294,7 +396,10 @@ signupForm.addEventListener("submit", function (e) {
   signupSubmitBtn.textContent = "Creating account…";
   signupStatus.classList.remove("is-visible");
 
+  var createdUser = null;
+
   createUserWithEmailAndPassword(auth, email, password).then(function (cred) {
+    createdUser = cred.user;
     return setDoc(doc(db, "profiles", cred.user.uid), {
       fullName: fullName,
       company: company,
@@ -303,26 +408,42 @@ signupForm.addEventListener("submit", function (e) {
       updatedAt: serverTimestamp()
     }, { merge: true });
   }).then(function () {
-    try {
-      sessionStorage.setItem("nkmw-fullname", fullName);
-      sessionStorage.setItem("nkmw-role", "client");
-    } catch (err) {}
-    window.location.replace("welcome.html");
+    // The profile is saved, but the account itself stays unusable until the
+    // email is verified -- send the link, sign back out immediately, and
+    // send them to the sign-in tab rather than through to welcome.html.
+    return sendEmailVerification(createdUser).catch(function () {}).then(function () {
+      return signOut(auth);
+    });
+  }).then(function () {
+    suppressAutoRedirect = false;
+    signupForm.reset();
+    activateTab("signin");
+    showStatus(status, "Account created — we've sent a verification link to " + email + ". Verify it, then sign in.");
   }).catch(function (err) {
     suppressAutoRedirect = false;
     showStatus(signupStatus, friendlySignupError(err));
+  }).finally(function () {
     signupSubmitBtn.disabled = false;
     signupSubmitBtn.textContent = "Create account";
   });
 });
 
-// Already signed in (or just signed in via the sign-in tab) -- this page's
-// only job is the gate, so hand off to the profile page rather than
-// showing anything here. The sign-up flow above handles its own redirect.
+// Already signed in (e.g. a cached session from a previous visit) -- this
+// page's only job is the gate, so hand off to the profile page rather than
+// showing anything here. The sign-in/sign-up handlers above manage their
+// own navigation and set suppressAutoRedirect so this listener stays out
+// of their way while a submit is in flight.
 onAuthStateChanged(auth, function (user) {
-  if (user && !suppressAutoRedirect) {
-    window.location.replace("profile.html");
+  if (!user || suppressAutoRedirect) return;
+  if (!user.emailVerified) {
+    suppressAutoRedirect = true;
+    signOut(auth).then(function () {
+      suppressAutoRedirect = false;
+      showStatus(status, "Please verify your email before signing in. Check your inbox for the verification link.");
+    });
+    return;
   }
+  window.location.replace("profile.html");
 });
 
 document.getElementById("year").textContent = new Date().getFullYear();

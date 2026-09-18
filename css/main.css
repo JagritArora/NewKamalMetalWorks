@@ -1742,6 +1742,20 @@ button.login-back {
 }
 .login-password-toggle.is-visible { color: var(--accent); }
 
+.login-forgot-row { display: flex; justify-content: flex-end; margin-top: -6px; }
+.login-forgot-link {
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--ink-muted);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: color .2s ease;
+}
+.login-forgot-link:hover { color: var(--accent); }
+
 .login-submit { width: 100%; justify-content: center; margin-top: 4px; }
 
 .login-status {
