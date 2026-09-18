@@ -3,12 +3,30 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<script>
+// Runs before first paint: on a reload with a remembered scroll position,
+// hide the page instantly so the visitor never sees a flash of the top of
+// the page before main.js (loaded later, at the end of body) restores the
+// real position. Without this, that brief flash reads as being "redirected"
+// somewhere, even though it's just a normal reload settling into place.
+// The timeout is a safety net in case something downstream never reveals it.
+(function () {
+  try {
+    var nav = performance.getEntriesByType && performance.getEntriesByType("navigation")[0];
+    var saved = parseInt(sessionStorage.getItem("nkmw-scroll-y"), 10) || 0;
+    if (nav && nav.type === "reload" && saved > 0) {
+      document.documentElement.style.visibility = "hidden";
+      setTimeout(function () { document.documentElement.style.visibility = ""; }, 1500);
+    }
+  } catch (e) {}
+})();
+</script>
 <title>New Kamal Metal Works | Precision Sheet Metal Components, Faridabad</title>
 <meta name="description" content="ISO 9001:2015 certified manufacturer of precision sheet metal components, pressed and stamped parts and fabricated assemblies. Blanking, punching, bending and plating under one roof, with dies designed and built in-house. Faridabad, Haryana, since 1999." />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/main.css?v=30" />
+<link rel="stylesheet" href="css/main.css?v=31" />
 </head>
 <body>
 
@@ -450,7 +468,7 @@
       <p class="footer-legal">&copy; <span id="year"></span> New Kamal Metal Works, Faridabad. All rights reserved.</p>
       <p class="footer-meta">ISO 9001:2015 certified &middot; GSTIN 06AGQPA5950R1ZR</p>
       <div class="footer-credit">
-        <p class="footer-credit-name">Made by Jagrit Arora</p>
+        <p class="footer-credit-name">Designed by <span class="footer-credit-highlight">Jagrit Arora</span></p>
         <p class="footer-credit-links">
           <a href="mailto:jagrit.arora007@icloud.com">jagrit.arora007@icloud.com</a>
           <span class="footer-credit-dot" aria-hidden="true">&middot;</span>

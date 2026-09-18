@@ -1377,6 +1377,7 @@ p { margin: 0; text-wrap: pretty; }
 .footer-meta { order: 2; }
 .footer-credit { order: 3; display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
 .footer-credit-name { color: var(--ink); font-weight: 500; }
+.footer-credit-highlight { color: var(--accent); }
 .footer-credit-links { display: flex; align-items: center; gap: 8px; }
 .footer-credit-links a { color: var(--ink-muted); text-decoration: none; transition: color .2s ease; }
 .footer-credit-links a:hover { color: var(--accent); }
