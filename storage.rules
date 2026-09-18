@@ -1,0 +1,11 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Generated invoice PDFs -- master (owner) only, same access rule as
+    // the Firestore invoices collection, checked via a cross-service read.
+    match /invoices/{buyerId}/{fileName} {
+      allow read, write: if request.auth != null
+        && firestore.get(/databases/(default)/documents/profiles/$(request.auth.uid)).data.role == "master";
+    }
+  }
+}

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Coming soon | New Kamal Metal Works</title>
+<meta name="description" content="This feature is on its way." />
+<meta name="robots" content="noindex" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/main.css?v=41" />
+</head>
+<body class="login-page">
+
+<nav class="site-nav">
+  <a href="index.html#hero" class="brand">New Kamal <span>Metal Works</span></a>
+  <button type="button" class="login-back" id="soon-logout">Log out</button>
+</nav>
+
+<main class="login-shell">
+  <div class="login-card login-enter" id="soon-card" hidden>
+    <span class="login-kicker">Coming soon</span>
+    <h1 class="welcome-heading" id="soon-heading" style="font-size: clamp(1.6rem, 4vw, 2rem);">This is on its way.</h1>
+    <p class="welcome-sub">Stay tuned &mdash; we're building this out and it'll be ready soon.</p>
+    <a href="welcome.html" class="welcome-action-link" style="display:inline-block; margin-top: 28px;">&lsaquo; Back to welcome</a>
+  </div>
+
+  <div class="login-card login-enter login-loading-card" id="soon-loading">
+    <div class="login-spinner" aria-hidden="true"><span></span><span></span><span></span></div>
+    <p class="login-sub">Loading&hellip;</p>
+  </div>
+</main>
+
+<footer class="login-footer">
+  <p>&copy; <span id="year"></span> New Kamal Metal Works, Faridabad. All rights reserved.</p>
+</footer>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+
+var firebaseConfig = {
+  apiKey: "AIzaSyDkEyDAOah5XzAOVjUux9SLhH60To2oTKs",
+  authDomain: "new-kamal-metal-works.firebaseapp.com",
+  projectId: "new-kamal-metal-works",
+  storageBucket: "new-kamal-metal-works.firebasestorage.app",
+  messagingSenderId: "595817400572",
+  appId: "1:595817400572:web:8617eb7419e5049524af79"
+};
+
+var app = initializeApp(firebaseConfig);
+var auth = getAuth(app);
+
+document.getElementById("soon-logout").addEventListener("click", function () { signOut(auth); });
+
+var feature = new URLSearchParams(window.location.search).get("feature");
+if (feature) {
+  document.getElementById("soon-heading").textContent = feature + " is on its way.";
+}
+
+onAuthStateChanged(auth, function (user) {
+  if (!user) {
+    window.location.replace("login.html");
+    return;
+  }
+  if (!user.emailVerified) {
+    signOut(auth).then(function () {
+      window.location.replace("login.html?unverified=1");
+    });
+    return;
+  }
+  document.getElementById("soon-loading").hidden = true;
+  document.getElementById("soon-card").hidden = false;
+});
+
+document.getElementById("year").textContent = new Date().getFullYear();
+</script>
+</body>
+</html>

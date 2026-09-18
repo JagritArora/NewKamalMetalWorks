@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dashboard | New Kamal Metal Works</title>
+<meta name="description" content="Master dashboard for New Kamal Metal Works." />
+<meta name="robots" content="noindex" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/main.css?v=41" />
+</head>
+<body class="login-page">
+
+<nav class="site-nav">
+  <a href="index.html#hero" class="brand">New Kamal <span>Metal Works</span></a>
+  <a href="profile.html" class="nav-capsule">Back to Profile</a>
+</nav>
+
+<main class="login-shell dashboard-shell">
+  <div class="dashboard-wrap" id="dash-wrap" hidden>
+    <span class="login-kicker welcome-fade" style="--d:0s">Master access</span>
+    <h1 class="welcome-heading welcome-fade" style="--d:.08s">Dashboard.</h1>
+    <p class="welcome-sub welcome-fade" style="--d:.16s">Pick what you want to work on.</p>
+
+    <div class="tile-grid welcome-fade" style="--d:.26s">
+      <a href="billing.html" class="tile-card">
+        <span class="tile-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M7 9h10M7 13h10M7 17h6"></path></svg>
+        </span>
+        <span class="tile-title">Billing</span>
+        <span class="tile-desc">Generate tax invoices, email them out, and keep a running history.</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="login-card login-enter login-loading-card" id="dash-loading">
+    <div class="login-spinner" aria-hidden="true"><span></span><span></span><span></span></div>
+    <p class="login-sub">Loading&hellip;</p>
+  </div>
+</main>
+
+<footer class="login-footer">
+  <p>&copy; <span id="year"></span> New Kamal Metal Works, Faridabad. All rights reserved.</p>
+</footer>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import {
+  initializeFirestore,
+  doc,
+  getDoc,
+  setDoc
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+var firebaseConfig = {
+  apiKey: "AIzaSyDkEyDAOah5XzAOVjUux9SLhH60To2oTKs",
+  authDomain: "new-kamal-metal-works.firebaseapp.com",
+  projectId: "new-kamal-metal-works",
+  storageBucket: "new-kamal-metal-works.firebasestorage.app",
+  messagingSenderId: "595817400572",
+  appId: "1:595817400572:web:8617eb7419e5049524af79"
+};
+
+var app = initializeApp(firebaseConfig);
+var auth = getAuth(app);
+var db = initializeFirestore(app, { experimentalForceLongPolling: true });
+
+onAuthStateChanged(auth, function (user) {
+  if (!user) {
+    window.location.replace("login.html");
+    return;
+  }
+  if (!user.emailVerified) {
+    signOut(auth).then(function () {
+      window.location.replace("login.html?unverified=1");
+    });
+    return;
+  }
+
+  getDoc(doc(db, "profiles", user.uid)).then(function (snap) {
+    var data = snap.exists() ? snap.data() : {};
+    if (data.role !== "master") {
+      window.location.replace("welcome.html");
+      return;
+    }
+    // Backfill -- profiles saved before the billing tile existed don't
+    // have an email field yet, and "mail this to every master" (billing.html)
+    // depends on it being there. Cheap enough to just check on every visit.
+    if (data.email !== user.email) {
+      setDoc(doc(db, "profiles", user.uid), { email: user.email }, { merge: true }).catch(function () {});
+    }
+    document.getElementById("dash-loading").hidden = true;
+    document.getElementById("dash-wrap").hidden = false;
+  }).catch(function () {
+    window.location.replace("welcome.html");
+  });
+});
+
+document.getElementById("year").textContent = new Date().getFullYear();
+</script>
+</body>
+</html>

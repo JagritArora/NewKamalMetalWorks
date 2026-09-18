@@ -1,0 +1,12 @@
+{
+  "functions": {
+    "source": "functions"
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "storage": {
+    "bucket": "new-kamal-metal-works.firebasestorage.app",
+    "rules": "storage.rules"
+  }
+}

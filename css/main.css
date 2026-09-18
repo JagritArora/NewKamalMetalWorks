@@ -1499,6 +1499,17 @@ p { margin: 0; text-wrap: pretty; }
 
 /* ================= Login page ================= */
 .login-page { display: flex; flex-direction: column; min-height: 100dvh; }
+.nav-capsule {
+  padding: 9px 18px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--ink);
+  background: var(--surface-sunken);
+  border: 1px solid var(--line);
+  border-radius: 980px;
+  transition: border-color .2s ease, color .2s ease;
+}
+.nav-capsule:hover { border-color: var(--accent); color: var(--accent); }
 .login-back {
   font-size: 0.9rem;
   font-weight: 500;
@@ -1596,6 +1607,307 @@ button.login-back {
 }
 .login-empty .login-sub { margin: 0; font-size: 0.88rem; }
 
+/* ================= Welcome quick-actions slider ================= */
+.welcome-shell { flex-direction: column; gap: 48px; }
+.qa-section {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  text-align: center;
+}
+.qa-heading {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 1.4rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  padding: 0 9vw;
+}
+.qa-slider { margin-top: 22px; }
+.qa-track {
+  display: flex;
+  gap: 18px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px 9vw 8px;
+  text-align: left;
+}
+.qa-track::-webkit-scrollbar { display: none; }
+
+.qa-card {
+  position: relative;
+  flex: 0 0 min(260px, 78vw);
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 22px 22px 26px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: transform .25s var(--ease), box-shadow .25s var(--ease), border-color .2s ease;
+}
+.qa-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--accent);
+}
+.qa-plus {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--surface-sunken);
+  color: var(--ink-muted);
+  font-size: 1rem;
+  line-height: 1;
+}
+.qa-kicker {
+  color: var(--accent);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.qa-title {
+  margin-top: 2px;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 1.08rem;
+  font-weight: 600;
+  color: var(--ink);
+  padding-right: 20px;
+}
+.qa-desc { font-size: 0.85rem; color: var(--ink-muted); line-height: 1.5; }
+
+.qa-nav {
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.qa-arrow {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: box-shadow .2s ease, transform .2s var(--ease), border-color .2s ease;
+}
+.qa-arrow:hover { box-shadow: var(--shadow-sm); border-color: var(--accent); color: var(--accent); }
+.qa-arrow svg { width: 16px; height: 16px; }
+
+/* ================= Dashboard tiles ================= */
+.dashboard-shell { align-items: flex-start; padding-top: 72px; }
+.dashboard-wrap { width: 100%; max-width: 760px; text-align: center; margin: 0 auto; }
+.tile-grid {
+  margin-top: 36px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+  text-align: left;
+}
+.tile-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 26px 24px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: transform .25s var(--ease), box-shadow .25s var(--ease), border-color .2s ease;
+}
+.tile-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--accent);
+}
+.tile-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  color: var(--accent);
+}
+.tile-icon svg { width: 22px; height: 22px; }
+.tile-title {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+.tile-desc { font-size: 0.88rem; color: var(--ink-muted); line-height: 1.5; }
+
+/* ================= Billing ================= */
+.billing-shell { align-items: flex-start; padding: 56px 24px 80px; }
+.billing-wrap { width: 100%; max-width: 920px; margin: 0 auto; }
+.billing-back-link {
+  display: inline-block;
+  margin-bottom: 14px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--ink-muted);
+  transition: color .2s ease;
+}
+.billing-back-link:hover { color: var(--accent); }
+
+.billing-card {
+  margin-top: 28px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 32px;
+}
+.billing-card-title {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.billing-grid {
+  margin-top: 22px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+.billing-grid select, .billing-grid input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 12px;
+  font-size: 0.92rem;
+  font-family: inherit;
+  color: var(--ink);
+  background: var(--surface-sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+.billing-optional { font-weight: 400; color: var(--ink-muted); text-transform: none; letter-spacing: 0; }
+
+.billing-seed-note {
+  margin: 18px 0 0;
+  padding: 12px 14px;
+  background: var(--surface-sunken);
+  border-left: 2px solid var(--accent);
+  border-radius: var(--radius-sm);
+  font-size: 0.86rem;
+  color: var(--ink-muted);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.billing-seed-btn {
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--accent-ink);
+  background: var(--accent);
+  border: none;
+  border-radius: 980px;
+  padding: 7px 16px;
+  cursor: pointer;
+}
+
+.billing-items-wrap { margin-top: 26px; overflow-x: auto; }
+.billing-items-table, .billing-history-table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+.billing-items-table th, .billing-history-table th {
+  text-align: left;
+  padding: 10px 8px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  border-bottom: 1px solid var(--line);
+}
+.billing-items-table td, .billing-history-table td {
+  padding: 8px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+  color: var(--ink);
+}
+.billing-items-table select, .billing-items-table input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 9px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  color: var(--ink);
+  background: var(--surface-sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+.billing-sno-cell, .billing-desc-cell, .billing-hsn-cell, .billing-rate-cell, .billing-amount-cell {
+  white-space: nowrap;
+}
+.billing-remove-row {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: none;
+  color: var(--ink-muted);
+  font-size: 1rem;
+  cursor: pointer;
+}
+.billing-remove-row:hover { color: var(--danger); background: var(--surface-sunken); }
+.billing-add-row { margin-top: 12px; padding: 8px 2px; }
+
+.billing-totals {
+  margin-top: 26px;
+  max-width: 320px;
+  margin-left: auto;
+}
+.billing-totals-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  font-size: 0.92rem;
+  color: var(--ink-muted);
+  border-bottom: 1px solid var(--line);
+}
+.billing-totals-net {
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 1.05rem;
+  border-bottom: none;
+}
+.billing-words {
+  margin-top: 10px;
+  text-align: right;
+  font-size: 0.8rem;
+  color: var(--ink-muted);
+  font-style: italic;
+}
+
+.billing-generate-btn { margin-top: 22px; width: 100%; justify-content: center; }
+
+.billing-history-wrap { margin-top: 20px; overflow-x: auto; }
+.billing-history-empty { color: var(--ink-muted); text-align: center; padding: 20px 8px; }
+
+@media (max-width: 640px) {
+  .billing-card { padding: 24px 18px; }
+  .billing-totals { max-width: 100%; }
+}
+
 .login-shell {
   flex: 1;
   display: flex;
@@ -1681,7 +1993,8 @@ button.login-back {
   font-weight: 600;
   color: var(--ink);
 }
-.login-field input {
+.login-field input,
+.login-field select {
   width: 100%;
   box-sizing: border-box;
   padding: 12px 14px;
@@ -1693,7 +2006,17 @@ button.login-back {
   border-radius: var(--radius-sm);
   transition: border-color .2s ease, box-shadow .2s ease;
 }
-.login-field input:focus {
+.login-field select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23888' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 34px;
+  cursor: pointer;
+}
+.login-field input:focus,
+.login-field select:focus {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);

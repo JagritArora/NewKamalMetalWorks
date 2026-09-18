@@ -5,3 +5,12 @@
 # Editor
 .vscode/
 .idea/
+
+# Secrets -- never commit (Gmail App Password, SMTP config, etc.)
+.env
+
+# Cloud Functions
+functions/node_modules/
+functions/.env
+firebase-debug.log
+.firebase/

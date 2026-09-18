@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/main.css?v=40" />
+<link rel="stylesheet" href="css/main.css?v=41" />
 </head>
 <body class="login-page">
 
@@ -135,6 +135,11 @@ form.addEventListener("submit", function (e) {
     fullName: fullNameValue,
     company: fields.company.value.trim(),
     phone: fields.phone.value.trim(),
+    // Denormalized off auth.currentUser -- Firestore rules can't hand a
+    // client the email addresses behind other people's uids, so anything
+    // that needs to mail "all master users" (the billing tile) has to read
+    // it off their own profile doc instead. Kept in sync on every save.
+    email: auth.currentUser ? auth.currentUser.email : null,
     updatedAt: serverTimestamp()
   };
   // role is only ever written here on first creation, and only as "client" --

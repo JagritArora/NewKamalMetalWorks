@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Billing | New Kamal Metal Works</title>
+<meta name="description" content="Invoice billing for New Kamal Metal Works." />
+<meta name="robots" content="noindex" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/main.css?v=41" />
+</head>
+<body class="login-page">
+
+<nav class="site-nav">
+  <a href="index.html#hero" class="brand">New Kamal <span>Metal Works</span></a>
+  <button type="button" class="login-back" id="billing-logout">Log out</button>
+</nav>
+
+<main class="login-shell billing-shell">
+  <div class="billing-wrap" id="billing-wrap" hidden>
+    <a href="welcome.html" class="billing-back-link">&lsaquo; Welcome</a>
+    <span class="login-kicker">Billing</span>
+    <h1 class="welcome-heading" style="font-size: clamp(1.8rem, 4vw, 2.3rem);">Generate an invoice.</h1>
+    <p class="welcome-sub">Pick the buyer and items, generate the tax invoice, then send it from the history below.</p>
+
+    <section class="billing-card">
+      <h2 class="billing-card-title">New invoice</h2>
+
+      <div class="billing-grid">
+        <div class="login-field">
+          <label for="billing-buyer">Buyer</label>
+          <select id="billing-buyer"></select>
+        </div>
+        <div class="login-field">
+          <label for="billing-invoice-no">Invoice No.</label>
+          <input type="text" id="billing-invoice-no" placeholder="2026-27/1" />
+        </div>
+        <div class="login-field">
+          <label for="billing-date">Date</label>
+          <input type="date" id="billing-date" />
+        </div>
+        <div class="login-field">
+          <label for="billing-po-no">P.O. No.</label>
+          <input type="text" id="billing-po-no" placeholder="e.g. 2947" />
+        </div>
+        <div class="login-field">
+          <label for="billing-schedule-no">Schedule No. <span class="billing-optional">(optional)</span></label>
+          <input type="text" id="billing-schedule-no" />
+        </div>
+        <div class="login-field">
+          <label for="billing-eway-no">EWAY Bill No. <span class="billing-optional">(optional)</span></label>
+          <input type="text" id="billing-eway-no" />
+        </div>
+        <div class="login-field">
+          <label for="billing-vehicle-no">Vehicle No.</label>
+          <input type="text" id="billing-vehicle-no" />
+        </div>
+        <div class="login-field">
+          <label for="billing-terms">Terms of Delivery <span class="billing-optional">(optional)</span></label>
+          <input type="text" id="billing-terms" />
+        </div>
+      </div>
+
+      <p class="billing-seed-note" id="billing-seed-note" hidden>
+        No rate card found for this buyer yet.
+        <button type="button" class="billing-seed-btn" id="billing-seed-btn">Load Hella rate card</button>
+      </p>
+
+      <div class="billing-items-wrap">
+        <table class="billing-items-table">
+          <thead>
+            <tr>
+              <th>S.No</th>
+              <th>Part No.</th>
+              <th>Description</th>
+              <th>HSN/SAC</th>
+              <th>Qty</th>
+              <th>Rate</th>
+              <th>Amount</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="billing-items-body"></tbody>
+        </table>
+        <button type="button" class="btn-secondary billing-add-row" id="billing-add-row">+ Add item</button>
+      </div>
+
+      <div class="billing-totals">
+        <div class="billing-totals-row"><span>Subtotal</span><span id="billing-subtotal">₹0.00</span></div>
+        <div class="billing-totals-row"><span>IGST (18%)</span><span id="billing-igst">₹0.00</span></div>
+        <div class="billing-totals-row billing-totals-net"><span>Net Amount</span><span id="billing-net">₹0.00</span></div>
+        <p class="billing-words" id="billing-words"></p>
+      </div>
+
+      <p class="login-status" id="billing-status" role="status" aria-live="polite"></p>
+
+      <button type="button" class="btn btn-primary billing-generate-btn" id="billing-generate-btn">Generate</button>
+    </section>
+
+    <section class="billing-card">
+      <h2 class="billing-card-title">Invoice history</h2>
+      <div class="billing-history-wrap">
+        <table class="billing-history-table" id="billing-history-table">
+          <thead>
+            <tr>
+              <th>Invoice No.</th>
+              <th>Date</th>
+              <th>Buyer</th>
+              <th>Net Amount</th>
+              <th>Emailed to</th>
+              <th>PDF</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="billing-history-body">
+            <tr><td colspan="7" class="billing-history-empty">Loading&hellip;</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <div class="login-card login-enter login-loading-card" id="billing-loading">
+    <div class="login-spinner" aria-hidden="true"><span></span><span></span><span></span></div>
+    <p class="login-sub">Loading&hellip;</p>
+  </div>
+</main>
+
+<footer class="login-footer">
+  <p>&copy; <span id="year"></span> New Kamal Metal Works, Faridabad. All rights reserved.</p>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import {
+  initializeFirestore,
+  doc,
+  getDoc,
+  getDocs,
+  addDoc,
+  setDoc,
+  updateDoc,
+  collection,
+  query,
+  where,
+  orderBy,
+  limit,
+  runTransaction,
+  writeBatch,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import {
+  getStorage,
+  ref as storageRef,
+  uploadBytes,
+  getDownloadURL
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-storage.js";
+
+var firebaseConfig = {
+  apiKey: "AIzaSyDkEyDAOah5XzAOVjUux9SLhH60To2oTKs",
+  authDomain: "new-kamal-metal-works.firebaseapp.com",
+  projectId: "new-kamal-metal-works",
+  storageBucket: "new-kamal-metal-works.firebasestorage.app",
+  messagingSenderId: "595817400572",
+  appId: "1:595817400572:web:8617eb7419e5049524af79"
+};
+
+var app = initializeApp(firebaseConfig);
+var auth = getAuth(app);
+var db = initializeFirestore(app, { experimentalForceLongPolling: true });
+var storage = getStorage(app);
+
+document.getElementById("billing-logout").addEventListener("click", function () { signOut(auth); });
+document.getElementById("year").textContent = new Date().getFullYear();
+
+// ---------------------------------------------------------------------
+// Company letterhead + declaration text -- fixed, replicated from the
+// existing "Hella Invoice" sheet in the .numbers workbook.
+// ---------------------------------------------------------------------
+var COMPANY = {
+  name: "NEW KAMAL METAL WORKS",
+  addressLines: ["Plot No. 118, Industrial Area-4", "Dabua Pali Road, Faridabad-121001"],
+  gstin: "06AGQPA5950R1ZR",
+  state: "Haryana",
+  stateCode: "06",
+  contact: "9818650504",
+  mail: "kamal.jagrit93@gmail.com"
+};
+var IGST_RATE = 0.18;
+
+// Signature stamp, cut straight from the source .numbers workbook's
+// declaration/signatory cell -- loaded once up front so it's ready by the
+// time a PDF needs to be generated.
+var SIGNATURE_IMG_DATAURL = null;
+var SIGNATURE_IMG_ASPECT = 1134 / 470;
+var SIGNATURE_IMG_PROMISE = fetch("assets/kmw-signature-stamp.png")
+  .then(function (r) { return r.blob(); })
+  .then(function (blob) {
+    return new Promise(function (resolve) {
+      var reader = new FileReader();
+      reader.onloadend = function () { SIGNATURE_IMG_DATAURL = reader.result; resolve(reader.result); };
+      reader.readAsDataURL(blob);
+    });
+  })
+  .catch(function () { return null; });
+
+// jsPDF's built-in "helvetica" has no Rupee-sign glyph (₹), so the ₹
+// amounts render as a broken box. These are Apple's own Helvetica Regular
+// and Bold, cut down to just the ASCII + rupee-sign characters the invoice
+// needs (~30KB each) -- visually identical to the built-in font, but with
+// the glyph the invoice actually needs.
+var INVOICE_FONT_REGULAR_B64 = null;
+var INVOICE_FONT_BOLD_B64 = null;
+function arrayBufferToBase64(buf) {
+  var bytes = new Uint8Array(buf);
+  var chunk = 0x8000;
+  var parts = [];
+  for (var i = 0; i < bytes.length; i += chunk) {
+    parts.push(String.fromCharCode.apply(null, bytes.subarray(i, i + chunk)));
+  }
+  return btoa(parts.join(""));
+}
+function loadInvoiceFont(url) {
+  return fetch(url).then(function (r) { return r.arrayBuffer(); }).then(arrayBufferToBase64);
+}
+var INVOICE_FONT_PROMISE = Promise.all([
+  loadInvoiceFont("assets/invoice-font-regular.ttf").then(function (b64) { INVOICE_FONT_REGULAR_B64 = b64; }),
+  loadInvoiceFont("assets/invoice-font-bold.ttf").then(function (b64) { INVOICE_FONT_BOLD_B64 = b64; })
+]).catch(function () { return null; });
+
+var INVOICE_PDF_ASSETS_PROMISE = Promise.all([SIGNATURE_IMG_PROMISE, INVOICE_FONT_PROMISE]);
+
+// Seed data for the one buyer currently on file -- lets the tool bootstrap
+// itself on first use instead of requiring manual Firestore data entry.
+var HELLA_SEED = {
+  buyer: { name: "HELLA INDIA LIGHTING LTD.", address: "Ambala-Chandigarh Highway, Derabassi-140507, Punjab", gstin: "03AAACJ0101G1ZL" },
+  parts: [
+    { partNo: "069.609-00", hsn: "85121000", description: "Washer 4, 1x2, 8", rate: 0.29 },
+    { partNo: "329.404-00", hsn: "85121000", description: "Contact Earth", rate: 0.41 },
+    { partNo: "329.412-00", hsn: "85121000", description: "Connector Map Eyelet", rate: 0.61 },
+    { partNo: "329.406-40", hsn: "85121000", description: "Bracket Angle Map", rate: 0.62 },
+    { partNo: "329.085-00", hsn: "85121000", description: "Support Spring SML", rate: 0.67 },
+    { partNo: "329.405-00", hsn: "85121000", description: "Insulation Element", rate: 1.01 },
+    { partNo: "329.458-00", hsn: "85121000", description: "Contact Element", rate: 1.17 },
+    { partNo: "329.408-00", hsn: "85121000", description: "Retaining Bracket", rate: 1.69 },
+    { partNo: "329.084-00", hsn: "85121000", description: "Contact Spring SML", rate: 2.32 },
+    { partNo: "329.407-00", hsn: "85121000", description: "Contact Spring", rate: 2.68 },
+    { partNo: "327.253-03", hsn: "85121000", description: "Bracket Rect", rate: 3.12 },
+    { partNo: "104.295-00", hsn: "85121000", description: "Reflector LH", rate: 5.85 },
+    { partNo: "104.296-00", hsn: "85121000", description: "Reflector RH", rate: 5.85 },
+    { partNo: "329.461-37", hsn: "85121000", description: "Bulb Holder Zn B80N", rate: 4.68 },
+    { partNo: "329.401-00", hsn: "85121000", description: "Cover Map Reading", rate: 4.79 },
+    { partNo: "329.115-00", hsn: "85121000", description: "Contact Spring BL1516 A", rate: 5.30 },
+    { partNo: "329.116-00", hsn: "85121000", description: "Contact Spring BL1516 B", rate: 5.30 }
+  ]
+};
+
+// ---------------------------------------------------------------------
+// Number -> Indian-numbering words (Crore / Lakh / Thousand / Hundred),
+// replicating the "Net Amount (in words)" lookup in the original sheet.
+// ---------------------------------------------------------------------
+function numberToWordsIndian(num) {
+  num = Math.round(num);
+  if (num === 0) return "Rupees Zero Only";
+  var ones = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten",
+    "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"];
+  var tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+
+  function twoDigits(n) {
+    if (n < 20) return ones[n];
+    var t = tens[Math.floor(n / 10)];
+    var o = n % 10;
+    return o ? t + " " + ones[o] : t;
+  }
+  function threeDigits(n) {
+    var s = "";
+    if (n >= 100) {
+      s += ones[Math.floor(n / 100)] + " Hundred";
+      n = n % 100;
+      if (n) s += " ";
+    }
+    if (n) s += twoDigits(n);
+    return s;
+  }
+
+  var crore = Math.floor(num / 10000000); num %= 10000000;
+  var lakh = Math.floor(num / 100000); num %= 100000;
+  var thousand = Math.floor(num / 1000); num %= 1000;
+  var hundred = num;
+
+  var parts = [];
+  if (crore) parts.push(threeDigits(crore) + " Crore");
+  if (lakh) parts.push(threeDigits(lakh) + " Lakh");
+  if (thousand) parts.push(threeDigits(thousand) + " Thousand");
+  if (hundred) parts.push(threeDigits(hundred));
+
+  return "Rupees " + parts.join(" ") + " Only";
+}
+
+function financialYearFor(dateObj) {
+  var y = dateObj.getFullYear();
+  var m = dateObj.getMonth() + 1;
+  var startY = m >= 4 ? y : y - 1;
+  var endY = (startY + 1) % 100;
+  return startY + "-" + (endY < 10 ? "0" + endY : "" + endY);
+}
+
+function formatCurrency(n) {
+  return "₹" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function statusEl() { return document.getElementById("billing-status"); }
+function showStatus(message) {
+  var el = statusEl();
+  el.textContent = message;
+  el.classList.add("is-visible");
+}
+
+// ---------------------------------------------------------------------
+// State
+// ---------------------------------------------------------------------
+var buyersById = {};       // buyerId -> { name, address, gstin }
+var partsByBuyer = {};     // buyerId -> { partNo -> { description, hsn, rate } }
+var invoiceNoTouched = false;
+
+var buyerSelect = document.getElementById("billing-buyer");
+var invoiceNoInput = document.getElementById("billing-invoice-no");
+var dateInput = document.getElementById("billing-date");
+var itemsBody = document.getElementById("billing-items-body");
+var seedNote = document.getElementById("billing-seed-note");
+var seedBtn = document.getElementById("billing-seed-btn");
+
+dateInput.value = new Date().toISOString().slice(0, 10);
+invoiceNoInput.addEventListener("input", function () { invoiceNoTouched = true; });
+
+// ---------------------------------------------------------------------
+// Line items
+// ---------------------------------------------------------------------
+function currentBuyerId() { return buyerSelect.value; }
+
+function addItemRow() {
+  var tr = document.createElement("tr");
+  tr.className = "billing-item-row";
+  tr.innerHTML =
+    '<td class="billing-sno-cell"></td>' +
+    '<td><select class="billing-part-select"><option value="">Select part&hellip;</option></select></td>' +
+    '<td class="billing-desc-cell">—</td>' +
+    '<td class="billing-hsn-cell">—</td>' +
+    '<td><input type="number" class="billing-qty-input" min="1" step="1" placeholder="Qty" /></td>' +
+    '<td class="billing-rate-cell">—</td>' +
+    '<td class="billing-amount-cell">0.00</td>' +
+    '<td><button type="button" class="billing-remove-row" aria-label="Remove item">&times;</button></td>';
+  itemsBody.appendChild(tr);
+  populatePartOptions(tr.querySelector(".billing-part-select"));
+  wireRow(tr);
+  renumberRows();
+}
+
+function populatePartOptions(select) {
+  var parts = partsByBuyer[currentBuyerId()] || {};
+  var keep = select.value;
+  select.innerHTML = '<option value="">Select part&hellip;</option>';
+  Object.keys(parts).sort().forEach(function (partNo) {
+    var opt = document.createElement("option");
+    opt.value = partNo;
+    opt.textContent = partNo + " — " + parts[partNo].description;
+    select.appendChild(opt);
+  });
+  if (keep && parts[keep]) select.value = keep;
+}
+
+function wireRow(tr) {
+  var select = tr.querySelector(".billing-part-select");
+  var qty = tr.querySelector(".billing-qty-input");
+  select.addEventListener("change", function () { fillRowFromPart(tr); recomputeTotals(); });
+  qty.addEventListener("input", function () { recomputeTotals(); });
+  tr.querySelector(".billing-remove-row").addEventListener("click", function () {
+    if (itemsBody.children.length <= 1) return;
+    tr.remove();
+    renumberRows();
+    recomputeTotals();
+  });
+}
+
+function fillRowFromPart(tr) {
+  var partNo = tr.querySelector(".billing-part-select").value;
+  var part = (partsByBuyer[currentBuyerId()] || {})[partNo];
+  tr.querySelector(".billing-desc-cell").textContent = part ? part.description : "—";
+  tr.querySelector(".billing-hsn-cell").textContent = part ? part.hsn : "—";
+  tr.querySelector(".billing-rate-cell").textContent = part ? part.rate.toFixed(2) : "—";
+  tr.dataset.rate = part ? part.rate : "";
+  tr.dataset.hsn = part ? part.hsn : "";
+  tr.dataset.description = part ? part.description : "";
+}
+
+function renumberRows() {
+  Array.prototype.forEach.call(itemsBody.children, function (tr, i) {
+    tr.querySelector(".billing-sno-cell").textContent = i + 1;
+  });
+}
+
+function collectItems() {
+  var items = [];
+  Array.prototype.forEach.call(itemsBody.children, function (tr) {
+    var partNo = tr.querySelector(".billing-part-select").value;
+    var qty = parseFloat(tr.querySelector(".billing-qty-input").value);
+    var rate = parseFloat(tr.dataset.rate);
+    if (!partNo || !qty || !rate) return;
+    items.push({
+      partNo: partNo,
+      description: tr.dataset.description || "",
+      hsn: tr.dataset.hsn || "",
+      qty: qty,
+      rate: rate,
+      amount: qty * rate
+    });
+  });
+  return items;
+}
+
+function recomputeTotals() {
+  Array.prototype.forEach.call(itemsBody.children, function (tr) {
+    var qty = parseFloat(tr.querySelector(".billing-qty-input").value);
+    var rate = parseFloat(tr.dataset.rate);
+    var amount = (qty && rate) ? qty * rate : 0;
+    tr.querySelector(".billing-amount-cell").textContent = amount.toFixed(2);
+  });
+  var items = collectItems();
+  var subtotal = items.reduce(function (sum, it) { return sum + it.amount; }, 0);
+  var igst = subtotal * IGST_RATE;
+  var net = subtotal + igst;
+  document.getElementById("billing-subtotal").textContent = formatCurrency(subtotal);
+  document.getElementById("billing-igst").textContent = formatCurrency(igst);
+  document.getElementById("billing-net").textContent = formatCurrency(net);
+  document.getElementById("billing-words").textContent = net > 0 ? numberToWordsIndian(net) : "";
+  return { items: items, subtotal: subtotal, igst: igst, net: net };
+}
+
+document.getElementById("billing-add-row").addEventListener("click", addItemRow);
+
+// ---------------------------------------------------------------------
+// Buyers + rate cards
+// ---------------------------------------------------------------------
+function loadBuyers() {
+  return getDocs(collection(db, "buyers")).then(function (snap) {
+    buyerSelect.innerHTML = "";
+    if (snap.empty) {
+      var opt = document.createElement("option");
+      opt.value = "hella";
+      opt.textContent = "Hella India Lighting Ltd. (not set up yet)";
+      buyerSelect.appendChild(opt);
+      buyersById.hella = null;
+      return;
+    }
+    snap.forEach(function (d) {
+      buyersById[d.id] = d.data();
+      var opt = document.createElement("option");
+      opt.value = d.id;
+      opt.textContent = d.data().name;
+      buyerSelect.appendChild(opt);
+    });
+  }).then(function () { return loadPartsForCurrentBuyer(); });
+}
+
+function loadPartsForCurrentBuyer() {
+  var buyerId = currentBuyerId();
+  if (!buyerId) return Promise.resolve();
+  return getDocs(collection(db, "buyers", buyerId, "parts")).then(function (snap) {
+    var map = {};
+    snap.forEach(function (d) { map[d.id] = d.data(); });
+    partsByBuyer[buyerId] = map;
+    seedNote.hidden = Object.keys(map).length > 0 || buyerId !== "hella";
+    Array.prototype.forEach.call(itemsBody.querySelectorAll(".billing-part-select"), populatePartOptions);
+    Array.prototype.forEach.call(itemsBody.children, fillRowFromPart);
+    recomputeTotals();
+    return suggestInvoiceNo();
+  });
+}
+
+buyerSelect.addEventListener("change", function () {
+  invoiceNoTouched = false;
+  loadPartsForCurrentBuyer();
+});
+
+seedBtn.addEventListener("click", function () {
+  seedBtn.disabled = true;
+  seedBtn.textContent = "Loading…";
+  var batch = writeBatch(db);
+  batch.set(doc(db, "buyers", "hella"), HELLA_SEED.buyer);
+  HELLA_SEED.parts.forEach(function (p) {
+    batch.set(doc(db, "buyers", "hella", "parts", p.partNo), {
+      hsn: p.hsn,
+      description: p.description,
+      rate: p.rate
+    });
+  });
+  batch.commit().then(function () {
+    return loadBuyers();
+  }).then(function () {
+    buyerSelect.value = "hella";
+    return loadPartsForCurrentBuyer();
+  }).catch(function () {
+    showStatus("Couldn't load the rate card just now — please try again.");
+  }).finally(function () {
+    seedBtn.disabled = false;
+    seedBtn.textContent = "Load Hella rate card";
+  });
+});
+
+// ---------------------------------------------------------------------
+// Invoice numbering -- suggests the next number from the per-financial-
+// year counter, but stays fully editable. Whatever number is actually
+// used on Generate becomes the new counter baseline, so a first-ever
+// invoice can pick up wherever the old paper trail left off.
+// ---------------------------------------------------------------------
+function suggestInvoiceNo() {
+  if (invoiceNoTouched) return Promise.resolve();
+  var fy = financialYearFor(new Date(dateInput.value || Date.now()));
+  return getDoc(doc(db, "counters", fy)).then(function (snap) {
+    if (invoiceNoTouched) return;
+    var nextSeq = snap.exists() ? (snap.data().lastSeq || 0) + 1 : 1;
+    invoiceNoInput.value = fy + "/" + nextSeq;
+  });
+}
+
+dateInput.addEventListener("change", function () {
+  invoiceNoTouched = false;
+  suggestInvoiceNo();
+});
+
+// ---------------------------------------------------------------------
+// PDF generation -- pixel-exact replica of the reference "Hella Invoice"
+// layout (source/Tax Invoice 2026-27:341.pdf). Every coordinate, colour,
+// font size and rule below is taken directly from that spec; see the
+// section comments for the corresponding spec section number.
+// ---------------------------------------------------------------------
+var INV_L = 13.0, INV_R = 582.3, INV_T = 61.7, INV_B = 818.1;
+var INV_COLS = [13.0, 59.1, 224.8, 303.4, 388.9, 442.9, 501.0, 582.3];
+var INV_HEADERS = ["S. No.", "Description", "HSN/SAC", "Part No.", "Qty", "Rate", "Amount"];
+var INV_ROW_H = 24.9;
+var INV_BODY_ROWS = 12;
+var INV_HB = [61.7, 86.6, 111.5, 136.4, 161.3, 186.2, 211.1, 236.0, 276.3]; // header block bands
+var INV_TABLE_HEAD_TOP = 276.3, INV_TABLE_HEAD_BOT = 301.2;
+var INV_BODY_TOP = 301.2, INV_BODY_BOT = 600.0;
+var INV_TOTALS_Y = [600.0, 624.9, 649.8, 674.7];
+var INV_WORDS_Y = [674.7, 699.6, 724.5];
+var INV_BOTTOM_Y = [724.5, 818.1];
+var INV_MIDX = 442.9; // right-block internal split for the 3 label/value pairs
+
+var C_HEADER_FILL = [146, 146, 146]; // #929292
+var C_BODY_SHADED = [213, 213, 213]; // #D5D5D5
+var C_BUYER_FILL = [247, 247, 246]; // #F7F7F6
+var C_NET_FILL = [245, 245, 245]; // #F5F5F5
+var C_HAIR_LIGHT = [191, 191, 191]; // #BFBFBF header-block hairlines
+var C_HAIR_MED = [166, 166, 166]; // #A6A6A6 totals/bottom-block hairlines
+
+function inr(n, decimals) {
+  return "₹ " + Number(n).toLocaleString("en-IN", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+}
+// Optical vertical centring for a text block inside a cell (spec section 1).
+function invBaseline(cellTop, cellHeight, fontSize) {
+  return cellTop + (cellHeight + 0.72 * fontSize) / 2;
+}
+// For lines given as an explicit "cap-top" y in the spec (section 4/8).
+function invCapBaseline(capTop, fontSize) {
+  return capTop + 0.72 * fontSize;
+}
+
+function buildInvoicePdf(data) {
+  var pdf = new window.jspdf.jsPDF({ unit: "pt", format: "a4" });
+  var haveInvoiceFont = INVOICE_FONT_REGULAR_B64 && INVOICE_FONT_BOLD_B64;
+  if (haveInvoiceFont) {
+    pdf.addFileToVFS("InvoiceFont-Regular.ttf", INVOICE_FONT_REGULAR_B64);
+    pdf.addFont("InvoiceFont-Regular.ttf", "InvoiceFont", "normal");
+    pdf.addFileToVFS("InvoiceFont-Bold.ttf", INVOICE_FONT_BOLD_B64);
+    pdf.addFont("InvoiceFont-Bold.ttf", "InvoiceFont", "bold");
+  }
+  var FONT = haveInvoiceFont ? "InvoiceFont" : "helvetica";
+  function setF(weight, size) { pdf.setFont(FONT, weight); pdf.setFontSize(size); }
+  function fill(rgb) { pdf.setFillColor(rgb[0], rgb[1], rgb[2]); }
+  function drawColor(rgb) { pdf.setDrawColor(rgb[0], rgb[1], rgb[2]); }
+  function hline(x1, x2, y, w, rgb) { drawColor(rgb); pdf.setLineWidth(w); pdf.line(x1, y, x2, y); }
+  function vline(x, y1, y2, w, rgb) { drawColor(rgb); pdf.setLineWidth(w); pdf.line(x, y1, x, y2); }
+
+  pdf.setTextColor(0, 0, 0);
+  var X = INV_COLS;
+  var colCenter = [];
+  for (var ci = 0; ci < 7; ci++) colCenter.push((X[ci] + X[ci + 1]) / 2);
+
+  // ================= 1. FILLS (bottom layer, painted first) =================
+  fill(C_BUYER_FILL); pdf.rect(INV_L, INV_HB[5], X[3] - INV_L, INV_HB[8] - INV_HB[5], "F"); // buyer cell 186.2-276.3
+  fill(C_HEADER_FILL); pdf.rect(INV_L, INV_TABLE_HEAD_TOP, INV_R - INV_L, INV_TABLE_HEAD_BOT - INV_TABLE_HEAD_TOP, "F");
+
+  var items = data.items.slice(0, INV_BODY_ROWS);
+  for (var r = 0; r < INV_BODY_ROWS; r++) {
+    var rowTop = INV_BODY_TOP + r * INV_ROW_H;
+    var shaded = (r % 2) === 1; // rows 1,3,5,7,9,11 (1-indexed odd) = white; even = shaded
+    fill(shaded ? C_BODY_SHADED : [255, 255, 255]);
+    pdf.rect(INV_L, rowTop, INV_R - INV_L, INV_ROW_H, "F");
+  }
+
+  fill([255, 255, 255]); pdf.rect(388.9, INV_TOTALS_Y[0], INV_R - 388.9, INV_TOTALS_Y[1] - INV_TOTALS_Y[0], "F");
+  fill(C_BUYER_FILL); pdf.rect(388.9, INV_TOTALS_Y[1], INV_R - 388.9, INV_TOTALS_Y[2] - INV_TOTALS_Y[1], "F");
+  fill(C_NET_FILL); pdf.rect(388.9, INV_TOTALS_Y[2], INV_R - 388.9, INV_TOTALS_Y[3] - INV_TOTALS_Y[2], "F");
+
+  fill(C_BUYER_FILL); pdf.rect(INV_L, INV_WORDS_Y[0], INV_R - INV_L, INV_WORDS_Y[1] - INV_WORDS_Y[0], "F");
+  fill(C_NET_FILL); pdf.rect(INV_L, INV_WORDS_Y[1], INV_R - INV_L, INV_WORDS_Y[2] - INV_WORDS_Y[1], "F");
+
+  fill(C_BUYER_FILL); pdf.rect(INV_L, INV_BOTTOM_Y[0], INV_R - INV_L, INV_BOTTOM_Y[1] - INV_BOTTOM_Y[0], "F");
+
+  // ================= 2. HAIRLINES (thin, drawn over fills) =================
+  // Header block: horizontals at 111.5/161.3/211.1 (right side) and 186.2 (left side)
+  hline(302.9, 582.8, 111.5, 0.25, C_HAIR_LIGHT);
+  hline(302.9, 582.8, 161.3, 0.25, C_HAIR_LIGHT);
+  hline(302.9, 582.8, 211.1, 0.25, C_HAIR_LIGHT);
+  hline(12.5, 303.4, 186.2, 0.25, C_HAIR_LIGHT);
+  // Header block verticals: x=303.4 full header height, x=442.9 down to 211.1 only
+  vline(303.4, INV_HB[0], INV_HB[8], 0.25, C_HAIR_LIGHT);
+  vline(INV_MIDX, INV_HB[0], 211.1, 0.25, C_HAIR_LIGHT);
+
+  // Body: per-row column hairlines at internal boundaries only (59.1..501.0)
+  var innerCols = [X[1], X[2], X[3], X[4], X[5], X[6]];
+  for (var rr = 0; rr < INV_BODY_ROWS; rr++) {
+    var top = INV_BODY_TOP + rr * INV_ROW_H;
+    var isShaded = (rr % 2) === 1;
+    var hw = isShaded ? 0.35 : 1.0;
+    var hc = isShaded ? [255, 255, 255] : C_BODY_SHADED;
+    for (var cc = 0; cc < innerCols.length; cc++) {
+      vline(innerCols[cc], top, top + INV_ROW_H, hw, hc);
+    }
+  }
+
+  // Totals + words + bottom-block hairlines (#A6A6A6)
+  hline(388.4, 582.8, INV_TOTALS_Y[1], 0.35, C_HAIR_MED);
+  hline(388.4, 582.8, INV_TOTALS_Y[2], 0.35, C_HAIR_MED);
+  vline(501.0, INV_TOTALS_Y[0], 675.2, 0.35, C_HAIR_MED);
+  hline(INV_L, INV_R, INV_WORDS_Y[1], 0.35, C_HAIR_MED);
+  vline(303.4, 724.0, 818.6, 0.35, C_HAIR_MED);
+
+  // ================= 3. HEAVY BLACK STRUCTURAL RULES =================
+  pdf.setDrawColor(0, 0, 0);
+  pdf.setLineWidth(2.0);
+  pdf.rect(INV_L, INV_T, INV_R - INV_L, INV_B - INV_T); // outer frame
+
+  pdf.setLineWidth(2.0);
+  pdf.line(INV_L, INV_TABLE_HEAD_TOP, INV_R, INV_TABLE_HEAD_TOP);
+  pdf.line(INV_L, INV_TABLE_HEAD_BOT, INV_R, INV_TABLE_HEAD_BOT);
+  for (var vx = 0; vx < X.length; vx++) {
+    pdf.line(X[vx], INV_TABLE_HEAD_TOP, X[vx], INV_TABLE_HEAD_BOT);
+  }
+
+  pdf.line(388.9, 599.5, 388.9, 675.2);
+  pdf.line(388.4, INV_TOTALS_Y[0], 582.8, INV_TOTALS_Y[0]);
+  pdf.line(12.5, INV_TOTALS_Y[3], 582.8, INV_TOTALS_Y[3]);
+  pdf.line(INV_L, INV_WORDS_Y[2], INV_R, INV_WORDS_Y[2]);
+
+  // ================= 4. TITLE =================
+  setF("bold", 16.6);
+  pdf.text("TAX INVOICE", 297.64, 54.0, { align: "center" });
+
+  // ================= 5. HEADER BLOCK TEXT =================
+  setF("bold", 19.1);
+  pdf.text("NEW KAMAL METAL WORKS", 17.1, invCapBaseline(69.5, 19.1));
+  setF("normal", 13.3);
+  var companyLineY = [90.4, 105.4, 120.3, 135.2, 150.2, 165.1];
+  var companyLines = [
+    "Plot No. 118, Industrial Area-4",
+    "Dabua Pali Road, Faridabad-121001",
+    "GSTIN: " + COMPANY.gstin,
+    "State: " + COMPANY.state + ", Code: " + COMPANY.stateCode,
+    "Contact: " + COMPANY.contact,
+    "Mail: " + COMPANY.mail
+  ];
+  companyLines.forEach(function (line, i) { pdf.text(line, 17.1, invCapBaseline(companyLineY[i], 13.3)); });
+
+  setF("normal", 13.3);
+  pdf.text("Buyer", 17.1, invCapBaseline(191.0, 13.3));
+  hline(17.1, 51.8, 202.7, 0.8, [0, 0, 0]);
+  setF("bold", 19.1);
+  pdf.text(data.buyer.name, 17.1, invCapBaseline(208.2, 19.1));
+  setF("normal", 13.3);
+  var buyerAddrLines = pdf.splitTextToSize(data.buyer.address, X[3] - INV_L - 2 * 4.1);
+  var buyerLineY = [229.1, 244.1, 259.0];
+  buyerAddrLines.slice(0, 2).forEach(function (line, i) { pdf.text(line, 17.1, invCapBaseline(buyerLineY[i], 13.3)); });
+  pdf.text("GSTIN: " + data.buyer.gstin, 17.1, invCapBaseline(buyerLineY[Math.min(buyerAddrLines.length, 2)], 13.3));
+
+  // Right side: 3 label/value pairs + Terms of Delivery
+  var metaPairs = [
+    ["Invoice No.", data.invoiceNo, "Date", data.dateStr],
+    ["P.O. No.", data.poNo || "", "Schedule No.", data.scheduleNo || ""],
+    ["EWAY Bill No.", data.ewayBillNo || "", "Vehicle No.", data.vehicleNo || ""]
+  ];
+  metaPairs.forEach(function (pair, i) {
+    var labelTop = INV_HB[i * 2], valueTop = INV_HB[i * 2 + 1];
+    setF("bold", 13.3);
+    pdf.text(pair[0], 307, invBaseline(labelTop, INV_ROW_H, 13.3));
+    pdf.text(pair[2], 446.3, invBaseline(labelTop, INV_ROW_H, 13.3));
+    setF("normal", 13.3);
+    if (pair[1]) pdf.text(String(pair[1]), 439.4, invBaseline(valueTop, INV_ROW_H, 13.3), { align: "right" });
+    if (pair[3]) pdf.text(String(pair[3]), 578.2, invBaseline(valueTop, INV_ROW_H, 13.3), { align: "right" });
+  });
+  setF("bold", 13.3);
+  pdf.text("Terms of Delivery", 306.9, invBaseline(211.1, INV_ROW_H, 13.3));
+  if (data.termsOfDelivery) {
+    setF("normal", 13.3);
+    var termsLines = pdf.splitTextToSize(data.termsOfDelivery, (INV_R - 303.4) - 2 * 4.1);
+    pdf.text(termsLines, 306.9, invBaseline(236.0, 40.3, 13.3) - (termsLines.length - 1) * 7);
+  }
+
+  // ================= 6. ITEM TABLE HEADER =================
+  setF("bold", 13.3);
+  INV_HEADERS.forEach(function (h, i) {
+    pdf.text(h, colCenter[i], invBaseline(INV_TABLE_HEAD_TOP, INV_TABLE_HEAD_BOT - INV_TABLE_HEAD_TOP, 13.3), { align: "center" });
+  });
+
+  // ================= 7. ITEM TABLE BODY =================
+  setF("normal", 12.45);
+  for (var b = 0; b < INV_BODY_ROWS; b++) {
+    var it = items[b];
+    var rowTop2 = INV_BODY_TOP + b * INV_ROW_H;
+    var base = invBaseline(rowTop2, INV_ROW_H, 12.45);
+    if (!it) continue;
+    var cells = [
+      String(b + 1),
+      it.description,
+      it.hsn,
+      it.partNo,
+      it.qty.toLocaleString("en-IN"),
+      inr(it.rate, 2),
+      inr(it.amount, 2)
+    ];
+    cells.forEach(function (text, ci2) { pdf.text(String(text), colCenter[ci2], base, { align: "center" }); });
+  }
+
+  // ================= 8. TOTALS =================
+  var labelCenter = (388.9 + 501.0) / 2, valueCenter = (501.0 + 582.3) / 2;
+  setF("normal", 12.45);
+  pdf.text("Subtotal", labelCenter, invBaseline(INV_TOTALS_Y[0], INV_ROW_H, 12.45), { align: "center" });
+  pdf.text(inr(data.subtotal, 2), valueCenter, invBaseline(INV_TOTALS_Y[0], INV_ROW_H, 12.45), { align: "center" });
+  pdf.text("IGST (18%)", labelCenter, invBaseline(INV_TOTALS_Y[1], INV_ROW_H, 12.45), { align: "center" });
+  pdf.text(inr(data.igst, 2), valueCenter, invBaseline(INV_TOTALS_Y[1], INV_ROW_H, 12.45), { align: "center" });
+  setF("bold", 14.1);
+  pdf.text("Net Amount", labelCenter, invBaseline(INV_TOTALS_Y[2], INV_ROW_H, 14.1), { align: "center" });
+  setF("bold", 12.45);
+  pdf.text(inr(Math.round(data.net), 0), valueCenter, invBaseline(INV_TOTALS_Y[2], INV_ROW_H, 12.45), { align: "center" });
+
+  // ================= 9. NET AMOUNT IN WORDS =================
+  setF("bold", 14.1);
+  pdf.text("Net Amount (in words)", 17.1, invBaseline(INV_WORDS_Y[0], INV_ROW_H, 14.1));
+  setF("normal", 14.1);
+  pdf.text(data.netWords.replace(/\s+/g, " "), 17.1, invBaseline(INV_WORDS_Y[1], INV_ROW_H, 14.1));
+
+  // ================= 10. DECLARATION + SIGNATURE =================
+  setF("bold", 9.55);
+  pdf.text("Declaration:-", 17.1, invCapBaseline(729.7, 9.55));
+  hline(17.1, 69.6, 738.1, 0.575, [0, 0, 0]);
+  setF("normal", 9.55);
+  pdf.text("We declare that this invoice shows the actual price of the goods", 17.1, invCapBaseline(740.5, 9.55));
+  pdf.text("described and all particulars are true and correct. Terms and", 17.1, invCapBaseline(751.3, 9.55));
+  pdf.text("Conditions:", 17.1, invCapBaseline(762.0, 9.55));
+
+  var declRows = [
+    { y: 772.9, num: "1.", text: "Goods once sold can not be taken back." },
+    { y: 783.7, num: "2.", text: "Received the above materials in good condition." },
+    { y: 794.5, num: "3.", text: "Interest @18% p.a. will be charged if the payment is not made" }
+  ];
+  declRows.forEach(function (row) {
+    setF("bold", 9.55);
+    pdf.text(row.num, 17.1, invCapBaseline(row.y, 9.55));
+    setF("normal", 9.55);
+    pdf.text(row.text, 32.8, invCapBaseline(row.y, 9.55));
+  });
+  setF("normal", 9.55);
+  pdf.text("with due dates.", 32.8, invCapBaseline(805.2, 9.55));
+
+  if (SIGNATURE_IMG_DATAURL) {
+    pdf.addImage(SIGNATURE_IMG_DATAURL, "PNG", 330.4, 720.5, 173.1, 80.3);
+  }
+  setF("bold", 9.96);
+  pdf.text("Authorise Signatory", 578.2, invCapBaseline(791.5, 9.96), { align: "right" });
+  pdf.text("New Kamal Metal Works", 578.2, invCapBaseline(803.9, 9.96), { align: "right" });
+
+  return pdf;
+}
+
+// ---------------------------------------------------------------------
+// Generate
+// ---------------------------------------------------------------------
+var generateBtn = document.getElementById("billing-generate-btn");
+
+generateBtn.addEventListener("click", function () {
+  statusEl().classList.remove("is-visible");
+  var buyerId = currentBuyerId();
+  var buyer = buyersById[buyerId];
+  var invoiceNo = invoiceNoInput.value.trim();
+  var dateVal = dateInput.value;
+  var vehicleNo = document.getElementById("billing-vehicle-no").value.trim();
+  var totals = recomputeTotals();
+
+  if (!buyer) { showStatus("Load the rate card for this buyer first."); return; }
+  if (!invoiceNo) { showStatus("Enter an invoice number."); return; }
+  if (!dateVal) { showStatus("Pick a date."); return; }
+  if (!vehicleNo) { showStatus("Enter a vehicle number."); return; }
+  if (!totals.items.length) { showStatus("Add at least one line item with a part and quantity."); return; }
+
+  generateBtn.disabled = true;
+  generateBtn.textContent = "Generating…";
+
+  var dateObj = new Date(dateVal + "T00:00:00");
+  var fy = financialYearFor(dateObj);
+  var dateStr = dateObj.toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" });
+  var netWords = numberToWordsIndian(totals.net);
+  var seqMatch = invoiceNo.match(/(\d+)\s*$/);
+  var typedSeq = seqMatch ? parseInt(seqMatch[1], 10) : null;
+
+  var pdfData = {
+    invoiceNo: invoiceNo,
+    dateStr: dateStr,
+    poNo: document.getElementById("billing-po-no").value.trim(),
+    scheduleNo: document.getElementById("billing-schedule-no").value.trim(),
+    ewayBillNo: document.getElementById("billing-eway-no").value.trim(),
+    vehicleNo: document.getElementById("billing-vehicle-no").value.trim(),
+    termsOfDelivery: document.getElementById("billing-terms").value.trim(),
+    buyer: buyer,
+    items: totals.items,
+    subtotal: totals.subtotal,
+    igst: totals.igst,
+    net: totals.net,
+    netWords: netWords
+  };
+
+  var safeInvoiceNo = invoiceNo.replace(/[^\w.-]+/g, "_");
+  var pdfPath = "invoices/" + buyerId + "/" + safeInvoiceNo + ".pdf";
+  var fileRef = storageRef(storage, pdfPath);
+
+  INVOICE_PDF_ASSETS_PROMISE
+    .then(function () {
+      var pdf = buildInvoicePdf(pdfData);
+      return pdf.output("blob");
+    })
+    .then(function (pdfBlob) {
+      return uploadBytes(fileRef, pdfBlob, { contentType: "application/pdf" });
+    })
+    .then(function () { return getDownloadURL(fileRef); })
+    .then(function (pdfUrl) {
+      return runTransaction(db, function (tx) {
+        var counterRef = doc(db, "counters", fy);
+        return tx.get(counterRef).then(function (counterSnap) {
+          var lastSeq = counterSnap.exists() ? (counterSnap.data().lastSeq || 0) : 0;
+          var newLastSeq = typedSeq ? Math.max(lastSeq, typedSeq) : lastSeq + 1;
+          var invoiceRef = doc(collection(db, "invoices"));
+          tx.set(invoiceRef, {
+            invoiceNo: invoiceNo,
+            financialYear: fy,
+            date: dateVal,
+            buyerId: buyerId,
+            buyer: buyer,
+            poNo: pdfData.poNo,
+            scheduleNo: pdfData.scheduleNo,
+            ewayBillNo: pdfData.ewayBillNo,
+            vehicleNo: pdfData.vehicleNo,
+            termsOfDelivery: pdfData.termsOfDelivery,
+            items: totals.items,
+            subtotal: totals.subtotal,
+            igst: totals.igst,
+            net: totals.net,
+            netWords: netWords,
+            pdfUrl: pdfUrl,
+            pdfPath: pdfPath,
+            emailedTo: [],
+            status: "generated",
+            createdBy: auth.currentUser.uid,
+            createdAt: serverTimestamp()
+          });
+          tx.set(counterRef, { lastSeq: newLastSeq }, { merge: true });
+        });
+      });
+    })
+    .then(function () {
+      showStatus("Invoice " + invoiceNo + " generated. Send it from the invoice history below.");
+      itemsBody.innerHTML = "";
+      addItemRow();
+      recomputeTotals();
+      invoiceNoTouched = false;
+      suggestInvoiceNo();
+      loadHistory();
+    })
+    .catch(function (err) {
+      showStatus("Something went wrong generating the invoice — please try again.");
+      console.error(err);
+    })
+    .finally(function () {
+      generateBtn.disabled = false;
+      generateBtn.textContent = "Generate";
+    });
+});
+
+// ---------------------------------------------------------------------
+// Invoice history
+// ---------------------------------------------------------------------
+function loadHistory() {
+  var body = document.getElementById("billing-history-body");
+  return getDocs(query(collection(db, "invoices"), orderBy("createdAt", "desc"), limit(50)))
+    .then(function (snap) {
+      if (snap.empty) {
+        body.innerHTML = '<tr><td colspan="7" class="billing-history-empty">No invoices yet.</td></tr>';
+        return;
+      }
+      body.innerHTML = "";
+      snap.forEach(function (d) {
+        var inv = d.data();
+        var tr = document.createElement("tr");
+        tr.innerHTML =
+          "<td>" + inv.invoiceNo + "</td>" +
+          "<td>" + inv.date + "</td>" +
+          "<td>" + (inv.buyer ? inv.buyer.name : "") + "</td>" +
+          "<td>" + formatCurrency(inv.net || 0) + "</td>" +
+          "<td>" + (inv.emailedTo ? inv.emailedTo.length : 0) + "</td>" +
+          "<td>" + (inv.pdfUrl ? '<a href="' + inv.pdfUrl + '" target="_blank" rel="noopener">View</a>' : "—") + "</td>" +
+          "<td></td>";
+        var actionCell = tr.lastElementChild;
+        if (inv.pdfUrl) {
+          var sendBtn = document.createElement("button");
+          sendBtn.type = "button";
+          sendBtn.className = "billing-seed-btn";
+          sendBtn.textContent = (inv.emailedTo && inv.emailedTo.length) ? "Resend" : "Send";
+          sendBtn.addEventListener("click", function () {
+            sendInvoiceEmail(d.id, inv, sendBtn);
+          });
+          actionCell.appendChild(sendBtn);
+        }
+        body.appendChild(tr);
+      });
+    })
+    .catch(function () {
+      body.innerHTML = '<tr><td colspan="7" class="billing-history-empty">Couldn’t load history.</td></tr>';
+    });
+}
+
+function sendInvoiceEmail(invoiceId, inv, btn) {
+  var originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "Sending…";
+  var masterEmails = [];
+
+  getDocs(query(collection(db, "profiles"), where("role", "==", "master")))
+    .then(function (snap) {
+      snap.forEach(function (d) { if (d.data().email) masterEmails.push(d.data().email); });
+      if (!masterEmails.length) {
+        return Promise.reject(new Error("NO_MASTER_EMAIL"));
+      }
+      return fetch(inv.pdfUrl);
+    })
+    .then(function (r) { return r.blob(); })
+    .then(function (blob) {
+      return new Promise(function (resolve, reject) {
+        var reader = new FileReader();
+        reader.onloadend = function () { resolve(reader.result.split(",")[1]); };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    })
+    .then(function (pdfBase64) {
+      var safeInvoiceNo = inv.invoiceNo.replace(/[^\w.-]+/g, "_");
+      var dateObj = new Date(inv.date + "T00:00:00");
+      var dateStr = dateObj.toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" });
+      return addDoc(collection(db, "mail"), {
+        to: masterEmails,
+        message: {
+          subject: "Invoice " + inv.invoiceNo + " — New Kamal Metal Works",
+          html: "<p>Invoice <strong>" + inv.invoiceNo + "</strong> for " + (inv.buyer ? inv.buyer.name : "") + ", dated " + dateStr + ".</p>" +
+            "<p>Net amount: " + formatCurrency(inv.net || 0) + "</p>" +
+            "<p><a href=\"" + inv.pdfUrl + "\">View PDF</a></p>",
+          attachments: [{ filename: safeInvoiceNo + ".pdf", content: pdfBase64, encoding: "base64" }]
+        }
+      }).then(function () {
+        return updateDoc(doc(db, "invoices", invoiceId), { emailedTo: masterEmails, status: "sent" });
+      });
+    })
+    .then(function () {
+      showStatus("Invoice " + inv.invoiceNo + " emailed.");
+      loadHistory();
+    })
+    .catch(function (err) {
+      btn.disabled = false;
+      btn.textContent = originalText;
+      if (err && err.message === "NO_MASTER_EMAIL") {
+        showStatus("No master email is on file to send to — add one from Profile.");
+      } else {
+        showStatus("Couldn't send the invoice email — please try again.");
+        console.error(err);
+      }
+    });
+}
+
+// ---------------------------------------------------------------------
+// Auth + role guard
+// ---------------------------------------------------------------------
+onAuthStateChanged(auth, function (user) {
+  if (!user) { window.location.replace("login.html"); return; }
+  if (!user.emailVerified) {
+    signOut(auth).then(function () { window.location.replace("login.html?unverified=1"); });
+    return;
+  }
+
+  getDoc(doc(db, "profiles", user.uid)).then(function (snap) {
+    var data = snap.exists() ? snap.data() : {};
+    if (data.role !== "master") { window.location.replace("welcome.html"); return; }
+    if (data.email !== user.email) {
+      setDoc(doc(db, "profiles", user.uid), { email: user.email }, { merge: true }).catch(function () {});
+    }
+
+    document.getElementById("billing-loading").hidden = true;
+    document.getElementById("billing-wrap").hidden = false;
+
+    addItemRow();
+    loadBuyers().then(loadHistory);
+  }).catch(function () {
+    window.location.replace("welcome.html");
+  });
+});
+</script>
+</body>
+</html>
