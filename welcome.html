@@ -23,7 +23,7 @@
 
 <main class="login-shell">
   <div class="welcome-card" id="welcome-card" hidden>
-    <span class="login-kicker welcome-fade" style="--d:0s">Client access</span>
+    <span class="login-kicker welcome-fade" id="welcome-kicker" style="--d:0s">Client access</span>
     <h1 class="welcome-heading welcome-fade" id="welcome-heading" style="--d:.08s">Welcome.</h1>
     <p class="welcome-sub welcome-fade" style="--d:.16s">How can we help you today?</p>
 
@@ -62,6 +62,7 @@ var auth = getAuth(app);
 var welcomeCard = document.getElementById("welcome-card");
 var loadingCard = document.getElementById("welcome-loading");
 var heading = document.getElementById("welcome-heading");
+var kicker = document.getElementById("welcome-kicker");
 var logoutBtn = document.getElementById("welcome-logout");
 
 logoutBtn.addEventListener("click", function () { signOut(auth); });
@@ -71,8 +72,9 @@ function firstName(fullName) {
   return fullName.trim().split(/\s+/)[0];
 }
 
-function reveal(name) {
+function reveal(name, role) {
   heading.textContent = name ? "Welcome, " + name + "." : "Welcome.";
+  kicker.textContent = role === "master" ? "Master access" : "Client access";
   loadingCard.hidden = true;
   welcomeCard.hidden = false;
 }
@@ -88,16 +90,20 @@ onAuthStateChanged(auth, function (user) {
   // path never needs its own Firestore connection at all. Firestore (and
   // its IndexedDB-backed local cache) is only pulled in as a fallback, for
   // a direct reload/bookmark of this page where that handoff didn't happen.
-  var cached = null;
-  try { cached = sessionStorage.getItem("nkmw-fullname"); } catch (e) {}
+  var cachedName = null;
+  var cachedRole = null;
+  try {
+    cachedName = sessionStorage.getItem("nkmw-fullname");
+    cachedRole = sessionStorage.getItem("nkmw-role");
+  } catch (e) {}
 
-  if (cached !== null) {
-    reveal(firstName(cached));
+  if (cachedName !== null) {
+    reveal(firstName(cachedName), cachedRole || "client");
     return;
   }
 
   var timedOut = false;
-  var timeoutId = setTimeout(function () { timedOut = true; reveal(""); }, 8000);
+  var timeoutId = setTimeout(function () { timedOut = true; reveal("", "client"); }, 8000);
 
   import("https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js").then(function (mod) {
     var db = mod.initializeFirestore(app, { experimentalForceLongPolling: true });
@@ -105,11 +111,16 @@ onAuthStateChanged(auth, function (user) {
   }).then(function (snap) {
     clearTimeout(timeoutId);
     if (timedOut) return;
-    reveal(snap.exists() ? firstName(snap.data().fullName) : "");
+    if (snap.exists()) {
+      var data = snap.data();
+      reveal(firstName(data.fullName), data.role || "client");
+    } else {
+      reveal("", "client");
+    }
   }).catch(function () {
     clearTimeout(timeoutId);
     if (timedOut) return;
-    reveal("");
+    reveal("", "client");
   });
 });
 

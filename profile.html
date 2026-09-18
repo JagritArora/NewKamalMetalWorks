@@ -119,6 +119,8 @@ function showStatus(message) {
 }
 
 var currentUid = null;
+var profileExists = false;
+var currentRole = "client";
 
 form.addEventListener("submit", function (e) {
   e.preventDefault();
@@ -129,15 +131,26 @@ form.addEventListener("submit", function (e) {
 
   var fullNameValue = fields.fullName.value.trim();
 
-  setDoc(doc(db, "profiles", currentUid), {
+  var payload = {
     fullName: fullNameValue,
     company: fields.company.value.trim(),
     phone: fields.phone.value.trim(),
     updatedAt: serverTimestamp()
-  }).then(function () {
+  };
+  // role is only ever written here on first creation, and only as "client" --
+  // security rules reject any client write that changes an existing role, so
+  // promoting someone to "master" has to be done by hand in the Firebase
+  // console, which writes as an admin and bypasses these rules entirely.
+  if (!profileExists) payload.role = "client";
+
+  setDoc(doc(db, "profiles", currentUid), payload, { merge: true }).then(function () {
+    profileExists = true;
     showStatus("Saved.");
     emptyNote.hidden = true;
-    try { sessionStorage.setItem("nkmw-fullname", fullNameValue); } catch (e) {}
+    try {
+      sessionStorage.setItem("nkmw-fullname", fullNameValue);
+      sessionStorage.setItem("nkmw-role", currentRole);
+    } catch (e) {}
     setTimeout(function () { window.location.href = "welcome.html"; }, 700);
   }).catch(function () {
     showStatus("Couldn't save just now — please try again.");
@@ -174,12 +187,17 @@ onAuthStateChanged(auth, function (user) {
     clearTimeout(timeoutId);
     if (timedOut) return;
     if (snap.exists()) {
+      profileExists = true;
       var data = snap.data();
+      currentRole = data.role || "client";
       if (!wantsEdit) {
         // Already have profile info on file -- this page's form is only
         // for the one-time "no data yet" case (or an explicit edit), so
         // skip straight to the welcome page rather than showing it again.
-        try { sessionStorage.setItem("nkmw-fullname", data.fullName || ""); } catch (e) {}
+        try {
+          sessionStorage.setItem("nkmw-fullname", data.fullName || "");
+          sessionStorage.setItem("nkmw-role", currentRole);
+        } catch (e) {}
         window.location.replace("welcome.html");
         return;
       }
