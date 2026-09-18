@@ -1266,9 +1266,18 @@ p { margin: 0; text-wrap: pretty; }
 @media (max-width: 560px) {
   .contact { padding: 80px 0 96px; }
   .contact-card { margin-top: 44px; padding: 28px 26px; }
-  .contact-meta { gap: 18px 0; }
-  .contact-meta li { flex: 0 0 50%; padding: 0 0 0 16px; border-left: 1px solid var(--line); }
-  .contact-meta li:nth-child(odd) { padding-left: 0; border-left: none; }
+  /* The two-column pairing above relies on every field being one line
+     tall so rows stay aligned -- "New Kamal Metal Works" wraps to two at
+     this width and throws the border/padding pattern out of step. A
+     single stacked column has no such assumption to break. */
+  .contact-meta { flex-direction: column; gap: 16px; }
+  .contact-meta li {
+    flex: 1 1 auto;
+    padding: 0 0 16px;
+    border-left: none;
+    border-bottom: 1px solid var(--line);
+  }
+  .contact-meta li:last-child { padding-bottom: 0; border-bottom: none; }
   .contact-action { padding: 28px 20px; }
 }
 
