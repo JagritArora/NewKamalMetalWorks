@@ -1424,16 +1424,19 @@ invoiceEditVerifyBtn.addEventListener("click", function () {
 });
 
 // ---------------------------------------------------------------------
-// Invoice numbering -- suggests the next number from the per-financial-
-// year counter. Whatever number is actually used on Generate becomes the
-// new counter baseline, so a first-ever invoice can pick up wherever the
-// old paper trail left off. Only runs while locked; see the lock group
-// above.
+// Invoice numbering -- suggests the next number from a single running
+// counter that never resets at a financial-year boundary (matching how
+// these invoices have actually always been numbered -- see counters/
+// global in Firestore). Only the "2026-27/" label prefix changes with
+// the date; the sequence after the slash just keeps climbing. Whatever
+// number is actually used on Generate becomes the new counter baseline,
+// so a first-ever invoice can pick up wherever the old paper trail left
+// off. Only runs while locked; see the lock group above.
 // ---------------------------------------------------------------------
 function suggestInvoiceNo() {
   if (!fieldsLocked) return Promise.resolve();
   var fy = financialYearFor(new Date(dateInput.value || Date.now()));
-  return getDoc(doc(db, "counters", fy)).then(function (snap) {
+  return getDoc(doc(db, "counters", "global")).then(function (snap) {
     if (!fieldsLocked) return;
     var nextSeq = snap.exists() ? (snap.data().lastSeq || 0) + 1 : 1;
     invoiceNoInput.value = fy + "/" + nextSeq;
@@ -1778,7 +1781,7 @@ generateBtn.addEventListener("click", function () {
     .then(function () { return getDownloadURL(fileRef); })
     .then(function (pdfUrl) {
       return runTransaction(db, function (tx) {
-        var counterRef = doc(db, "counters", fy);
+        var counterRef = doc(db, "counters", "global");
         return tx.get(counterRef).then(function (counterSnap) {
           var lastSeq = counterSnap.exists() ? (counterSnap.data().lastSeq || 0) : 0;
           var newLastSeq = typedSeq ? Math.max(lastSeq, typedSeq) : lastSeq + 1;

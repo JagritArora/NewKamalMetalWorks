@@ -67,7 +67,7 @@ service cloud.firestore {
       allow read, write: if isMaster();
     }
 
-    match /counters/{financialYear} {
+    match /counters/{counterId} {
       allow read, write: if isMaster();
     }
 

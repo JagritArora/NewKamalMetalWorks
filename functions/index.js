@@ -461,11 +461,12 @@ exports.chatWithBot = onCall(
 // ---------------------------------------------------------------------
 // ONE-TIME migration -- wipes /invoices, /supply, /payments (plus their
 // PDFs in Storage) and reseeds /supply + /payments from the old Numbers
-// workbook's "Supply"/"Sale" sheets, then sets the FY26-27 invoice
-// counter to the real last-used sequence number so the next invoice
-// generated in-app continues it correctly. Callable only by a signed-in
-// master account (same guard as the rate-card functions above); delete
-// this export once it's been run.
+// workbook's "Supply"/"Sale" sheets, then sets counters/global to the
+// real last-used sequence number so the next invoice generated in-app
+// continues it correctly -- this counter never resets at a financial-
+// year boundary (see suggestInvoiceNo() in billing.html). Callable only
+// by a signed-in master account (same guard as the rate-card functions
+// above); delete this export once it's been run.
 // ---------------------------------------------------------------------
 exports.adminOneTimeMigration = onCall(
   { region: "asia-south1" },
@@ -557,7 +558,7 @@ exports.adminOneTimeMigration = onCall(
       }
 
       if (maxSeq > 0) {
-        await db.collection("counters").doc("2026-27").set({ lastSeq: maxSeq }, { merge: true });
+        await db.collection("counters").doc("global").set({ lastSeq: maxSeq }, { merge: true });
       }
 
       return {
