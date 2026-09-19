@@ -1868,12 +1868,38 @@ button.login-back {
   box-shadow: var(--shadow-sm);
   padding: 32px;
 }
+.billing-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
 .billing-card-title {
   font-family: "Space Grotesk", sans-serif;
   font-size: 1.3rem;
   font-weight: 600;
   color: var(--ink);
 }
+
+.billing-lockgroup-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ink-muted);
+  background: var(--surface-sunken);
+  border: 1px solid var(--line);
+  border-radius: 980px;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: color .2s ease, border-color .2s ease;
+}
+.billing-lockgroup-btn:hover { color: var(--accent); border-color: var(--accent); }
+.billing-lockgroup-btn[aria-pressed="true"] { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); }
+.billing-lockgroup-icon { width: 14px; height: 14px; flex: none; }
 
 .billing-grid {
   margin-top: 22px;
@@ -1891,6 +1917,11 @@ button.login-back {
   background: var(--surface-sunken);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
+}
+.billing-grid input:disabled {
+  color: var(--ink-muted);
+  background: var(--surface);
+  cursor: not-allowed;
 }
 .billing-optional { font-weight: 400; color: var(--ink-muted); text-transform: none; letter-spacing: 0; }
 

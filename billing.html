@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/main.css?v=46" />
+<link rel="stylesheet" href="css/main.css?v=47" />
 </head>
 <body class="login-page">
 
@@ -31,7 +31,13 @@
     <p class="welcome-sub">Pick the buyer and items, generate the tax invoice, then send it from the history below.</p>
 
     <section class="billing-card">
-      <h2 class="billing-card-title">New invoice</h2>
+      <div class="billing-card-head">
+        <h2 class="billing-card-title">New invoice</h2>
+        <button type="button" class="billing-lockgroup-btn" id="billing-lockgroup-btn" aria-pressed="false">
+          <svg class="billing-lockgroup-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10.5" width="16" height="9.5" rx="2"/><path d="M7.5 10.5V7a4.5 4.5 0 0 1 9 0v3.5"/></svg>
+          <span id="billing-lockgroup-label">Edit</span>
+        </button>
+      </div>
 
       <div class="billing-grid">
         <div class="login-field">
@@ -39,15 +45,15 @@
           <select id="billing-buyer"></select>
         </div>
         <div class="login-field">
-          <label for="billing-invoice-no">Invoice No.</label>
+          <label for="billing-invoice-no">Invoice No. <span class="billing-optional" id="billing-invoice-no-lockhint">(auto)</span></label>
           <input type="text" id="billing-invoice-no" placeholder="2026-27/1" />
         </div>
         <div class="login-field">
-          <label for="billing-date">Date</label>
+          <label for="billing-date">Date <span class="billing-optional" id="billing-date-lockhint">(auto)</span></label>
           <input type="date" id="billing-date" />
         </div>
         <div class="login-field">
-          <label for="billing-po-no">P.O. No.</label>
+          <label for="billing-po-no">P.O. No. <span class="billing-optional" id="billing-po-no-lockhint">(auto)</span></label>
           <input type="text" id="billing-po-no" placeholder="e.g. 2947" />
         </div>
         <div class="login-field">
@@ -407,8 +413,6 @@ function showStatus(message) {
 // ---------------------------------------------------------------------
 var buyersById = {};       // buyerId -> { name, address, gstin }
 var partsByBuyer = {};     // buyerId -> { partNo -> { description, hsn, rate, poNo } }
-var invoiceNoTouched = false;
-var poNoTouched = false;
 
 var buyerSelect = document.getElementById("billing-buyer");
 var invoiceNoInput = document.getElementById("billing-invoice-no");
@@ -423,8 +427,48 @@ var ratecardBody = document.getElementById("billing-ratecard-body");
 var ratecardStatus = document.getElementById("billing-ratecard-status");
 
 dateInput.value = new Date().toISOString().slice(0, 10);
-invoiceNoInput.addEventListener("input", function () { invoiceNoTouched = true; });
-poNoInput.addEventListener("input", function () { poNoTouched = true; });
+
+// ---------------------------------------------------------------------
+// Invoice No. / Date / P.O. No. lock group -- these three are computed
+// automatically (financial-year invoice numbering, today's date, and the
+// PO numbers on the selected items' rate-card entries) and stay locked
+// read-only so a fat-fingered edit can't slip in unnoticed. "Edit" opens
+// all three for a manual override at once; "Done" locks them again and
+// lets the auto-fill logic take back over.
+// ---------------------------------------------------------------------
+var LOCK_GROUP_FIELDS = [invoiceNoInput, dateInput, poNoInput];
+var LOCK_GROUP_HINTS = [
+  document.getElementById("billing-invoice-no-lockhint"),
+  document.getElementById("billing-date-lockhint"),
+  document.getElementById("billing-po-no-lockhint")
+];
+var lockGroupBtn = document.getElementById("billing-lockgroup-btn");
+var lockGroupLabel = document.getElementById("billing-lockgroup-label");
+var fieldsLocked = true;
+
+function applyFieldLockState() {
+  LOCK_GROUP_FIELDS.forEach(function (el) { el.disabled = fieldsLocked; });
+  LOCK_GROUP_HINTS.forEach(function (el) { el.hidden = !fieldsLocked; });
+  lockGroupLabel.textContent = fieldsLocked ? "Edit" : "Done";
+  lockGroupBtn.setAttribute("aria-pressed", String(!fieldsLocked));
+}
+applyFieldLockState();
+
+function lockFieldGroup() {
+  fieldsLocked = true;
+  applyFieldLockState();
+  suggestInvoiceNo();
+  updatePoNoField();
+}
+
+lockGroupBtn.addEventListener("click", function () {
+  if (fieldsLocked) {
+    fieldsLocked = false;
+    applyFieldLockState();
+  } else {
+    lockFieldGroup();
+  }
+});
 
 // ---------------------------------------------------------------------
 // Line items
@@ -539,10 +583,10 @@ function recomputeTotals() {
 // the selected items (rate-card-level, set from the rate card editor),
 // in the order they appear on screen -- so an invoice spanning more than
 // one PO shows both -- "ABC123, XYZ456" -- instead of requiring it to be
-// typed in by hand. Left alone once the owner has typed into it
-// themselves, same as the invoice-number field.
+// typed in by hand. Only runs while the field is locked; see the lock
+// group above.
 function updatePoNoField() {
-  if (poNoTouched) return;
+  if (!fieldsLocked) return;
   var seen = {};
   var pos = [];
   Array.prototype.forEach.call(itemsBody.children, function (tr) {
@@ -598,8 +642,8 @@ function loadPartsForCurrentBuyer() {
 }
 
 buyerSelect.addEventListener("change", function () {
-  invoiceNoTouched = false;
-  poNoTouched = false;
+  fieldsLocked = true;
+  applyFieldLockState();
   loadPartsForCurrentBuyer();
 });
 
@@ -824,24 +868,22 @@ ratecardVerifyBtn.addEventListener("click", function () {
 
 // ---------------------------------------------------------------------
 // Invoice numbering -- suggests the next number from the per-financial-
-// year counter, but stays fully editable. Whatever number is actually
-// used on Generate becomes the new counter baseline, so a first-ever
-// invoice can pick up wherever the old paper trail left off.
+// year counter. Whatever number is actually used on Generate becomes the
+// new counter baseline, so a first-ever invoice can pick up wherever the
+// old paper trail left off. Only runs while locked; see the lock group
+// above.
 // ---------------------------------------------------------------------
 function suggestInvoiceNo() {
-  if (invoiceNoTouched) return Promise.resolve();
+  if (!fieldsLocked) return Promise.resolve();
   var fy = financialYearFor(new Date(dateInput.value || Date.now()));
   return getDoc(doc(db, "counters", fy)).then(function (snap) {
-    if (invoiceNoTouched) return;
+    if (!fieldsLocked) return;
     var nextSeq = snap.exists() ? (snap.data().lastSeq || 0) + 1 : 1;
     invoiceNoInput.value = fy + "/" + nextSeq;
   });
 }
 
-dateInput.addEventListener("change", function () {
-  invoiceNoTouched = false;
-  suggestInvoiceNo();
-});
+dateInput.addEventListener("change", suggestInvoiceNo);
 
 // ---------------------------------------------------------------------
 // PDF generation -- pixel-exact replica of the reference "Hella Invoice"
@@ -1210,8 +1252,7 @@ generateBtn.addEventListener("click", function () {
       itemsBody.innerHTML = "";
       addItemRow();
       recomputeTotals();
-      invoiceNoTouched = false;
-      suggestInvoiceNo();
+      lockFieldGroup();
       loadHistory();
     })
     .catch(function (err) {
@@ -1350,13 +1391,10 @@ onAuthStateChanged(auth, function (user) {
 window.NKMWBillingBridge = {
   fillDraft: function (draft) {
     buyerSelect.value = draft.buyerId;
-    invoiceNoTouched = false;
-    poNoTouched = false;
+    fieldsLocked = true;
+    applyFieldLockState();
     return loadPartsForCurrentBuyer().then(function () {
       if (draft.vehicleNo) document.getElementById("billing-vehicle-no").value = draft.vehicleNo;
-      // An explicit PO from the draft is respected as-is -- it's not
-      // overwritten by the items' rate-card PO auto-fill below.
-      if (draft.poNo) { poNoInput.value = draft.poNo; poNoTouched = true; }
       if (draft.scheduleNo) document.getElementById("billing-schedule-no").value = draft.scheduleNo;
       if (draft.ewayBillNo) document.getElementById("billing-eway-no").value = draft.ewayBillNo;
       if (draft.termsOfDelivery) document.getElementById("billing-terms").value = draft.termsOfDelivery;
