@@ -1428,7 +1428,27 @@ p { margin: 0; text-wrap: pretty; }
   .site-nav .nav-links.open { display: flex; }
   .nav-toggle { display: flex; }
   .hero { padding: 40px 0 48px; }
+}
 
+/* Tablet/narrow-desktop tier for the process scene: the pinned, scroll-
+   scrubbed layout still runs here (JS only falls back to the static grid
+   below 480px), so the caption card just needs to take up less room. */
+@media (min-width: 481px) and (max-width: 760px) {
+  .stage-copy { padding: 0 4%; }
+  .stage-copy[data-cinematic] { padding: 0 0 32px 32px; }
+  .stage-copy[data-cinematic][data-bulge="right"] { padding: 0 32px 32px 0; }
+  .stage-copy[data-cinematic] .stage-copy-body { padding: 14px 16px; }
+  .stage-copy-body { max-width: 240px; }
+  .stage-name { margin-top: 8px; font-size: clamp(1.15rem, 4vw, 1.4rem); }
+  .stage-desc {
+    margin-top: 8px;
+    max-width: 26ch;
+    font-size: 0.82rem;
+    line-height: 1.5;
+  }
+}
+
+@media (max-width: 480px) {
   .process-track { height: auto !important; }
   .process-sticky {
     position: static !important;
