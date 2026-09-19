@@ -86,6 +86,7 @@
                 <th>Description</th>
                 <th>HSN/SAC</th>
                 <th>Rate</th>
+                <th>P.O. No.</th>
                 <th></th>
               </tr>
             </thead>
@@ -405,11 +406,13 @@ function showStatus(message) {
 // State
 // ---------------------------------------------------------------------
 var buyersById = {};       // buyerId -> { name, address, gstin }
-var partsByBuyer = {};     // buyerId -> { partNo -> { description, hsn, rate } }
+var partsByBuyer = {};     // buyerId -> { partNo -> { description, hsn, rate, poNo } }
 var invoiceNoTouched = false;
+var poNoTouched = false;
 
 var buyerSelect = document.getElementById("billing-buyer");
 var invoiceNoInput = document.getElementById("billing-invoice-no");
+var poNoInput = document.getElementById("billing-po-no");
 var dateInput = document.getElementById("billing-date");
 var itemsBody = document.getElementById("billing-items-body");
 var ratecardBtn = document.getElementById("billing-ratecard-btn");
@@ -421,6 +424,7 @@ var ratecardStatus = document.getElementById("billing-ratecard-status");
 
 dateInput.value = new Date().toISOString().slice(0, 10);
 invoiceNoInput.addEventListener("input", function () { invoiceNoTouched = true; });
+poNoInput.addEventListener("input", function () { poNoTouched = true; });
 
 // ---------------------------------------------------------------------
 // Line items
@@ -480,6 +484,7 @@ function fillRowFromPart(tr) {
   tr.dataset.rate = part ? part.rate : "";
   tr.dataset.hsn = part ? part.hsn : "";
   tr.dataset.description = part ? part.description : "";
+  tr.dataset.poNo = part ? (part.poNo || "") : "";
 }
 
 function renumberRows() {
@@ -499,6 +504,7 @@ function collectItems() {
       partNo: partNo,
       description: tr.dataset.description || "",
       hsn: tr.dataset.hsn || "",
+      poNo: tr.dataset.poNo || "",
       qty: qty,
       rate: rate,
       amount: qty * rate
@@ -525,7 +531,29 @@ function recomputeTotals() {
   document.getElementById("billing-igst").textContent = formatCurrency(igst);
   document.getElementById("billing-net").textContent = formatCurrency(net);
   document.getElementById("billing-words").textContent = net > 0 ? numberToWordsIndian(net) : "";
+  updatePoNoField();
   return { items: items, subtotal: subtotal, igst: igst, net: net };
+}
+
+// Auto-fills the P.O. No. field from the distinct PO numbers on file for
+// the selected items (rate-card-level, set from the rate card editor),
+// in the order they appear on screen -- so an invoice spanning more than
+// one PO shows both -- "ABC123, XYZ456" -- instead of requiring it to be
+// typed in by hand. Left alone once the owner has typed into it
+// themselves, same as the invoice-number field.
+function updatePoNoField() {
+  if (poNoTouched) return;
+  var seen = {};
+  var pos = [];
+  Array.prototype.forEach.call(itemsBody.children, function (tr) {
+    var partNo = tr.querySelector(".billing-part-select").value;
+    var qty = parseFloat(tr.querySelector(".billing-qty-input").value);
+    var rate = parseFloat(tr.dataset.rate);
+    if (!partNo || !qty || !rate) return;
+    var po = (tr.dataset.poNo || "").trim();
+    if (po && !seen[po]) { seen[po] = true; pos.push(po); }
+  });
+  poNoInput.value = pos.join(", ");
 }
 
 document.getElementById("billing-add-row").addEventListener("click", addItemRow);
@@ -571,6 +599,7 @@ function loadPartsForCurrentBuyer() {
 
 buyerSelect.addEventListener("change", function () {
   invoiceNoTouched = false;
+  poNoTouched = false;
   loadPartsForCurrentBuyer();
 });
 
@@ -589,11 +618,13 @@ function addRatecardRow(data) {
     '<td><input type="text" class="rc-desc" placeholder="Description" /></td>' +
     '<td><input type="text" class="rc-hsn" placeholder="HSN/SAC" /></td>' +
     '<td><input type="number" class="rc-rate" min="0" step="0.01" placeholder="Rate" /></td>' +
+    '<td><input type="text" class="rc-po" placeholder="P.O. No." /></td>' +
     '<td><button type="button" class="billing-remove-row" aria-label="Remove part">&times;</button></td>';
   tr.querySelector(".rc-partno").value = data.partNo || "";
   tr.querySelector(".rc-desc").value = data.description || "";
   tr.querySelector(".rc-hsn").value = data.hsn || "";
   tr.querySelector(".rc-rate").value = data.rate != null ? data.rate : "";
+  tr.querySelector(".rc-po").value = data.poNo || "";
   tr.querySelector(".billing-remove-row").addEventListener("click", function () {
     tr.remove();
   });
@@ -617,7 +648,7 @@ function openRatecardPanel() {
   if (partNos.length) {
     partNos.forEach(function (partNo) {
       var p = parts[partNo];
-      addRatecardRow({ partNo: partNo, description: p.description, hsn: p.hsn, rate: p.rate });
+      addRatecardRow({ partNo: partNo, description: p.description, hsn: p.hsn, rate: p.rate, poNo: p.poNo });
     });
   } else if (buyerId === "hella") {
     // No rate card saved yet for Hella -- prefill with the known part list
@@ -699,9 +730,10 @@ document.getElementById("billing-ratecard-save").addEventListener("click", funct
     var description = tr.querySelector(".rc-desc").value.trim();
     var hsn = tr.querySelector(".rc-hsn").value.trim();
     var rate = parseFloat(tr.querySelector(".rc-rate").value);
-    if (!partNo && !description && !hsn && isNaN(rate)) return; // skip a fully blank row
+    var poNo = tr.querySelector(".rc-po").value.trim();
+    if (!partNo && !description && !hsn && !poNo && isNaN(rate)) return; // skip a fully blank row
     if (!partNo || !description || isNaN(rate) || rate < 0) { invalid = true; return; }
-    newParts[partNo] = { hsn: hsn, description: description, rate: rate, originalPartNo: tr.dataset.originalPartNo || "" };
+    newParts[partNo] = { hsn: hsn, description: description, rate: rate, poNo: poNo, originalPartNo: tr.dataset.originalPartNo || "" };
   });
 
   if (invalid) {
@@ -752,7 +784,8 @@ ratecardVerifyBtn.addEventListener("click", function () {
       batch.set(doc(db, "buyers", buyerId, "parts", partNo), {
         hsn: entry.hsn,
         description: entry.description,
-        rate: entry.rate
+        rate: entry.rate,
+        poNo: entry.poNo || ""
       });
     });
     Object.keys(partsByBuyer[buyerId] || {}).forEach(function (partNo) {
@@ -972,15 +1005,29 @@ function buildInvoicePdf(data) {
     ["P.O. No.", data.poNo || "", "Schedule No.", data.scheduleNo || ""],
     ["EWAY Bill No.", data.ewayBillNo || "", "Vehicle No.", data.vehicleNo || ""]
   ];
+  // Right-aligned value text, shrunk down (never below 9pt) if it's too
+  // wide for its ~125pt-wide slot -- only kicks in for an unusually long
+  // value, e.g. an invoice spanning several P.O. numbers ("ABC123,
+  // XYZ4556"); everything else renders at the normal 13.3pt untouched.
+  function drawMetaValue(text, x, y, maxWidth) {
+    var size = 13.3;
+    setF("normal", size);
+    while (size > 9 && pdf.getTextWidth(text) > maxWidth) {
+      size -= 0.5;
+      setF("normal", size);
+    }
+    pdf.text(text, x, y, { align: "right" });
+  }
+
   metaPairs.forEach(function (pair, i) {
     var labelTop = INV_HB[i * 2], valueTop = INV_HB[i * 2 + 1];
     setF("bold", 13.3);
     pdf.text(pair[0], 307, invBaseline(labelTop, INV_ROW_H, 13.3));
     pdf.text(pair[2], 446.3, invBaseline(labelTop, INV_ROW_H, 13.3));
-    setF("normal", 13.3);
-    if (pair[1]) pdf.text(String(pair[1]), 439.4, invBaseline(valueTop, INV_ROW_H, 13.3), { align: "right" });
-    if (pair[3]) pdf.text(String(pair[3]), 578.2, invBaseline(valueTop, INV_ROW_H, 13.3), { align: "right" });
+    if (pair[1]) drawMetaValue(String(pair[1]), 439.4, invBaseline(valueTop, INV_ROW_H, 13.3), 125);
+    if (pair[3]) drawMetaValue(String(pair[3]), 578.2, invBaseline(valueTop, INV_ROW_H, 13.3), 125);
   });
+  setF("normal", 13.3);
   setF("bold", 13.3);
   pdf.text("Terms of Delivery", 306.9, invBaseline(211.1, INV_ROW_H, 13.3));
   if (data.termsOfDelivery) {
@@ -1304,9 +1351,12 @@ window.NKMWBillingBridge = {
   fillDraft: function (draft) {
     buyerSelect.value = draft.buyerId;
     invoiceNoTouched = false;
+    poNoTouched = false;
     return loadPartsForCurrentBuyer().then(function () {
       if (draft.vehicleNo) document.getElementById("billing-vehicle-no").value = draft.vehicleNo;
-      if (draft.poNo) document.getElementById("billing-po-no").value = draft.poNo;
+      // An explicit PO from the draft is respected as-is -- it's not
+      // overwritten by the items' rate-card PO auto-fill below.
+      if (draft.poNo) { poNoInput.value = draft.poNo; poNoTouched = true; }
       if (draft.scheduleNo) document.getElementById("billing-schedule-no").value = draft.scheduleNo;
       if (draft.ewayBillNo) document.getElementById("billing-eway-no").value = draft.ewayBillNo;
       if (draft.termsOfDelivery) document.getElementById("billing-terms").value = draft.termsOfDelivery;

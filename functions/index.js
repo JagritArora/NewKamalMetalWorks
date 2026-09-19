@@ -272,7 +272,7 @@ async function runBotTool(name, args) {
     return {
       items: partsSnap.docs.map(function (d) {
         var p = d.data();
-        return { partNo: d.id, description: p.description, hsn: p.hsn, rate: p.rate };
+        return { partNo: d.id, description: p.description, hsn: p.hsn, rate: p.rate, poNo: p.poNo || "" };
       })
     };
   }
@@ -321,6 +321,7 @@ async function runBotTool(name, args) {
         qty: wanted.qty,
         description: part.description,
         hsn: part.hsn,
+        poNo: part.poNo || "",
         rate: part.rate,
         amount: wanted.qty * part.rate
       });
@@ -328,13 +329,27 @@ async function runBotTool(name, args) {
     if (!items.length) return { ok: false, error: "No valid items given." };
     var subtotal = items.reduce(function (sum, it) { return sum + it.amount; }, 0);
     var igst = subtotal * 0.18;
+
+    // If the owner didn't give a PO explicitly, fall back to whichever PO
+    // numbers are on file for these items' rate-card entries -- joined,
+    // in case the items span more than one PO.
+    var draftPoNo = args.poNo || "";
+    if (!draftPoNo) {
+      var seenPo = {};
+      var itemPos = [];
+      items.forEach(function (it) {
+        if (it.poNo && !seenPo[it.poNo]) { seenPo[it.poNo] = true; itemPos.push(it.poNo); }
+      });
+      draftPoNo = itemPos.join(", ");
+    }
+
     return {
       ok: true,
       draft: {
         buyerId: args.buyerId,
         buyerName: buyer.name,
         vehicleNo: args.vehicleNo || "",
-        poNo: args.poNo || "",
+        poNo: draftPoNo,
         scheduleNo: args.scheduleNo || "",
         ewayBillNo: args.ewayBillNo || "",
         termsOfDelivery: args.termsOfDelivery || "",
