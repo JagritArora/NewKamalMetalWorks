@@ -40,7 +40,7 @@
     var style = document.createElement("style");
     style.textContent =
       ".bot-launcher {" +
-      "  position: fixed; right: 16px; bottom: 16px; z-index: 999;" +
+      "  position: fixed; right: 24px; top: 82px; z-index: 999;" +
       "  opacity: 0; transform: translateY(8px); pointer-events: none;" +
       "  transition: opacity .3s var(--ease, ease), transform .3s var(--ease, ease);" +
       "  touch-action: none;" +
