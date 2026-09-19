@@ -1288,7 +1288,7 @@ generateBtn.addEventListener("click", function () {
 // ---------------------------------------------------------------------
 function loadHistory() {
   var body = document.getElementById("billing-history-body");
-  return getDocs(query(collection(db, "invoices"), orderBy("createdAt", "desc"), limit(50)))
+  return getDocs(query(collection(db, "invoices"), orderBy("createdAt", "desc"), limit(2)))
     .then(function (snap) {
       if (snap.empty) {
         body.innerHTML = '<tr><td colspan="7" class="billing-history-empty">No invoices yet.</td></tr>';
