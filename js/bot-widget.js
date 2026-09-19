@@ -50,7 +50,7 @@
       ".bot-launcher.is-visible.is-nudged { transform: translateY(var(--bot-nudge, 0px)); }" +
       ".bot-launcher.is-dragging { transition: none; }" +
       ".bot-fab {" +
-      "  width: 48px; height: 48px; border-radius: 50%; border: none; padding: 0;" +
+      "  width: 36px; height: 36px; border-radius: 50%; border: none; padding: 0;" +
       "  background: var(--surface, #fff);" +
       "  display: flex; align-items: center; justify-content: center;" +
       "  box-shadow: var(--shadow-md, 0 12px 32px rgba(0,0,0,0.2));" +
@@ -58,7 +58,7 @@
       "  cursor: grab;" +
       "}" +
       ".bot-launcher.is-dragging .bot-fab { cursor: grabbing; }" +
-      ".bot-fab svg { width: 30px; height: 30px; }" +
+      ".bot-fab svg { width: 22px; height: 22px; }" +
       ".bot-fab:hover { transform: scale(1.06); }" +
       ".bot-panel {" +
       "  position: fixed; z-index: 1000; width: min(360px, calc(100vw - 32px));" +
