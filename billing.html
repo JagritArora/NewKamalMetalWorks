@@ -1758,11 +1758,31 @@ function sendInvoiceEmail(invoiceId, inv, btn) {
         to: masterEmails,
         message: {
           subject: "Invoice " + inv.invoiceNo + " — New Kamal Metal Works",
-          html: "<p>Dear Sir/Ma'am,</p>" +
-            "<p>PFA the Invoice <strong>" + inv.invoiceNo + "</strong> dated " + dateStr + " amounting to " + formatCurrency(inv.net || 0) + " for your reference. " +
-            "If you have any concern related to the same, please contact within 7 days else it will be treated as agreed and booked in your accounts.</p>" +
-            "<p>Thank You.</p>" +
-            "<p>Regards,<br><a href=\"https://www.newkamalmetalworks.co.in\">New Kamal Metal Works</a></p>",
+          html: "<div style=\"font-family: Helvetica, Arial, sans-serif; font-size: 18px; color: #1a1a1a; line-height: 1.6;\">" +
+            "<p style=\"margin: 0 0 18px;\">Dear Sir/Ma'am,</p>" +
+            "<p style=\"margin: 0 0 22px;\">Please find attached the tax invoice raised against the following order, for your reference and records:</p>" +
+            "<table cellpadding=\"0\" cellspacing=\"0\" style=\"border-collapse: collapse; margin: 0 0 26px; font-size: 18px;\">" +
+              "<tr>" +
+                "<td style=\"padding: 10px 28px 10px 0; color: #666666;\">Invoice No.</td>" +
+                "<td style=\"padding: 10px 0; font-weight: 700;\">" + inv.invoiceNo + "</td>" +
+              "</tr>" +
+              "<tr>" +
+                "<td style=\"padding: 10px 28px 10px 0; color: #666666; border-top: 1px solid #eeeeee;\">Date</td>" +
+                "<td style=\"padding: 10px 0; font-weight: 700; border-top: 1px solid #eeeeee;\">" + dateStr + "</td>" +
+              "</tr>" +
+              "<tr>" +
+                "<td style=\"padding: 10px 28px 10px 0; color: #666666; border-top: 1px solid #eeeeee;\">Amount</td>" +
+                "<td style=\"padding: 10px 0; font-weight: 700; color: #C4501C; border-top: 1px solid #eeeeee;\">" + formatCurrency(inv.net || 0) + "</td>" +
+              "</tr>" +
+            "</table>" +
+            "<p style=\"background: #FFF4EC; border-left: 4px solid #C4501C; padding: 16px 18px; margin: 0 0 26px; line-height: 1.6;\">" +
+              "If you have any concern related to the same, please contact us <strong>within 7 days</strong> — else it will be treated as agreed and booked in your accounts." +
+            "</p>" +
+            "<p style=\"margin: 0 0 26px;\">Thank you.</p>" +
+            "<p style=\"margin: 0;\">Regards,<br>" +
+              "<a href=\"https://www.newkamalmetalworks.co.in\" style=\"color: #C4501C; font-weight: 600; text-decoration: none;\">New Kamal Metal Works</a>" +
+            "</p>" +
+            "</div>",
           attachments: [{ filename: safeInvoiceNo + ".pdf", path: inv.pdfUrl }]
         }
       }).then(function () {
