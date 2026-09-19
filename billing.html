@@ -12,13 +12,15 @@
 <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/main.css?v=43" />
+<link rel="stylesheet" href="css/main.css?v=44" />
 </head>
 <body class="login-page">
 
 <nav class="site-nav">
   <a href="index.html#hero" class="brand">New Kamal <span>Metal Works</span></a>
-  <button type="button" class="login-back" id="billing-logout">Log out</button>
+  <a href="welcome.html" class="nav-icon-btn" aria-label="Back to Welcome">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1H9.5a1 1 0 0 0 1-1v-4a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v4a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-9"/></svg>
+  </a>
 </nav>
 
 <main class="login-shell billing-shell">
@@ -205,7 +207,6 @@ var auth = getAuth(app);
 var db = initializeFirestore(app, { experimentalForceLongPolling: true });
 var storage = getStorage(app);
 
-document.getElementById("billing-logout").addEventListener("click", function () { signOut(auth); });
 document.getElementById("year").textContent = new Date().getFullYear();
 
 // Resolved once the form below is populated and ready to be driven by the

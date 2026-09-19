@@ -1530,6 +1530,20 @@ button.login-back {
   align-items: center;
   gap: 18px;
 }
+.nav-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  transition: border-color .2s ease, color .2s ease;
+}
+.nav-icon-btn svg { width: 18px; height: 18px; }
+.nav-icon-btn:hover { border-color: var(--accent); color: var(--accent); }
 .profile-menu { position: relative; }
 .profile-menu-btn {
   display: flex;
