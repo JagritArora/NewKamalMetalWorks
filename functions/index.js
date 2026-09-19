@@ -4,6 +4,7 @@ const { defineSecret } = require("firebase-functions/params");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
 const nodemailer = require("nodemailer");
+const crypto = require("crypto");
 
 initializeApp();
 
@@ -60,6 +61,97 @@ exports.sendMail = onDocumentCreated(
       );
       throw err;
     }
+  }
+);
+
+// Rate-card verification -- Save on the rate-card editor (billing.html)
+// is gated behind a 6-digit code emailed to the signed-in master account.
+// The code and its "verified" state live only here, written via the Admin
+// SDK, which bypasses firestore.rules entirely -- clients can neither read
+// nor write the rateCardVerify collection directly (see firestore.rules),
+// so this check can't be short-circuited from devtools the way a purely
+// client-side confirmation could be.
+const RATE_CARD_CODE_TTL_MS = 10 * 60 * 1000; // how long an emailed code stays usable
+const RATE_CARD_VERIFIED_TTL_MS = 5 * 60 * 1000; // how long a verified save-window stays open
+const RATE_CARD_MAX_ATTEMPTS = 5;
+
+function hashRateCardCode(code, uid) {
+  return crypto.createHash("sha256").update(code + ":" + uid).digest("hex");
+}
+
+async function requireMasterWithEmail(request) {
+  if (!request.auth) throw new HttpsError("unauthenticated", "Sign in first.");
+  var db = getFirestore();
+  var profileSnap = await db.collection("profiles").doc(request.auth.uid).get();
+  if (!profileSnap.exists || profileSnap.data().role !== "master") {
+    throw new HttpsError("permission-denied", "Master accounts only.");
+  }
+  var email = profileSnap.data().email || request.auth.token.email;
+  if (!email) throw new HttpsError("failed-precondition", "No email on file for this account.");
+  return { uid: request.auth.uid, email: email };
+}
+
+exports.requestRateCardCode = onCall(
+  { region: "asia-south1" },
+  async function (request) {
+    var master = await requireMasterWithEmail(request);
+    var db = getFirestore();
+    var code = ("" + crypto.randomInt(0, 1000000)).padStart(6, "0");
+
+    await db.collection("rateCardVerify").doc(master.uid).set({
+      codeHash: hashRateCardCode(code, master.uid),
+      sentAt: new Date(),
+      attempts: 0,
+      verifiedUntil: null
+    });
+
+    await db.collection("mail").add({
+      to: [master.email],
+      message: {
+        subject: "Your rate-card verification code",
+        html:
+          "<p>Use this code to confirm the rate-card change you're about to make on the New Kamal Metal " +
+          "Works billing tool:</p>" +
+          "<p style=\"font-size:28px;font-weight:700;letter-spacing:4px;\">" + code + "</p>" +
+          "<p>This code expires in 10 minutes. If you didn't request this, you can ignore this email.</p>"
+      }
+    });
+
+    return { ok: true };
+  }
+);
+
+exports.verifyRateCardCode = onCall(
+  { region: "asia-south1" },
+  async function (request) {
+    var master = await requireMasterWithEmail(request);
+    var code = ((request.data && request.data.code) || "").trim();
+    if (!/^\d{6}$/.test(code)) throw new HttpsError("invalid-argument", "Enter the 6-digit code.");
+
+    var db = getFirestore();
+    var ref = db.collection("rateCardVerify").doc(master.uid);
+    var snap = await ref.get();
+    if (!snap.exists) throw new HttpsError("failed-precondition", "Request a code first.");
+    var data = snap.data();
+
+    var sentAt = data.sentAt && data.sentAt.toDate ? data.sentAt.toDate() : new Date(data.sentAt);
+    if (Date.now() - sentAt.getTime() > RATE_CARD_CODE_TTL_MS) {
+      throw new HttpsError("deadline-exceeded", "That code expired -- request a new one.");
+    }
+    if ((data.attempts || 0) >= RATE_CARD_MAX_ATTEMPTS) {
+      throw new HttpsError("resource-exhausted", "Too many attempts -- request a new code.");
+    }
+
+    if (hashRateCardCode(code, master.uid) !== data.codeHash) {
+      await ref.update({ attempts: (data.attempts || 0) + 1 });
+      throw new HttpsError("permission-denied", "That code isn't right.");
+    }
+
+    await ref.update({
+      verifiedUntil: new Date(Date.now() + RATE_CARD_VERIFIED_TTL_MS),
+      attempts: 0
+    });
+    return { ok: true };
   }
 );
 

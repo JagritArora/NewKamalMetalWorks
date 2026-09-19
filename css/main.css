@@ -1894,19 +1894,6 @@ button.login-back {
 }
 .billing-optional { font-weight: 400; color: var(--ink-muted); text-transform: none; letter-spacing: 0; }
 
-.billing-seed-note {
-  margin: 18px 0 0;
-  padding: 12px 14px;
-  background: var(--surface-sunken);
-  border-left: 2px solid var(--accent);
-  border-radius: var(--radius-sm);
-  font-size: 0.86rem;
-  color: var(--ink-muted);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
 .billing-seed-btn {
   font-family: inherit;
   font-size: 0.84rem;
@@ -1918,6 +1905,99 @@ button.login-back {
   padding: 7px 16px;
   cursor: pointer;
 }
+
+.billing-ratecard-row {
+  margin: 18px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.billing-ratecard-hint { font-size: 0.86rem; color: var(--ink-muted); }
+
+.billing-ratecard-panel {
+  margin-top: 18px;
+  padding: 22px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+}
+.billing-ratecard-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.billing-ratecard-head h3 {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+.billing-ratecard-close {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: none;
+  color: var(--ink-muted);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.billing-ratecard-close:hover { color: var(--danger); background: var(--surface); }
+.billing-ratecard-body-wrap { margin-top: 16px; overflow-x: auto; }
+.billing-ratecard-actions {
+  margin-top: 18px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.billing-ratecard-verify {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+.billing-ratecard-verify-copy { font-size: 0.86rem; color: var(--ink-muted); }
+.billing-ratecard-verify-row {
+  margin-top: 12px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.billing-ratecard-code-input {
+  width: 140px;
+  box-sizing: border-box;
+  padding: 11px 12px;
+  font-size: 1.05rem;
+  letter-spacing: 0.2em;
+  text-align: center;
+  font-family: inherit;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+.billing-ratecard-verify-links {
+  margin-top: 12px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.billing-ratecard-link-btn {
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: none;
+  border: none;
+  padding: 4px 0;
+  cursor: pointer;
+}
+.billing-ratecard-link-btn:disabled { color: var(--ink-muted); cursor: default; }
 
 .billing-items-wrap { margin-top: 26px; overflow-x: auto; }
 .billing-items-table, .billing-history-table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }

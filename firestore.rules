@@ -7,6 +7,19 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role == "master";
     }
 
+    // A rate-card write is only allowed within a short window after the
+    // requestRateCardCode / verifyRateCardCode Cloud Functions confirmed a
+    // code emailed to the signed-in master. Those functions write
+    // verifiedUntil via the Admin SDK, which bypasses these rules -- the
+    // rateCardVerify collection itself is unreadable and unwritable by any
+    // client below, so this can't be forged from the browser console.
+    function rateCardVerified() {
+      return isMaster()
+        && exists(/databases/$(database)/documents/rateCardVerify/$(request.auth.uid))
+        && get(/databases/$(database)/documents/rateCardVerify/$(request.auth.uid)).data.verifiedUntil != null
+        && request.time < get(/databases/$(database)/documents/rateCardVerify/$(request.auth.uid)).data.verifiedUntil;
+    }
+
     match /profiles/{uid} {
       allow read: if request.auth != null
                   && (request.auth.uid == uid || isMaster());
@@ -25,9 +38,18 @@ service cloud.firestore {
     match /buyers/{buyerId} {
       allow read, write: if isMaster();
 
+      // Rate-card entries themselves additionally require a freshly
+      // emailed, verified code -- see rateCardVerified() above.
       match /parts/{partNo} {
-        allow read, write: if isMaster();
+        allow read: if isMaster();
+        allow write: if isMaster() && rateCardVerified();
       }
+    }
+
+    // Written only by requestRateCardCode / verifyRateCardCode (Cloud
+    // Functions, Admin SDK) -- never by a client, in either direction.
+    match /rateCardVerify/{uid} {
+      allow read, write: if false;
     }
 
     match /invoices/{invoiceId} {

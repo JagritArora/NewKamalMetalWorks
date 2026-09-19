@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/main.css?v=44" />
+<link rel="stylesheet" href="css/main.css?v=46" />
 </head>
 <body class="login-page">
 
@@ -68,10 +68,49 @@
         </div>
       </div>
 
-      <p class="billing-seed-note" id="billing-seed-note" hidden>
-        No rate card found for this buyer yet.
-        <button type="button" class="billing-seed-btn" id="billing-seed-btn">Load Hella rate card</button>
-      </p>
+      <div class="billing-ratecard-row">
+        <button type="button" class="billing-seed-btn" id="billing-ratecard-btn">Edit rate card</button>
+        <span class="billing-ratecard-hint" id="billing-ratecard-hint" hidden>No rate card found for this buyer yet.</span>
+      </div>
+
+      <div class="billing-ratecard-panel" id="billing-ratecard-panel" hidden>
+        <div class="billing-ratecard-head">
+          <h3>Rate card &mdash; <span id="billing-ratecard-buyer-name"></span></h3>
+          <button type="button" class="billing-ratecard-close" id="billing-ratecard-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="billing-ratecard-body-wrap">
+          <table class="billing-items-table billing-ratecard-table">
+            <thead>
+              <tr>
+                <th>Part No.</th>
+                <th>Description</th>
+                <th>HSN/SAC</th>
+                <th>Rate</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="billing-ratecard-body"></tbody>
+          </table>
+          <button type="button" class="btn-secondary billing-add-row" id="billing-ratecard-add-row">+ Add part</button>
+        </div>
+        <p class="login-status" id="billing-ratecard-status" role="status" aria-live="polite"></p>
+        <div class="billing-ratecard-actions" id="billing-ratecard-actions">
+          <button type="button" class="btn-secondary" id="billing-ratecard-cancel">Cancel</button>
+          <button type="button" class="btn btn-primary" id="billing-ratecard-save">Save rate card</button>
+        </div>
+
+        <div class="billing-ratecard-verify" id="billing-ratecard-verify" hidden>
+          <p class="billing-ratecard-verify-copy" id="billing-ratecard-verify-copy">Sending a verification code to your email&hellip;</p>
+          <div class="billing-ratecard-verify-row">
+            <input type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" class="billing-ratecard-code-input" id="billing-ratecard-code-input" placeholder="6-digit code" />
+            <button type="button" class="btn btn-primary" id="billing-ratecard-verify-btn" disabled>Verify &amp; save</button>
+          </div>
+          <div class="billing-ratecard-verify-links">
+            <button type="button" class="billing-ratecard-link-btn" id="billing-ratecard-resend" disabled>Resend code</button>
+            <button type="button" class="billing-ratecard-link-btn" id="billing-ratecard-back">&lsaquo; Back to editing</button>
+          </div>
+        </div>
+      </div>
 
       <div class="billing-items-wrap">
         <table class="billing-items-table">
@@ -169,6 +208,7 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-functions.js";
 import {
   initializeFirestore,
   doc,
@@ -206,6 +246,9 @@ var app = initializeApp(firebaseConfig);
 var auth = getAuth(app);
 var db = initializeFirestore(app, { experimentalForceLongPolling: true });
 var storage = getStorage(app);
+var functions = getFunctions(app, "asia-south1");
+var requestRateCardCodeFn = httpsCallable(functions, "requestRateCardCode");
+var verifyRateCardCodeFn = httpsCallable(functions, "verifyRateCardCode");
 
 document.getElementById("year").textContent = new Date().getFullYear();
 
@@ -369,8 +412,12 @@ var buyerSelect = document.getElementById("billing-buyer");
 var invoiceNoInput = document.getElementById("billing-invoice-no");
 var dateInput = document.getElementById("billing-date");
 var itemsBody = document.getElementById("billing-items-body");
-var seedNote = document.getElementById("billing-seed-note");
-var seedBtn = document.getElementById("billing-seed-btn");
+var ratecardBtn = document.getElementById("billing-ratecard-btn");
+var ratecardHint = document.getElementById("billing-ratecard-hint");
+var ratecardPanel = document.getElementById("billing-ratecard-panel");
+var ratecardBuyerName = document.getElementById("billing-ratecard-buyer-name");
+var ratecardBody = document.getElementById("billing-ratecard-body");
+var ratecardStatus = document.getElementById("billing-ratecard-status");
 
 dateInput.value = new Date().toISOString().slice(0, 10);
 invoiceNoInput.addEventListener("input", function () { invoiceNoTouched = true; });
@@ -514,7 +561,7 @@ function loadPartsForCurrentBuyer() {
     var map = {};
     snap.forEach(function (d) { map[d.id] = d.data(); });
     partsByBuyer[buyerId] = map;
-    seedNote.hidden = Object.keys(map).length > 0 || buyerId !== "hella";
+    ratecardHint.hidden = Object.keys(map).length > 0;
     Array.prototype.forEach.call(itemsBody.querySelectorAll(".billing-part-select"), populatePartOptions);
     Array.prototype.forEach.call(itemsBody.children, fillRowFromPart);
     recomputeTotals();
@@ -527,28 +574,218 @@ buyerSelect.addEventListener("change", function () {
   loadPartsForCurrentBuyer();
 });
 
-seedBtn.addEventListener("click", function () {
-  seedBtn.disabled = true;
-  seedBtn.textContent = "Loading…";
-  var batch = writeBatch(db);
-  batch.set(doc(db, "buyers", "hella"), HELLA_SEED.buyer);
-  HELLA_SEED.parts.forEach(function (p) {
-    batch.set(doc(db, "buyers", "hella", "parts", p.partNo), {
-      hsn: p.hsn,
-      description: p.description,
-      rate: p.rate
-    });
+// ---------------------------------------------------------------------
+// Rate card editor -- lets the currently selected buyer's parts (part no,
+// description, HSN, rate) be added, edited, or removed in place, instead
+// of requiring manual Firestore data entry.
+// ---------------------------------------------------------------------
+function addRatecardRow(data) {
+  data = data || {};
+  var tr = document.createElement("tr");
+  tr.className = "billing-item-row";
+  tr.dataset.originalPartNo = data.partNo || "";
+  tr.innerHTML =
+    '<td><input type="text" class="rc-partno" placeholder="Part no." /></td>' +
+    '<td><input type="text" class="rc-desc" placeholder="Description" /></td>' +
+    '<td><input type="text" class="rc-hsn" placeholder="HSN/SAC" /></td>' +
+    '<td><input type="number" class="rc-rate" min="0" step="0.01" placeholder="Rate" /></td>' +
+    '<td><button type="button" class="billing-remove-row" aria-label="Remove part">&times;</button></td>';
+  tr.querySelector(".rc-partno").value = data.partNo || "";
+  tr.querySelector(".rc-desc").value = data.description || "";
+  tr.querySelector(".rc-hsn").value = data.hsn || "";
+  tr.querySelector(".rc-rate").value = data.rate != null ? data.rate : "";
+  tr.querySelector(".billing-remove-row").addEventListener("click", function () {
+    tr.remove();
   });
-  batch.commit().then(function () {
+  ratecardBody.appendChild(tr);
+}
+
+function openRatecardPanel() {
+  var buyerId = currentBuyerId();
+  var parts = partsByBuyer[buyerId] || {};
+  var partNos = Object.keys(parts).sort();
+
+  ratecardBuyerName.textContent =
+    (buyersById[buyerId] && buyersById[buyerId].name) ||
+    (buyerSelect.options[buyerSelect.selectedIndex] || {}).textContent ||
+    "";
+  ratecardStatus.textContent = "";
+  ratecardStatus.classList.remove("is-visible");
+  ratecardBody.innerHTML = "";
+  hideVerifyStep();
+
+  if (partNos.length) {
+    partNos.forEach(function (partNo) {
+      var p = parts[partNo];
+      addRatecardRow({ partNo: partNo, description: p.description, hsn: p.hsn, rate: p.rate });
+    });
+  } else if (buyerId === "hella") {
+    // No rate card saved yet for Hella -- prefill with the known part list
+    // (from the source .numbers workbook) as an editable starting point.
+    HELLA_SEED.parts.forEach(function (p) { addRatecardRow(p); });
+  } else {
+    addRatecardRow({});
+  }
+
+  ratecardPanel.hidden = false;
+}
+
+function closeRatecardPanel() {
+  ratecardPanel.hidden = true;
+  hideVerifyStep();
+}
+
+ratecardBtn.addEventListener("click", openRatecardPanel);
+document.getElementById("billing-ratecard-close").addEventListener("click", closeRatecardPanel);
+document.getElementById("billing-ratecard-cancel").addEventListener("click", closeRatecardPanel);
+document.getElementById("billing-ratecard-add-row").addEventListener("click", function () { addRatecardRow({}); });
+
+// ---------------------------------------------------------------------
+// Rate card save -- gated behind a 6-digit code emailed to the signed-in
+// master account. The code is generated and checked entirely server-side
+// (requestRateCardCode / verifyRateCardCode Cloud Functions); Firestore
+// rules refuse any write to a buyer's parts unless that verification went
+// through, so the check can't be skipped from devtools either -- see
+// firestore.rules and functions/index.js.
+// ---------------------------------------------------------------------
+var ratecardActions = document.getElementById("billing-ratecard-actions");
+var ratecardVerify = document.getElementById("billing-ratecard-verify");
+var ratecardVerifyCopy = document.getElementById("billing-ratecard-verify-copy");
+var ratecardCodeInput = document.getElementById("billing-ratecard-code-input");
+var ratecardVerifyBtn = document.getElementById("billing-ratecard-verify-btn");
+var ratecardResendBtn = document.getElementById("billing-ratecard-resend");
+var pendingRatecardSave = null; // { buyerId, newParts } captured at validation time
+
+function hideVerifyStep() {
+  ratecardVerify.hidden = true;
+  ratecardActions.hidden = false;
+  ratecardCodeInput.value = "";
+  pendingRatecardSave = null;
+}
+
+function sendRatecardCode() {
+  ratecardVerifyCopy.textContent = "Sending a verification code to your email…";
+  ratecardCodeInput.value = "";
+  ratecardCodeInput.disabled = true;
+  ratecardVerifyBtn.disabled = true;
+  ratecardResendBtn.disabled = true;
+  requestRateCardCodeFn().then(function () {
+    ratecardVerifyCopy.textContent = "We emailed a 6-digit code to your account's email. Enter it below to confirm this change.";
+    ratecardCodeInput.disabled = false;
+    ratecardVerifyBtn.disabled = false;
+    ratecardResendBtn.disabled = false;
+    ratecardCodeInput.focus();
+  }).catch(function (err) {
+    ratecardVerifyCopy.textContent = "Couldn't send a verification code just now — please try again.";
+    ratecardResendBtn.disabled = false;
+    console.error(err);
+  });
+}
+
+document.getElementById("billing-ratecard-resend").addEventListener("click", sendRatecardCode);
+document.getElementById("billing-ratecard-back").addEventListener("click", hideVerifyStep);
+
+ratecardCodeInput.addEventListener("input", function () {
+  ratecardCodeInput.value = ratecardCodeInput.value.replace(/\D/g, "").slice(0, 6);
+});
+
+document.getElementById("billing-ratecard-save").addEventListener("click", function () {
+  var buyerId = currentBuyerId();
+  var newParts = {};
+  var invalid = false;
+
+  Array.prototype.forEach.call(ratecardBody.children, function (tr) {
+    var partNo = tr.querySelector(".rc-partno").value.trim();
+    var description = tr.querySelector(".rc-desc").value.trim();
+    var hsn = tr.querySelector(".rc-hsn").value.trim();
+    var rate = parseFloat(tr.querySelector(".rc-rate").value);
+    if (!partNo && !description && !hsn && isNaN(rate)) return; // skip a fully blank row
+    if (!partNo || !description || isNaN(rate) || rate < 0) { invalid = true; return; }
+    newParts[partNo] = { hsn: hsn, description: description, rate: rate, originalPartNo: tr.dataset.originalPartNo || "" };
+  });
+
+  if (invalid) {
+    ratecardStatus.textContent = "Each part needs a part no., description, and rate.";
+    ratecardStatus.classList.add("is-visible");
+    return;
+  }
+  if (!Object.keys(newParts).length) {
+    ratecardStatus.textContent = "Add at least one part before saving.";
+    ratecardStatus.classList.add("is-visible");
+    return;
+  }
+
+  ratecardStatus.textContent = "";
+  ratecardStatus.classList.remove("is-visible");
+  pendingRatecardSave = { buyerId: buyerId, newParts: newParts };
+  ratecardActions.hidden = true;
+  ratecardVerify.hidden = false;
+  sendRatecardCode();
+});
+
+ratecardVerifyBtn.addEventListener("click", function () {
+  if (!pendingRatecardSave) return;
+  var code = ratecardCodeInput.value.trim();
+  if (!/^\d{6}$/.test(code)) {
+    ratecardVerifyCopy.textContent = "Enter the 6-digit code from the email.";
+    return;
+  }
+
+  var buyerId = pendingRatecardSave.buyerId;
+  var newParts = pendingRatecardSave.newParts;
+
+  ratecardVerifyBtn.disabled = true;
+  ratecardResendBtn.disabled = true;
+  ratecardVerifyCopy.textContent = "Verifying…";
+
+  verifyRateCardCodeFn({ code: code }).then(function () {
+    ratecardVerifyCopy.textContent = "Verified — saving…";
+
+    var batch = writeBatch(db);
+    var keptOriginals = {};
+    Object.keys(newParts).forEach(function (partNo) {
+      var entry = newParts[partNo];
+      if (entry.originalPartNo && entry.originalPartNo !== partNo) {
+        batch.delete(doc(db, "buyers", buyerId, "parts", entry.originalPartNo));
+      }
+      if (entry.originalPartNo) keptOriginals[entry.originalPartNo] = true;
+      batch.set(doc(db, "buyers", buyerId, "parts", partNo), {
+        hsn: entry.hsn,
+        description: entry.description,
+        rate: entry.rate
+      });
+    });
+    Object.keys(partsByBuyer[buyerId] || {}).forEach(function (partNo) {
+      if (!keptOriginals[partNo]) batch.delete(doc(db, "buyers", buyerId, "parts", partNo));
+    });
+    if (!buyersById[buyerId] && buyerId === "hella") {
+      batch.set(doc(db, "buyers", "hella"), HELLA_SEED.buyer);
+    }
+
+    return batch.commit();
+  }).then(function () {
     return loadBuyers();
   }).then(function () {
-    buyerSelect.value = "hella";
+    buyerSelect.value = pendingRatecardSave.buyerId;
     return loadPartsForCurrentBuyer();
-  }).catch(function () {
-    showStatus("Couldn't load the rate card just now — please try again.");
+  }).then(function () {
+    closeRatecardPanel();
+    showStatus("Rate card saved.");
+  }).catch(function (err) {
+    var errCode = err && err.code;
+    if (errCode === "functions/deadline-exceeded") {
+      ratecardVerifyCopy.textContent = "That code expired — request a new one.";
+    } else if (errCode === "functions/resource-exhausted") {
+      ratecardVerifyCopy.textContent = "Too many wrong attempts — request a new code.";
+    } else if (errCode === "functions/permission-denied") {
+      ratecardVerifyCopy.textContent = "That code isn't right. Try again or resend.";
+    } else {
+      ratecardVerifyCopy.textContent = "Couldn't save the rate card just now — please try again.";
+      console.error(err);
+    }
   }).finally(function () {
-    seedBtn.disabled = false;
-    seedBtn.textContent = "Load Hella rate card";
+    ratecardVerifyBtn.disabled = false;
+    ratecardResendBtn.disabled = false;
   });
 });
 
