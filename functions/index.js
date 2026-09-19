@@ -2,8 +2,7 @@ const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { defineSecret } = require("firebase-functions/params");
 const { initializeApp } = require("firebase-admin/app");
-const { getFirestore, FieldValue } = require("firebase-admin/firestore");
-const { getStorage } = require("firebase-admin/storage");
+const { getFirestore } = require("firebase-admin/firestore");
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 
@@ -455,127 +454,5 @@ exports.chatWithBot = onCall(
     }
 
     return { reply: finalText || "Done.", draft: draft, action: action };
-  }
-);
-
-// ---------------------------------------------------------------------
-// ONE-TIME migration -- wipes /invoices, /supply, /payments (plus their
-// PDFs in Storage) and reseeds /supply + /payments from the old Numbers
-// workbook's "Supply"/"Sale" sheets, then sets counters/global to the
-// real last-used sequence number so the next invoice generated in-app
-// continues it correctly -- this counter never resets at a financial-
-// year boundary (see suggestInvoiceNo() in billing.html). Callable only
-// by a signed-in master account (same guard as the rate-card functions
-// above); delete this export once it's been run.
-// ---------------------------------------------------------------------
-exports.adminOneTimeMigration = onCall(
-  { region: "asia-south1" },
-  async function (request) {
-    await requireMasterWithEmail(request);
-
-    var db = getFirestore();
-    var data = request.data || {};
-    var supplyRows = data.supplyRows || [];
-    var saleRows = data.saleRows || [];
-
-    async function deleteCollection(name) {
-      var snap = await db.collection(name).get();
-      var docs = snap.docs;
-      for (var i = 0; i < docs.length; i += 400) {
-        var batch = db.batch();
-        docs.slice(i, i + 400).forEach(function (d) { batch.delete(d.ref); });
-        await batch.commit();
-      }
-      return docs.length;
-    }
-
-    try {
-      var deletedInvoices = await deleteCollection("invoices");
-      var deletedSupply = await deleteCollection("supply");
-      var deletedPayments = await deleteCollection("payments");
-
-      var bucket = getStorage().bucket();
-      var filesResult = await bucket.getFiles({ prefix: "invoices/" });
-      var files = filesResult[0];
-      await Promise.all(files.map(function (f) { return f.delete(); }));
-
-      var buyersSnap = await db.collection("buyers").get();
-      var buyerDoc =
-        buyersSnap.docs.find(function (d) { return /hella/i.test(d.data().name || ""); }) ||
-        buyersSnap.docs[0];
-      if (!buyerDoc) throw new Error("No buyer found to attribute the backfilled records to.");
-      var buyerId = buyerDoc.id;
-      var buyerName = buyerDoc.data().name || "";
-
-      var partsSnap = await db.collection("buyers").doc(buyerId).collection("parts").get();
-      var partsByNo = {};
-      partsSnap.docs.forEach(function (d) { partsByNo[d.id] = d.data(); });
-
-      var writes = [];
-      supplyRows.forEach(function (row) {
-        var partNo = String(row.product).split(" (")[0].trim();
-        var part = partsByNo[partNo] || {};
-        writes.push({
-          ref: db.collection("supply").doc(),
-          data: {
-            invoiceId: null,
-            invoiceNo: "2026-27/" + row.invoiceSeq,
-            buyerId: buyerId,
-            buyerName: buyerName,
-            date: row.date,
-            month: row.month,
-            partNo: partNo,
-            description: part.description || "",
-            qty: row.qty,
-            createdAt: FieldValue.serverTimestamp()
-          }
-        });
-      });
-
-      var maxSeq = 0;
-      saleRows.forEach(function (row) {
-        if (row.invoiceSeq > maxSeq) maxSeq = row.invoiceSeq;
-        writes.push({
-          ref: db.collection("payments").doc(),
-          data: {
-            invoiceId: null,
-            invoiceNo: "2026-27/" + row.invoiceSeq,
-            buyerId: buyerId,
-            buyerName: buyerName,
-            date: row.date,
-            amount: row.amount,
-            status: row.cleared ? "cleared" : "pending",
-            clearedOn: row.clearedOn || null,
-            createdAt: FieldValue.serverTimestamp()
-          }
-        });
-      });
-
-      for (var i = 0; i < writes.length; i += 400) {
-        var batch = db.batch();
-        writes.slice(i, i + 400).forEach(function (w) { batch.set(w.ref, w.data); });
-        await batch.commit();
-      }
-
-      if (maxSeq > 0) {
-        await db.collection("counters").doc("global").set({ lastSeq: maxSeq }, { merge: true });
-      }
-
-      return {
-        ok: true,
-        deletedInvoices: deletedInvoices,
-        deletedSupply: deletedSupply,
-        deletedPayments: deletedPayments,
-        deletedFiles: files.length,
-        insertedSupply: supplyRows.length,
-        insertedPayments: saleRows.length,
-        buyerId: buyerId,
-        buyerName: buyerName,
-        newCounterLastSeq: maxSeq
-      };
-    } catch (err) {
-      console.error(err);
-      throw new HttpsError("internal", String((err && err.message) || err));
-    }
   }
 );
