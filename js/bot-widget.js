@@ -46,6 +46,8 @@
       "  touch-action: none;" +
       "}" +
       ".bot-launcher.is-visible { opacity: 1; transform: translateY(0); pointer-events: auto; }" +
+      ".bot-launcher.is-nudged { transform: translateY(var(--bot-nudge, 0px)); }" +
+      ".bot-launcher.is-visible.is-nudged { transform: translateY(var(--bot-nudge, 0px)); }" +
       ".bot-launcher.is-dragging { transition: none; }" +
       ".bot-fab {" +
       "  width: 48px; height: 48px; border-radius: 50%; border: none; padding: 0;" +

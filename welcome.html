@@ -12,13 +12,23 @@
 <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/main.css?v=41" />
+<link rel="stylesheet" href="css/main.css?v=42" />
 </head>
 <body class="login-page">
 
 <nav class="site-nav">
   <a href="index.html#hero" class="brand">New Kamal <span>Metal Works</span></a>
-  <button type="button" class="login-back" id="welcome-logout">Log out</button>
+  <div class="nav-actions">
+    <div class="profile-menu" id="welcome-profile-menu">
+      <button type="button" class="profile-menu-btn" id="welcome-profile-toggle" aria-haspopup="true" aria-expanded="false" aria-label="Profile menu">
+        <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8.5" r="4"></circle><path d="M4 20.3C4 15.9 7.6 12.8 12 12.8s8 3.1 8 7.5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"></path></svg>
+      </button>
+      <div class="profile-menu-panel" id="welcome-profile-panel">
+        <a href="profile.html" class="profile-menu-link">View your Profile</a>
+        <button type="button" class="profile-menu-link profile-menu-logout" id="welcome-logout">Log out</button>
+      </div>
+    </div>
+  </div>
 </nav>
 
 <main class="login-shell welcome-shell">
@@ -26,11 +36,6 @@
     <span class="login-kicker welcome-fade" id="welcome-kicker" style="--d:0s">Client access</span>
     <h1 class="welcome-heading welcome-fade" id="welcome-heading" style="--d:.08s">Welcome.</h1>
     <p class="welcome-sub welcome-fade" style="--d:.16s">How can we help you today?</p>
-
-    <div class="welcome-actions welcome-fade" style="--d:.26s">
-      <a href="index.html#contact" class="btn btn-primary welcome-action" id="welcome-primary-action">Request a quote</a>
-      <a href="profile.html?edit" class="welcome-action-link">Edit your profile</a>
-    </div>
   </div>
 
   <section class="qa-section welcome-fade" id="welcome-quick-actions" style="--d:.34s" hidden>
@@ -79,8 +84,34 @@
   </div>
 </main>
 
-<footer class="login-footer">
-  <p>&copy; <span id="year"></span> New Kamal Metal Works, Faridabad. All rights reserved.</p>
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <div class="footer-top">
+      <a href="index.html#hero" class="footer-brand">New Kamal <span>Metal Works</span></a>
+      <ul class="footer-links">
+        <li><a href="index.html#operations">Operations</a></li>
+        <li><a href="index.html#capabilities">Capabilities</a></li>
+        <li><a href="index.html#materials">Materials</a></li>
+        <li><a href="index.html#tooling">Tooling</a></li>
+        <li><a href="index.html#quality">Quality</a></li>
+        <li><a href="index.html#about">About</a></li>
+        <li><a href="index.html#contact">Contact</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-bottom">
+      <p class="footer-legal">&copy; <span id="year"></span> New Kamal Metal Works, Faridabad. All rights reserved.</p>
+      <p class="footer-meta">ISO 9001:2015 certified &middot; GSTIN 06AGQPA5950R1ZR</p>
+      <div class="footer-credit">
+        <p class="footer-credit-name">Designed by <span class="footer-credit-highlight">Jagrit Arora</span></p>
+        <p class="footer-credit-links">
+          <a href="mailto:jagrit.arora007@icloud.com">jagrit.arora007@icloud.com</a>
+          <span class="footer-credit-dot" aria-hidden="true">&middot;</span>
+          <a href="tel:+919599030400">+91 95990 30400</a>
+        </p>
+      </div>
+    </div>
+  </div>
 </footer>
 
 <script type="module">
@@ -104,8 +135,53 @@ var loadingCard = document.getElementById("welcome-loading");
 var heading = document.getElementById("welcome-heading");
 var kicker = document.getElementById("welcome-kicker");
 var logoutBtn = document.getElementById("welcome-logout");
+var profileMenu = document.getElementById("welcome-profile-menu");
+var profileToggle = document.getElementById("welcome-profile-toggle");
 
 logoutBtn.addEventListener("click", function () { signOut(auth); });
+
+function updateBotNudge(open) {
+  var launcher = document.querySelector(".bot-launcher");
+  if (!launcher) return;
+  if (!open) {
+    launcher.classList.remove("is-nudged");
+    launcher.style.removeProperty("--bot-nudge");
+    return;
+  }
+  var panelRect = document.getElementById("welcome-profile-panel").getBoundingClientRect();
+  var launcherRect = launcher.getBoundingClientRect();
+  var overlaps = launcherRect.top < panelRect.bottom && launcherRect.bottom > panelRect.top &&
+    launcherRect.left < panelRect.right && launcherRect.right > panelRect.left;
+  if (!overlaps) {
+    launcher.classList.remove("is-nudged");
+    launcher.style.removeProperty("--bot-nudge");
+    return;
+  }
+  var offset = panelRect.bottom - launcherRect.top + 16;
+  var maxOffset = Math.max(window.innerHeight - launcherRect.bottom - 16, 0);
+  offset = Math.min(offset, maxOffset);
+  launcher.style.setProperty("--bot-nudge", offset + "px");
+  launcher.classList.add("is-nudged");
+}
+
+function closeProfileMenu() {
+  profileMenu.classList.remove("is-open");
+  profileToggle.setAttribute("aria-expanded", "false");
+  updateBotNudge(false);
+}
+
+profileToggle.addEventListener("click", function (e) {
+  e.stopPropagation();
+  var isOpen = profileMenu.classList.toggle("is-open");
+  profileToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+  updateBotNudge(isOpen);
+});
+document.addEventListener("click", function (e) {
+  if (!profileMenu.contains(e.target)) closeProfileMenu();
+});
+document.addEventListener("keydown", function (e) {
+  if (e.key === "Escape") closeProfileMenu();
+});
 
 function firstName(fullName) {
   if (!fullName) return "";
