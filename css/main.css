@@ -1702,13 +1702,17 @@ button.login-back {
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
-  padding: 4px 9vw 8px 33.333vw;
+  padding: 4px 9vw 8px;
   text-align: left;
 }
-@media (max-width: 700px) {
-  .qa-track { padding-left: 9vw; }
-}
 .qa-track::-webkit-scrollbar { display: none; }
+/* Safari doesn't reliably render a scroll container's own start-edge
+   padding as visible space, so the extra inset is a margin on the
+   first card instead (9vw of container padding already applies). */
+.qa-track .qa-card:first-child { margin-left: 24.333vw; }
+@media (max-width: 700px) {
+  .qa-track .qa-card:first-child { margin-left: 0; }
+}
 
 .qa-card {
   position: relative;
