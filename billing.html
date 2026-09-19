@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/main.css?v=47" />
+<link rel="stylesheet" href="css/main.css?v=48" />
 </head>
 <body class="login-page">
 
@@ -447,7 +447,7 @@ var lockGroupLabel = document.getElementById("billing-lockgroup-label");
 var fieldsLocked = true;
 
 function applyFieldLockState() {
-  LOCK_GROUP_FIELDS.forEach(function (el) { el.disabled = fieldsLocked; });
+  LOCK_GROUP_FIELDS.forEach(function (el) { el.readOnly = fieldsLocked; });
   LOCK_GROUP_HINTS.forEach(function (el) { el.hidden = !fieldsLocked; });
   lockGroupLabel.textContent = fieldsLocked ? "Edit" : "Done";
   lockGroupBtn.setAttribute("aria-pressed", String(!fieldsLocked));
@@ -560,6 +560,17 @@ function collectItems() {
   return items;
 }
 
+// A row with a part chosen but no (or zero) quantity would otherwise just
+// silently drop out of collectItems() -- generation should refuse instead
+// of quietly leaving a picked item off the invoice.
+function findRowMissingQty() {
+  return Array.prototype.find.call(itemsBody.children, function (tr) {
+    var partNo = tr.querySelector(".billing-part-select").value;
+    var qty = parseFloat(tr.querySelector(".billing-qty-input").value);
+    return partNo && (!qty || qty <= 0);
+  });
+}
+
 function recomputeTotals() {
   Array.prototype.forEach.call(itemsBody.children, function (tr) {
     var qty = parseFloat(tr.querySelector(".billing-qty-input").value);
@@ -590,10 +601,11 @@ function updatePoNoField() {
   var seen = {};
   var pos = [];
   Array.prototype.forEach.call(itemsBody.children, function (tr) {
+    // Counts as soon as a part is picked -- doesn't wait for a qty to be
+    // typed in too, so the field visibly adjusts the moment a product is
+    // added rather than only once the row is otherwise complete.
     var partNo = tr.querySelector(".billing-part-select").value;
-    var qty = parseFloat(tr.querySelector(".billing-qty-input").value);
-    var rate = parseFloat(tr.dataset.rate);
-    if (!partNo || !qty || !rate) return;
+    if (!partNo) return;
     var po = (tr.dataset.poNo || "").trim();
     if (po && !seen[po]) { seen[po] = true; pos.push(po); }
   });
@@ -1172,6 +1184,12 @@ generateBtn.addEventListener("click", function () {
   if (!invoiceNo) { showStatus("Enter an invoice number."); return; }
   if (!dateVal) { showStatus("Pick a date."); return; }
   if (!vehicleNo) { showStatus("Enter a vehicle number."); return; }
+  var missingQtyRow = findRowMissingQty();
+  if (missingQtyRow) {
+    showStatus("Enter a quantity for every item you've picked before generating.");
+    missingQtyRow.querySelector(".billing-qty-input").focus();
+    return;
+  }
   if (!totals.items.length) { showStatus("Add at least one line item with a part and quantity."); return; }
 
   generateBtn.disabled = true;

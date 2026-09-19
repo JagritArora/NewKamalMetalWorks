@@ -1918,11 +1918,13 @@ button.login-back {
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
 }
-.billing-grid input:disabled {
-  color: var(--ink-muted);
+.billing-grid input:read-only {
+  color: var(--ink);
   background: var(--surface);
-  cursor: not-allowed;
+  border-style: dashed;
+  cursor: default;
 }
+.billing-grid input:read-only::-webkit-calendar-picker-indicator { opacity: 0.35; pointer-events: none; }
 .billing-optional { font-weight: 400; color: var(--ink-muted); text-transform: none; letter-spacing: 0; }
 
 .billing-seed-btn {
