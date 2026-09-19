@@ -8,10 +8,10 @@ const crypto = require("crypto");
 
 initializeApp();
 
-// Set once via: firebase functions:secrets:set GMAIL_APP_PASSWORD
-// (paste the 16-character App Password from the project's local .env file
-// when prompted -- Secret Manager stores it, this repo never does).
-const gmailAppPassword = defineSecret("GMAIL_APP_PASSWORD");
+// Set once via: firebase functions:secrets:set TITAN_EMAIL_PASSWORD
+// (paste contact@newkamalmetalworks.co.in's mailbox password when prompted
+// -- Secret Manager stores it, this repo never does).
+const titanEmailPassword = defineSecret("TITAN_EMAIL_PASSWORD");
 
 // billing.html writes a doc to the "mail" collection shaped like
 // { to: [...emails], message: { subject, html, attachments } } -- this is
@@ -19,7 +19,7 @@ const gmailAppPassword = defineSecret("GMAIL_APP_PASSWORD");
 // "Trigger Email from Firestore" extension, kept doc-triggered so
 // billing.html didn't need to change at all.
 exports.sendMail = onDocumentCreated(
-  { document: "mail/{mailId}", secrets: [gmailAppPassword], region: "asia-south1" },
+  { document: "mail/{mailId}", secrets: [titanEmailPassword], region: "asia-south1" },
   async function (event) {
     var snap = event.data;
     if (!snap) return;
@@ -27,18 +27,18 @@ exports.sendMail = onDocumentCreated(
     var message = data.message || {};
 
     var transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
+      host: "smtpout.secureserver.net",
       port: 465,
       secure: true,
       auth: {
-        user: "kamal.jagrit93@gmail.com",
-        pass: gmailAppPassword.value()
+        user: "contact@newkamalmetalworks.co.in",
+        pass: titanEmailPassword.value()
       }
     });
 
     try {
       await transporter.sendMail({
-        from: "New Kamal Metal Works <kamal.jagrit93@gmail.com>",
+        from: "New Kamal Metal Works <contact@newkamalmetalworks.co.in>",
         to: data.to,
         subject: message.subject,
         html: message.html,

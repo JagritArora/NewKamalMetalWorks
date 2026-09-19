@@ -337,7 +337,7 @@ var COMPANY = {
   state: "Haryana",
   stateCode: "06",
   contact: "9818650504",
-  mail: "kamal.jagrit93@gmail.com"
+  mail: "contact@newkamalmetalworks.co.in"
 };
 var IGST_RATE = 0.18;
 
@@ -1758,9 +1758,11 @@ function sendInvoiceEmail(invoiceId, inv, btn) {
         to: masterEmails,
         message: {
           subject: "Invoice " + inv.invoiceNo + " — New Kamal Metal Works",
-          html: "<p>Invoice <strong>" + inv.invoiceNo + "</strong> for " + (inv.buyer ? inv.buyer.name : "") + ", dated " + dateStr + ".</p>" +
-            "<p>Net amount: " + formatCurrency(inv.net || 0) + "</p>" +
-            "<p><a href=\"" + inv.pdfUrl + "\">View PDF</a></p>",
+          html: "<p>Dear Sir/Ma'am,</p>" +
+            "<p>PFA the Invoice <strong>" + inv.invoiceNo + "</strong> dated " + dateStr + " amounting to " + formatCurrency(inv.net || 0) + " for your reference. " +
+            "If you have any concern related to the same, please contact within 7 days else it will be treated as agreed and booked in your accounts.</p>" +
+            "<p>Thank You.</p>" +
+            "<p>Regards,<br><a href=\"https://www.newkamalmetalworks.co.in\">New Kamal Metal Works</a></p>",
           attachments: [{ filename: safeInvoiceNo + ".pdf", path: inv.pdfUrl }]
         }
       }).then(function () {
