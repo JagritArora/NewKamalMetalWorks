@@ -702,6 +702,80 @@ function updatePoNoField() {
 document.getElementById("billing-add-row").addEventListener("click", addItemRow);
 
 // ---------------------------------------------------------------------
+// Supply + payment records -- mirrors of the "Supply" and "Sale" sheets
+// in the old Numbers workbook, kept in sync automatically instead of by
+// hand. "supply" gets one doc per invoice line item (invoice, date,
+// month, part, qty); "payments" gets one doc per invoice, keyed by the
+// invoice's own doc id, tracking amount + cleared/pending status. Both
+// are written alongside the invoice itself on generate, and re-synced
+// whenever that invoice is edited.
+// ---------------------------------------------------------------------
+function monthNameFor(dateVal) {
+  return new Date(dateVal + "T00:00:00").toLocaleDateString("en-US", { month: "long" });
+}
+
+function queueSupplyDocs(writer, invoiceId, invoiceNo, buyerId, buyerName, dateVal, items) {
+  items.forEach(function (it) {
+    writer.set(doc(collection(db, "supply")), {
+      invoiceId: invoiceId,
+      invoiceNo: invoiceNo,
+      buyerId: buyerId,
+      buyerName: buyerName || "",
+      date: dateVal,
+      month: monthNameFor(dateVal),
+      partNo: it.partNo,
+      description: it.description || "",
+      qty: it.qty,
+      createdAt: serverTimestamp()
+    });
+  });
+}
+
+// Re-syncs the supply/payment records for an already-generated invoice
+// after its line items are edited: the old invoice's supply rows are
+// replaced wholesale (items can be added, removed, or changed) and the
+// payment doc's amount is refreshed in place, leaving its cleared/pending
+// status untouched. An invoice generated before this feature existed
+// won't have a payment doc yet -- this backfills one the first time it's
+// edited, rather than requiring a separate migration.
+function syncSupplyAndPaymentForEdit(invoiceId, invoiceNo, buyerId, buyerName, dateVal, items, net) {
+  var paymentRef = doc(db, "payments", invoiceId);
+  return Promise.all([
+    getDocs(query(collection(db, "supply"), where("invoiceId", "==", invoiceId))),
+    getDoc(paymentRef)
+  ]).then(function (results) {
+    var supplySnap = results[0];
+    var paymentSnap = results[1];
+    var batch = writeBatch(db);
+    supplySnap.forEach(function (d) { batch.delete(d.ref); });
+    queueSupplyDocs(batch, invoiceId, invoiceNo, buyerId, buyerName, dateVal, items);
+    if (paymentSnap.exists()) {
+      batch.update(paymentRef, {
+        invoiceNo: invoiceNo,
+        buyerId: buyerId,
+        buyerName: buyerName || "",
+        date: dateVal,
+        amount: net,
+        updatedAt: serverTimestamp()
+      });
+    } else {
+      batch.set(paymentRef, {
+        invoiceId: invoiceId,
+        invoiceNo: invoiceNo,
+        buyerId: buyerId,
+        buyerName: buyerName || "",
+        date: dateVal,
+        amount: net,
+        status: "pending",
+        clearedOn: null,
+        createdAt: serverTimestamp()
+      });
+    }
+    return batch.commit();
+  });
+}
+
+// ---------------------------------------------------------------------
 // Buyers + rate cards
 // ---------------------------------------------------------------------
 function loadBuyers() {
@@ -1296,6 +1370,12 @@ invoiceEditVerifyBtn.addEventListener("click", function () {
           netWords: netWords,
           pdfUrl: pdfUrl
         });
+      })
+      .then(function () {
+        return syncSupplyAndPaymentForEdit(
+          loadedInvoiceId, inv.invoiceNo, inv.buyerId, inv.buyer ? inv.buyer.name : "",
+          inv.date, totals.items, totals.net
+        );
       });
   }).then(function () {
     var invoiceNo = loadedInvoice.invoiceNo;
@@ -1704,6 +1784,18 @@ generateBtn.addEventListener("click", function () {
             createdAt: serverTimestamp()
           });
           tx.set(counterRef, { lastSeq: newLastSeq }, { merge: true });
+          queueSupplyDocs(tx, invoiceRef.id, invoiceNo, buyerId, buyer.name, dateVal, totals.items);
+          tx.set(doc(db, "payments", invoiceRef.id), {
+            invoiceId: invoiceRef.id,
+            invoiceNo: invoiceNo,
+            buyerId: buyerId,
+            buyerName: buyer.name || "",
+            date: dateVal,
+            amount: totals.net,
+            status: "pending",
+            clearedOn: null,
+            createdAt: serverTimestamp()
+          });
         });
       });
     })

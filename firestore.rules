@@ -56,6 +56,17 @@ service cloud.firestore {
       allow read, write: if isMaster();
     }
 
+    // Auto-populated alongside /invoices on generate (and re-synced on
+    // edit) -- one "supply" doc per invoice line item, one "payments" doc
+    // per invoice keyed by its invoice doc id. See billing.html.
+    match /supply/{supplyId} {
+      allow read, write: if isMaster();
+    }
+
+    match /payments/{invoiceId} {
+      allow read, write: if isMaster();
+    }
+
     match /counters/{financialYear} {
       allow read, write: if isMaster();
     }
