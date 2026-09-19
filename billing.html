@@ -39,7 +39,7 @@
         </button>
       </div>
 
-      <div class="billing-grid">
+      <div class="billing-grid" id="billing-new-invoice-grid">
         <div class="login-field">
           <label for="billing-buyer">Buyer</label>
           <select id="billing-buyer"></select>
@@ -74,7 +74,7 @@
         </div>
       </div>
 
-      <div class="billing-ratecard-row">
+      <div class="billing-ratecard-row" id="billing-ratecard-row">
         <button type="button" class="billing-seed-btn" id="billing-ratecard-btn">Edit rate card</button>
         <button type="button" class="billing-seed-btn" id="billing-invoice-edit-btn">Edit a previous invoice</button>
         <span class="billing-ratecard-hint" id="billing-ratecard-hint" hidden>No rate card found for this buyer yet.</span>
@@ -180,7 +180,7 @@
         </div>
       </div>
 
-      <div class="billing-items-wrap">
+      <div class="billing-items-wrap" id="billing-items-wrap">
         <table class="billing-items-table">
           <thead>
             <tr>
@@ -199,7 +199,7 @@
         <button type="button" class="btn-secondary billing-add-row" id="billing-add-row">+ Add item</button>
       </div>
 
-      <div class="billing-totals">
+      <div class="billing-totals" id="billing-new-invoice-totals">
         <div class="billing-totals-row"><span>Subtotal</span><span id="billing-subtotal">₹0.00</span></div>
         <div class="billing-totals-row"><span>IGST (18%)</span><span id="billing-igst">₹0.00</span></div>
         <div class="billing-totals-row billing-totals-net"><span>Net Amount</span><span id="billing-net">₹0.00</span></div>
@@ -490,6 +490,32 @@ var ratecardStatus = document.getElementById("billing-ratecard-status");
 dateInput.value = new Date().toISOString().slice(0, 10);
 
 // ---------------------------------------------------------------------
+// New-invoice body collapse -- while either the rate-card editor or the
+// "edit a previous invoice" panel is open, the still-visible new-invoice
+// fields/items/totals below them are just noise duplicating the panel's
+// own layout, so tuck them out of the way and give the open panel the
+// full card. Restored the moment the panel closes. (Their `display` is
+// set inline because several of these elements set their own `display`
+// in CSS, which would otherwise beat a plain `hidden` attribute.)
+// ---------------------------------------------------------------------
+var NEW_INVOICE_BODY_IDS = [
+  "billing-new-invoice-grid",
+  "billing-lockgroup-btn",
+  "billing-ratecard-row",
+  "billing-items-wrap",
+  "billing-new-invoice-totals",
+  "billing-status",
+  "billing-generate-btn"
+];
+
+function setNewInvoiceBodyCollapsed(collapsed) {
+  NEW_INVOICE_BODY_IDS.forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) el.style.display = collapsed ? "none" : "";
+  });
+}
+
+// ---------------------------------------------------------------------
 // Invoice No. / Date / P.O. No. lock group -- these three are computed
 // automatically (financial-year invoice numbering, today's date, and the
 // PO numbers on the selected items' rate-card entries) and stay locked
@@ -749,6 +775,8 @@ function addRatecardRow(data) {
 }
 
 function openRatecardPanel() {
+  closeInvoiceEditPanel();
+  setNewInvoiceBodyCollapsed(true);
   var buyerId = currentBuyerId();
   var parts = partsByBuyer[buyerId] || {};
   var partNos = Object.keys(parts).sort();
@@ -781,6 +809,7 @@ function openRatecardPanel() {
 function closeRatecardPanel() {
   ratecardPanel.hidden = true;
   hideVerifyStep();
+  if (invoiceEditPanel.hidden) setNewInvoiceBodyCollapsed(false);
 }
 
 ratecardBtn.addEventListener("click", openRatecardPanel);
@@ -969,6 +998,8 @@ var loadedInvoiceParts = {}; // partNo -> { description, hsn, rate, poNo } for t
 var pendingInvoiceEditSave = null; // totals captured at validation time
 
 function openInvoiceEditPanel() {
+  closeRatecardPanel();
+  setNewInvoiceBodyCollapsed(true);
   invoiceEditSearchInput.value = "";
   invoiceEditLookupStatus.textContent = "";
   invoiceEditLookupStatus.classList.remove("is-visible");
@@ -985,6 +1016,7 @@ function closeInvoiceEditPanel() {
   invoiceEditPanel.hidden = true;
   hideInvoiceEditVerifyStep();
   sectionTitle.textContent = "New invoice";
+  if (ratecardPanel.hidden) setNewInvoiceBodyCollapsed(false);
 }
 
 invoiceEditBtn.addEventListener("click", openInvoiceEditPanel);
