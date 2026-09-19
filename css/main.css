@@ -1881,6 +1881,7 @@ button.login-back {
   font-weight: 600;
   color: var(--ink);
 }
+.billing-card-title--accent { color: var(--accent); }
 
 .billing-lockgroup-btn {
   display: inline-flex;
@@ -2031,6 +2032,16 @@ button.login-back {
   cursor: pointer;
 }
 .billing-ratecard-link-btn:disabled { color: var(--ink-muted); cursor: default; }
+
+.billing-invoice-edit-lookup {
+  margin-top: 16px;
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.billing-invoice-edit-lookup .login-field { flex: 1 1 220px; }
+.billing-invoice-edit-summary { margin-top: 16px; font-size: 0.88rem; color: var(--ink-muted); }
 
 .billing-items-wrap { margin-top: 26px; overflow-x: auto; }
 .billing-items-table, .billing-history-table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }

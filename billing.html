@@ -32,7 +32,7 @@
 
     <section class="billing-card">
       <div class="billing-card-head">
-        <h2 class="billing-card-title">New invoice</h2>
+        <h2 class="billing-card-title billing-card-title--accent" id="billing-section-title">New invoice</h2>
         <button type="button" class="billing-lockgroup-btn" id="billing-lockgroup-btn" aria-pressed="false">
           <svg class="billing-lockgroup-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10.5" width="16" height="9.5" rx="2"/><path d="M7.5 10.5V7a4.5 4.5 0 0 1 9 0v3.5"/></svg>
           <span id="billing-lockgroup-label">Edit</span>
@@ -76,7 +76,68 @@
 
       <div class="billing-ratecard-row">
         <button type="button" class="billing-seed-btn" id="billing-ratecard-btn">Edit rate card</button>
+        <button type="button" class="billing-seed-btn" id="billing-invoice-edit-btn">Edit a previous invoice</button>
         <span class="billing-ratecard-hint" id="billing-ratecard-hint" hidden>No rate card found for this buyer yet.</span>
+      </div>
+
+      <div class="billing-ratecard-panel" id="billing-invoice-edit-panel" hidden>
+        <div class="billing-ratecard-head">
+          <h3>Edit a previous invoice</h3>
+          <button type="button" class="billing-ratecard-close" id="billing-invoice-edit-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="billing-invoice-edit-lookup">
+          <div class="login-field">
+            <label for="billing-invoice-edit-search">Invoice No.</label>
+            <input type="text" id="billing-invoice-edit-search" placeholder="2026-27/1" />
+          </div>
+          <button type="button" class="btn-secondary" id="billing-invoice-edit-load">Load</button>
+        </div>
+        <p class="login-status" id="billing-invoice-edit-lookup-status" role="status" aria-live="polite"></p>
+
+        <div id="billing-invoice-edit-body-wrap" hidden>
+          <p class="billing-invoice-edit-summary" id="billing-invoice-edit-summary"></p>
+          <div class="billing-ratecard-body-wrap">
+            <table class="billing-items-table billing-ratecard-table">
+              <thead>
+                <tr>
+                  <th>Part No.</th>
+                  <th>Description</th>
+                  <th>HSN/SAC</th>
+                  <th>Qty</th>
+                  <th>Rate</th>
+                  <th>Amount</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="billing-invoice-edit-items-body"></tbody>
+            </table>
+            <button type="button" class="btn-secondary billing-add-row" id="billing-invoice-edit-add-row">+ Add item</button>
+          </div>
+
+          <div class="billing-totals">
+            <div class="billing-totals-row"><span>Subtotal</span><span id="billing-invoice-edit-subtotal">₹0.00</span></div>
+            <div class="billing-totals-row"><span>IGST (18%)</span><span id="billing-invoice-edit-igst">₹0.00</span></div>
+            <div class="billing-totals-row billing-totals-net"><span>Net Amount</span><span id="billing-invoice-edit-net">₹0.00</span></div>
+          </div>
+
+          <p class="login-status" id="billing-invoice-edit-status" role="status" aria-live="polite"></p>
+          <div class="billing-ratecard-actions" id="billing-invoice-edit-actions">
+            <button type="button" class="btn-secondary" id="billing-invoice-edit-cancel">Cancel</button>
+            <button type="button" class="btn btn-primary" id="billing-invoice-edit-save">Save invoice</button>
+          </div>
+
+          <div class="billing-ratecard-verify" id="billing-invoice-edit-verify" hidden>
+            <p class="billing-ratecard-verify-copy" id="billing-invoice-edit-verify-copy">Sending a verification code to your email&hellip;</p>
+            <div class="billing-ratecard-verify-row">
+              <input type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" class="billing-ratecard-code-input" id="billing-invoice-edit-code-input" placeholder="6-digit code" />
+              <button type="button" class="btn btn-primary" id="billing-invoice-edit-verify-btn" disabled>Verify &amp; save</button>
+            </div>
+            <div class="billing-ratecard-verify-links">
+              <button type="button" class="billing-ratecard-link-btn" id="billing-invoice-edit-resend" disabled>Resend code</button>
+              <button type="button" class="billing-ratecard-link-btn" id="billing-invoice-edit-back">&lsaquo; Back to editing</button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="billing-ratecard-panel" id="billing-ratecard-panel" hidden>
@@ -875,6 +936,355 @@ ratecardVerifyBtn.addEventListener("click", function () {
   }).finally(function () {
     ratecardVerifyBtn.disabled = false;
     ratecardResendBtn.disabled = false;
+  });
+});
+
+// ---------------------------------------------------------------------
+// Edit a previous invoice -- looks an invoice up by its number and lets
+// its line items (part, qty, rate) be changed; Invoice No., Date, P.O.
+// No., and buyer stay fixed since those are derived/locked elsewhere on
+// this page. Saving re-renders the PDF at its existing storage path and
+// re-verifies through the same emailed 6-digit code as a rate-card save
+// (requestRateCardCode / verifyRateCardCode) -- see that section above.
+// ---------------------------------------------------------------------
+var invoiceEditBtn = document.getElementById("billing-invoice-edit-btn");
+var invoiceEditPanel = document.getElementById("billing-invoice-edit-panel");
+var invoiceEditSearchInput = document.getElementById("billing-invoice-edit-search");
+var invoiceEditLookupStatus = document.getElementById("billing-invoice-edit-lookup-status");
+var invoiceEditBodyWrap = document.getElementById("billing-invoice-edit-body-wrap");
+var invoiceEditSummary = document.getElementById("billing-invoice-edit-summary");
+var invoiceEditItemsBody = document.getElementById("billing-invoice-edit-items-body");
+var invoiceEditStatus = document.getElementById("billing-invoice-edit-status");
+var invoiceEditActions = document.getElementById("billing-invoice-edit-actions");
+var invoiceEditVerify = document.getElementById("billing-invoice-edit-verify");
+var invoiceEditVerifyCopy = document.getElementById("billing-invoice-edit-verify-copy");
+var invoiceEditCodeInput = document.getElementById("billing-invoice-edit-code-input");
+var invoiceEditVerifyBtn = document.getElementById("billing-invoice-edit-verify-btn");
+var invoiceEditResendBtn = document.getElementById("billing-invoice-edit-resend");
+var sectionTitle = document.getElementById("billing-section-title");
+
+var loadedInvoiceId = null;
+var loadedInvoice = null;
+var loadedInvoiceParts = {}; // partNo -> { description, hsn, rate, poNo } for the loaded invoice's buyer
+var pendingInvoiceEditSave = null; // totals captured at validation time
+
+function openInvoiceEditPanel() {
+  invoiceEditSearchInput.value = "";
+  invoiceEditLookupStatus.textContent = "";
+  invoiceEditLookupStatus.classList.remove("is-visible");
+  invoiceEditBodyWrap.hidden = true;
+  hideInvoiceEditVerifyStep();
+  loadedInvoiceId = null;
+  loadedInvoice = null;
+  sectionTitle.textContent = "New invoice";
+  invoiceEditPanel.hidden = false;
+  invoiceEditSearchInput.focus();
+}
+
+function closeInvoiceEditPanel() {
+  invoiceEditPanel.hidden = true;
+  hideInvoiceEditVerifyStep();
+  sectionTitle.textContent = "New invoice";
+}
+
+invoiceEditBtn.addEventListener("click", openInvoiceEditPanel);
+document.getElementById("billing-invoice-edit-close").addEventListener("click", closeInvoiceEditPanel);
+document.getElementById("billing-invoice-edit-cancel").addEventListener("click", closeInvoiceEditPanel);
+
+function lookupInvoiceForEdit() {
+  var invoiceNo = invoiceEditSearchInput.value.trim();
+  if (!invoiceNo) {
+    invoiceEditLookupStatus.textContent = "Enter an invoice number.";
+    invoiceEditLookupStatus.classList.add("is-visible");
+    return;
+  }
+  invoiceEditLookupStatus.textContent = "Looking up…";
+  invoiceEditLookupStatus.classList.add("is-visible");
+  invoiceEditBodyWrap.hidden = true;
+
+  getDocs(query(collection(db, "invoices"), where("invoiceNo", "==", invoiceNo)))
+    .then(function (snap) {
+      if (snap.empty) {
+        invoiceEditLookupStatus.textContent = "No invoice found with that number.";
+        sectionTitle.textContent = "New invoice";
+        return;
+      }
+      var d = snap.docs[0];
+      loadedInvoiceId = d.id;
+      loadedInvoice = d.data();
+      return getDocs(collection(db, "buyers", loadedInvoice.buyerId, "parts")).then(function (partsSnap) {
+        loadedInvoiceParts = {};
+        partsSnap.forEach(function (p) { loadedInvoiceParts[p.id] = p.data(); });
+        renderInvoiceEditForm();
+        invoiceEditLookupStatus.textContent = "";
+        invoiceEditLookupStatus.classList.remove("is-visible");
+      });
+    })
+    .catch(function (err) {
+      invoiceEditLookupStatus.textContent = "Couldn't look up that invoice — please try again.";
+      console.error(err);
+    });
+}
+
+document.getElementById("billing-invoice-edit-load").addEventListener("click", lookupInvoiceForEdit);
+invoiceEditSearchInput.addEventListener("keydown", function (e) {
+  if (e.key === "Enter") { e.preventDefault(); lookupInvoiceForEdit(); }
+});
+
+function renderInvoiceEditForm() {
+  var inv = loadedInvoice;
+  var dateStr = new Date(inv.date + "T00:00:00").toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" });
+  invoiceEditSummary.textContent =
+    (inv.buyer ? inv.buyer.name : "") + " · " + dateStr + (inv.poNo ? " · P.O. " + inv.poNo : "");
+  sectionTitle.textContent = "Old Invoice Dated " + dateStr;
+
+  invoiceEditItemsBody.innerHTML = "";
+  (inv.items || []).forEach(function (it) { addInvoiceEditRow(it); });
+  if (!inv.items || !inv.items.length) addInvoiceEditRow({});
+  recomputeInvoiceEditTotals();
+  invoiceEditStatus.textContent = "";
+  invoiceEditStatus.classList.remove("is-visible");
+  invoiceEditActions.hidden = false;
+  invoiceEditBodyWrap.hidden = false;
+}
+
+function populateInvoiceEditPartOptions(select, keepValue) {
+  select.innerHTML = '<option value="">Select part&hellip;</option>';
+  Object.keys(loadedInvoiceParts).sort().forEach(function (partNo) {
+    var opt = document.createElement("option");
+    opt.value = partNo;
+    opt.textContent = partNo + " — " + loadedInvoiceParts[partNo].description;
+    select.appendChild(opt);
+  });
+  if (keepValue && loadedInvoiceParts[keepValue]) select.value = keepValue;
+}
+
+function addInvoiceEditRow(data) {
+  data = data || {};
+  var tr = document.createElement("tr");
+  tr.className = "billing-item-row";
+  tr.innerHTML =
+    '<td><select class="ie-part"></select></td>' +
+    '<td class="ie-desc-cell">—</td>' +
+    '<td class="ie-hsn-cell">—</td>' +
+    '<td><input type="number" class="ie-qty" min="1" step="1" placeholder="Qty" /></td>' +
+    '<td><input type="number" class="ie-rate" min="0" step="0.01" placeholder="Rate" /></td>' +
+    '<td class="ie-amount-cell">0.00</td>' +
+    '<td><button type="button" class="billing-remove-row" aria-label="Remove item">&times;</button></td>';
+  invoiceEditItemsBody.appendChild(tr);
+
+  var select = tr.querySelector(".ie-part");
+  populateInvoiceEditPartOptions(select, data.partNo);
+  var seedPart = loadedInvoiceParts[data.partNo] || {};
+  tr.dataset.description = data.description || seedPart.description || "";
+  tr.dataset.hsn = data.hsn || seedPart.hsn || "";
+  tr.dataset.poNo = data.poNo || seedPart.poNo || "";
+  tr.querySelector(".ie-desc-cell").textContent = tr.dataset.description || "—";
+  tr.querySelector(".ie-hsn-cell").textContent = tr.dataset.hsn || "—";
+  tr.querySelector(".ie-qty").value = data.qty != null ? data.qty : "";
+  tr.querySelector(".ie-rate").value = data.rate != null ? data.rate : "";
+
+  select.addEventListener("change", function () {
+    var part = loadedInvoiceParts[select.value];
+    tr.dataset.description = part ? part.description : "";
+    tr.dataset.hsn = part ? part.hsn : "";
+    tr.dataset.poNo = part ? (part.poNo || "") : "";
+    tr.querySelector(".ie-desc-cell").textContent = part ? part.description : "—";
+    tr.querySelector(".ie-hsn-cell").textContent = part ? part.hsn : "—";
+    if (part) tr.querySelector(".ie-rate").value = part.rate;
+    recomputeInvoiceEditTotals();
+  });
+  tr.querySelector(".ie-qty").addEventListener("input", recomputeInvoiceEditTotals);
+  tr.querySelector(".ie-rate").addEventListener("input", recomputeInvoiceEditTotals);
+  tr.querySelector(".billing-remove-row").addEventListener("click", function () {
+    if (invoiceEditItemsBody.children.length <= 1) return;
+    tr.remove();
+    recomputeInvoiceEditTotals();
+  });
+}
+
+document.getElementById("billing-invoice-edit-add-row").addEventListener("click", function () { addInvoiceEditRow({}); });
+
+function collectInvoiceEditItems() {
+  var items = [];
+  Array.prototype.forEach.call(invoiceEditItemsBody.children, function (tr) {
+    var partNo = tr.querySelector(".ie-part").value;
+    var qty = parseFloat(tr.querySelector(".ie-qty").value);
+    var rate = parseFloat(tr.querySelector(".ie-rate").value);
+    if (!partNo || !qty || isNaN(rate)) return;
+    items.push({
+      partNo: partNo,
+      description: tr.dataset.description || "",
+      hsn: tr.dataset.hsn || "",
+      poNo: tr.dataset.poNo || "",
+      qty: qty,
+      rate: rate,
+      amount: qty * rate
+    });
+  });
+  items.sort(function (a, b) { return b.amount - a.amount; });
+  return items;
+}
+
+// A row with a part chosen but no (or zero) quantity would otherwise just
+// silently drop out of collectInvoiceEditItems() -- saving should refuse
+// instead of quietly leaving a picked item off the invoice.
+function findInvoiceEditRowMissingQty() {
+  return Array.prototype.find.call(invoiceEditItemsBody.children, function (tr) {
+    var partNo = tr.querySelector(".ie-part").value;
+    var qty = parseFloat(tr.querySelector(".ie-qty").value);
+    return partNo && (!qty || qty <= 0);
+  });
+}
+
+function recomputeInvoiceEditTotals() {
+  Array.prototype.forEach.call(invoiceEditItemsBody.children, function (tr) {
+    var qty = parseFloat(tr.querySelector(".ie-qty").value);
+    var rate = parseFloat(tr.querySelector(".ie-rate").value);
+    var amount = (qty && !isNaN(rate)) ? qty * rate : 0;
+    tr.querySelector(".ie-amount-cell").textContent = amount.toFixed(2);
+  });
+  var items = collectInvoiceEditItems();
+  var subtotal = items.reduce(function (sum, it) { return sum + it.amount; }, 0);
+  var igst = subtotal * IGST_RATE;
+  var net = subtotal + igst;
+  document.getElementById("billing-invoice-edit-subtotal").textContent = formatCurrency(subtotal);
+  document.getElementById("billing-invoice-edit-igst").textContent = formatCurrency(igst);
+  document.getElementById("billing-invoice-edit-net").textContent = formatCurrency(net);
+  return { items: items, subtotal: subtotal, igst: igst, net: net };
+}
+
+function hideInvoiceEditVerifyStep() {
+  invoiceEditVerify.hidden = true;
+  invoiceEditActions.hidden = false;
+  invoiceEditCodeInput.value = "";
+  pendingInvoiceEditSave = null;
+}
+
+function sendInvoiceEditCode() {
+  invoiceEditVerifyCopy.textContent = "Sending a verification code to your email…";
+  invoiceEditCodeInput.value = "";
+  invoiceEditCodeInput.disabled = true;
+  invoiceEditVerifyBtn.disabled = true;
+  invoiceEditResendBtn.disabled = true;
+  requestRateCardCodeFn().then(function () {
+    invoiceEditVerifyCopy.textContent = "We emailed a 6-digit code to your account's email. Enter it below to confirm this change.";
+    invoiceEditCodeInput.disabled = false;
+    invoiceEditVerifyBtn.disabled = false;
+    invoiceEditResendBtn.disabled = false;
+    invoiceEditCodeInput.focus();
+  }).catch(function (err) {
+    invoiceEditVerifyCopy.textContent = "Couldn't send a verification code just now — please try again.";
+    invoiceEditResendBtn.disabled = false;
+    console.error(err);
+  });
+}
+
+invoiceEditResendBtn.addEventListener("click", sendInvoiceEditCode);
+document.getElementById("billing-invoice-edit-back").addEventListener("click", hideInvoiceEditVerifyStep);
+
+invoiceEditCodeInput.addEventListener("input", function () {
+  invoiceEditCodeInput.value = invoiceEditCodeInput.value.replace(/\D/g, "").slice(0, 6);
+});
+
+document.getElementById("billing-invoice-edit-save").addEventListener("click", function () {
+  var totals = recomputeInvoiceEditTotals();
+  if (!totals.items.length) {
+    invoiceEditStatus.textContent = "Add at least one line item with a part, quantity, and rate.";
+    invoiceEditStatus.classList.add("is-visible");
+    return;
+  }
+  var missingQtyRow = findInvoiceEditRowMissingQty();
+  if (missingQtyRow) {
+    invoiceEditStatus.textContent = "Enter a quantity for every item you've picked.";
+    invoiceEditStatus.classList.add("is-visible");
+    missingQtyRow.querySelector(".ie-qty").focus();
+    return;
+  }
+
+  invoiceEditStatus.textContent = "";
+  invoiceEditStatus.classList.remove("is-visible");
+  pendingInvoiceEditSave = totals;
+  invoiceEditActions.hidden = true;
+  invoiceEditVerify.hidden = false;
+  sendInvoiceEditCode();
+});
+
+invoiceEditVerifyBtn.addEventListener("click", function () {
+  if (!pendingInvoiceEditSave) return;
+  var code = invoiceEditCodeInput.value.trim();
+  if (!/^\d{6}$/.test(code)) {
+    invoiceEditVerifyCopy.textContent = "Enter the 6-digit code from the email.";
+    return;
+  }
+
+  invoiceEditVerifyBtn.disabled = true;
+  invoiceEditResendBtn.disabled = true;
+  invoiceEditVerifyCopy.textContent = "Verifying…";
+
+  verifyRateCardCodeFn({ code: code }).then(function () {
+    invoiceEditVerifyCopy.textContent = "Verified — saving…";
+    var totals = pendingInvoiceEditSave;
+    var inv = loadedInvoice;
+    var netWords = numberToWordsIndian(totals.net);
+
+    var pdfData = {
+      invoiceNo: inv.invoiceNo,
+      dateStr: new Date(inv.date + "T00:00:00").toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" }),
+      poNo: inv.poNo || "",
+      scheduleNo: inv.scheduleNo || "",
+      ewayBillNo: inv.ewayBillNo || "",
+      vehicleNo: inv.vehicleNo || "",
+      termsOfDelivery: inv.termsOfDelivery || "",
+      buyer: inv.buyer,
+      items: totals.items,
+      subtotal: totals.subtotal,
+      igst: totals.igst,
+      net: totals.net,
+      netWords: netWords
+    };
+
+    return INVOICE_PDF_ASSETS_PROMISE
+      .then(function () {
+        var pdf = buildInvoicePdf(pdfData);
+        return pdf.output("blob");
+      })
+      .then(function (pdfBlob) {
+        var fileRef = storageRef(storage, inv.pdfPath);
+        return uploadBytes(fileRef, pdfBlob, { contentType: "application/pdf" }).then(function () {
+          return getDownloadURL(fileRef);
+        });
+      })
+      .then(function (pdfUrl) {
+        return updateDoc(doc(db, "invoices", loadedInvoiceId), {
+          items: totals.items,
+          subtotal: totals.subtotal,
+          igst: totals.igst,
+          net: totals.net,
+          netWords: netWords,
+          pdfUrl: pdfUrl
+        });
+      });
+  }).then(function () {
+    var invoiceNo = loadedInvoice.invoiceNo;
+    closeInvoiceEditPanel();
+    showStatus("Invoice " + invoiceNo + " updated.");
+    loadHistory();
+  }).catch(function (err) {
+    var errCode = err && err.code;
+    if (errCode === "functions/deadline-exceeded") {
+      invoiceEditVerifyCopy.textContent = "That code expired — request a new one.";
+    } else if (errCode === "functions/resource-exhausted") {
+      invoiceEditVerifyCopy.textContent = "Too many wrong attempts — request a new code.";
+    } else if (errCode === "functions/permission-denied") {
+      invoiceEditVerifyCopy.textContent = "That code isn't right. Try again or resend.";
+    } else {
+      invoiceEditVerifyCopy.textContent = "Couldn't save the invoice just now — please try again.";
+      console.error(err);
+    }
+  }).finally(function () {
+    invoiceEditVerifyBtn.disabled = false;
+    invoiceEditResendBtn.disabled = false;
   });
 });
 
