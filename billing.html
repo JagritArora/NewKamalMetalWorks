@@ -232,6 +232,28 @@
         </table>
       </div>
     </section>
+
+    <section class="billing-card">
+      <h2 class="billing-card-title">Payments</h2>
+      <div class="billing-history-wrap">
+        <table class="billing-history-table" id="billing-payments-table">
+          <thead>
+            <tr>
+              <th>Invoice No.</th>
+              <th>Date</th>
+              <th>Buyer</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Cleared on</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="billing-payments-body">
+            <tr><td colspan="7" class="billing-history-empty">Loading&hellip;</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
   </div>
 
   <div class="login-card login-enter login-loading-card" id="billing-loading">
@@ -1382,6 +1404,7 @@ invoiceEditVerifyBtn.addEventListener("click", function () {
     closeInvoiceEditPanel();
     showStatus("Invoice " + invoiceNo + " updated.");
     loadHistory();
+    loadPayments();
   }).catch(function (err) {
     var errCode = err && err.code;
     if (errCode === "functions/deadline-exceeded") {
@@ -1806,6 +1829,7 @@ generateBtn.addEventListener("click", function () {
       recomputeTotals();
       lockFieldGroup();
       loadHistory();
+      loadPayments();
     })
     .catch(function (err) {
       showStatus("Something went wrong generating the invoice — please try again.");
@@ -1857,6 +1881,117 @@ function loadHistory() {
     .catch(function () {
       body.innerHTML = '<tr><td colspan="7" class="billing-history-empty">Couldn’t load history.</td></tr>';
     });
+}
+
+// ---------------------------------------------------------------------
+// Payments -- lists every /payments doc (pending ones first, oldest due
+// first, then cleared ones most-recently-cleared first) and lets a
+// pending invoice be marked cleared, or a cleared one reverted, in place.
+// ---------------------------------------------------------------------
+function loadPayments() {
+  var body = document.getElementById("billing-payments-body");
+  return getDocs(query(collection(db, "payments"), orderBy("createdAt", "desc"), limit(50)))
+    .then(function (snap) {
+      if (snap.empty) {
+        body.innerHTML = '<tr><td colspan="7" class="billing-history-empty">No payments yet.</td></tr>';
+        return;
+      }
+      var rows = [];
+      snap.forEach(function (d) { rows.push({ id: d.id, data: d.data() }); });
+      rows.sort(function (a, b) {
+        var aPending = a.data.status !== "cleared";
+        var bPending = b.data.status !== "cleared";
+        if (aPending !== bPending) return aPending ? -1 : 1;
+        if (aPending) return (a.data.date || "").localeCompare(b.data.date || "");
+        return (b.data.clearedOn || "").localeCompare(a.data.clearedOn || "");
+      });
+
+      body.innerHTML = "";
+      rows.forEach(function (row) { body.appendChild(buildPaymentRow(row.id, row.data)); });
+    })
+    .catch(function (err) {
+      body.innerHTML = '<tr><td colspan="7" class="billing-history-empty">Couldn’t load payments.</td></tr>';
+      console.error(err);
+    });
+}
+
+function formatDisplayDate(dateStr) {
+  if (!dateStr) return "—";
+  return new Date(dateStr + "T00:00:00").toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function buildPaymentRow(paymentId, pay) {
+  var isCleared = pay.status === "cleared";
+  var tr = document.createElement("tr");
+  tr.innerHTML =
+    "<td>" + (pay.invoiceNo || "") + "</td>" +
+    "<td>" + formatDisplayDate(pay.date) + "</td>" +
+    "<td>" + (pay.buyerName || "") + "</td>" +
+    "<td>" + formatCurrency(pay.amount || 0) + "</td>" +
+    "<td><span class=\"billing-payment-status " + (isCleared ? "is-cleared" : "is-pending") + "\">" +
+      (isCleared ? "Cleared" : "Pending") + "</span></td>" +
+    "<td>" + (isCleared ? formatDisplayDate(pay.clearedOn) : "—") + "</td>" +
+    "<td></td>";
+
+  var actionCell = tr.lastElementChild;
+  if (isCleared) {
+    var undoBtn = document.createElement("button");
+    undoBtn.type = "button";
+    undoBtn.className = "billing-ratecard-link-btn";
+    undoBtn.textContent = "Undo";
+    undoBtn.addEventListener("click", function () {
+      undoBtn.disabled = true;
+      updateDoc(doc(db, "payments", paymentId), { status: "pending", clearedOn: null, updatedAt: serverTimestamp() })
+        .then(loadPayments)
+        .catch(function (err) { undoBtn.disabled = false; console.error(err); });
+    });
+    actionCell.appendChild(undoBtn);
+  } else {
+    var clearBtn = document.createElement("button");
+    clearBtn.type = "button";
+    clearBtn.className = "billing-seed-btn";
+    clearBtn.textContent = "Mark cleared";
+    clearBtn.addEventListener("click", function () {
+      actionCell.innerHTML = "";
+      var wrap = document.createElement("div");
+      wrap.className = "billing-payment-clear-row";
+
+      var dateInputEl = document.createElement("input");
+      dateInputEl.type = "date";
+      dateInputEl.value = new Date().toISOString().slice(0, 10);
+      dateInputEl.max = new Date().toISOString().slice(0, 10);
+
+      var confirmBtn = document.createElement("button");
+      confirmBtn.type = "button";
+      confirmBtn.className = "billing-payment-clear-confirm";
+      confirmBtn.setAttribute("aria-label", "Confirm cleared");
+      confirmBtn.innerHTML = "&#10003;";
+      confirmBtn.addEventListener("click", function () {
+        if (!dateInputEl.value) return;
+        confirmBtn.disabled = true;
+        updateDoc(doc(db, "payments", paymentId), {
+          status: "cleared",
+          clearedOn: dateInputEl.value,
+          updatedAt: serverTimestamp()
+        }).then(loadPayments).catch(function (err) { confirmBtn.disabled = false; console.error(err); });
+      });
+
+      var cancelBtn = document.createElement("button");
+      cancelBtn.type = "button";
+      cancelBtn.className = "billing-payment-clear-cancel";
+      cancelBtn.setAttribute("aria-label", "Cancel");
+      cancelBtn.innerHTML = "&times;";
+      cancelBtn.addEventListener("click", function () { loadPayments(); });
+
+      wrap.appendChild(dateInputEl);
+      wrap.appendChild(confirmBtn);
+      wrap.appendChild(cancelBtn);
+      actionCell.appendChild(wrap);
+    });
+    actionCell.appendChild(clearBtn);
+  }
+
+  return tr;
 }
 
 function sendInvoiceEmail(invoiceId, inv, btn) {
@@ -1950,7 +2085,7 @@ onAuthStateChanged(auth, function (user) {
     document.getElementById("billing-wrap").hidden = false;
 
     addItemRow();
-    loadBuyers().then(loadHistory).then(function () { resolveBillingReady(); });
+    loadBuyers().then(loadHistory).then(loadPayments).then(function () { resolveBillingReady(); });
   }).catch(function () {
     window.location.replace("welcome.html");
   });

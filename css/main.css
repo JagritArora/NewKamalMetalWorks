@@ -9,6 +9,7 @@
   --accent: #C4501C;
   --accent-ink: #FFFFFF;
   --danger: #C0392B;
+  --success: #1E8E3E;
   --radius-sm: 8px;
   --radius: 14px;
   --radius-lg: 22px;
@@ -28,6 +29,7 @@
     --accent: #E06A3A;
     --accent-ink: #0B0B0C;
     --danger: #FF6B5B;
+    --success: #3DDC84;
     --shadow-sm: 0 1px 2px rgba(0,0,0,0.5);
     --shadow-md: 0 16px 40px rgba(0,0,0,0.5);
   }
@@ -2119,6 +2121,49 @@ button.login-back {
 
 .billing-history-wrap { margin-top: 20px; overflow-x: auto; }
 .billing-history-empty { color: var(--ink-muted); text-align: center; padding: 20px 8px; }
+
+.billing-payment-status {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 980px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.billing-payment-status.is-pending { color: var(--danger); background: color-mix(in srgb, var(--danger) 14%, transparent); }
+.billing-payment-status.is-cleared { color: var(--success); background: color-mix(in srgb, var(--success) 16%, transparent); }
+
+.billing-payment-clear-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.billing-payment-clear-row input[type="date"] {
+  font-family: inherit;
+  font-size: 0.82rem;
+  padding: 6px 8px;
+  color: var(--ink);
+  background: var(--surface-sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+.billing-payment-clear-confirm, .billing-payment-clear-cancel {
+  width: 26px;
+  height: 26px;
+  flex: none;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: none;
+  font-size: 0.95rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.billing-payment-clear-confirm { color: var(--success); }
+.billing-payment-clear-confirm:hover { background: color-mix(in srgb, var(--success) 16%, transparent); }
+.billing-payment-clear-cancel { color: var(--ink-muted); }
+.billing-payment-clear-cancel:hover { color: var(--danger); background: var(--surface-sunken); }
 
 @media (max-width: 640px) {
   .billing-card { padding: 24px 18px; }
