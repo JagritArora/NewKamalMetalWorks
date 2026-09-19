@@ -14,3 +14,6 @@ functions/node_modules/
 functions/.env
 firebase-debug.log
 .firebase/
+
+# Business/tax source documents -- not for public repo
+source/
