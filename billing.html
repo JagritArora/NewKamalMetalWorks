@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/main.css?v=48" />
+<link rel="stylesheet" href="css/main.css?v=53" />
 </head>
 <body class="login-page">
 
@@ -153,6 +153,7 @@
                 <th>Description</th>
                 <th>HSN/SAC</th>
                 <th>Rate</th>
+                <th>Margin</th>
                 <th>P.O. No.</th>
                 <th></th>
               </tr>
@@ -618,6 +619,7 @@ function fillRowFromPart(tr) {
   tr.querySelector(".billing-hsn-cell").textContent = part ? part.hsn : "—";
   tr.querySelector(".billing-rate-cell").textContent = part ? part.rate.toFixed(2) : "—";
   tr.dataset.rate = part ? part.rate : "";
+  tr.dataset.margin = part && part.margin != null ? part.margin : "";
   tr.dataset.hsn = part ? part.hsn : "";
   tr.dataset.description = part ? part.description : "";
   tr.dataset.poNo = part ? (part.poNo || "") : "";
@@ -635,6 +637,7 @@ function collectItems() {
     var partNo = tr.querySelector(".billing-part-select").value;
     var qty = parseFloat(tr.querySelector(".billing-qty-input").value);
     var rate = parseFloat(tr.dataset.rate);
+    var margin = tr.dataset.margin ? parseFloat(tr.dataset.margin) : null;
     if (!partNo || !qty || !rate) return;
     items.push({
       partNo: partNo,
@@ -643,7 +646,8 @@ function collectItems() {
       poNo: tr.dataset.poNo || "",
       qty: qty,
       rate: rate,
-      amount: qty * rate
+      amount: qty * rate,
+      margin: margin
     });
   });
   // Invoice line items are always listed highest amount first -- doesn't
@@ -840,12 +844,14 @@ function addRatecardRow(data) {
     '<td><input type="text" class="rc-desc" placeholder="Description" /></td>' +
     '<td><input type="text" class="rc-hsn" placeholder="HSN/SAC" /></td>' +
     '<td><input type="number" class="rc-rate" min="0" step="0.01" placeholder="Rate" /></td>' +
+    '<td><input type="number" class="rc-margin" min="0" step="0.01" placeholder="Margin" /></td>' +
     '<td><input type="text" class="rc-po" placeholder="P.O. No." /></td>' +
     '<td><button type="button" class="billing-remove-row" aria-label="Remove part">&times;</button></td>';
   tr.querySelector(".rc-partno").value = data.partNo || "";
   tr.querySelector(".rc-desc").value = data.description || "";
   tr.querySelector(".rc-hsn").value = data.hsn || "";
   tr.querySelector(".rc-rate").value = data.rate != null ? data.rate : "";
+  tr.querySelector(".rc-margin").value = data.margin != null ? data.margin : "";
   tr.querySelector(".rc-po").value = data.poNo || "";
   tr.querySelector(".billing-remove-row").addEventListener("click", function () {
     tr.remove();
@@ -955,14 +961,17 @@ document.getElementById("billing-ratecard-save").addEventListener("click", funct
     var description = tr.querySelector(".rc-desc").value.trim();
     var hsn = tr.querySelector(".rc-hsn").value.trim();
     var rate = parseFloat(tr.querySelector(".rc-rate").value);
+    var marginRaw = tr.querySelector(".rc-margin").value;
+    var margin = marginRaw === "" ? null : parseFloat(marginRaw);
     var poNo = tr.querySelector(".rc-po").value.trim();
     if (!partNo && !description && !hsn && !poNo && isNaN(rate)) return; // skip a fully blank row
     if (!partNo || !description || isNaN(rate) || rate < 0) { invalid = true; return; }
-    newParts[partNo] = { hsn: hsn, description: description, rate: rate, poNo: poNo, originalPartNo: tr.dataset.originalPartNo || "" };
+    if (margin != null && (isNaN(margin) || margin < 0)) { invalid = true; return; }
+    newParts[partNo] = { hsn: hsn, description: description, rate: rate, margin: margin, poNo: poNo, originalPartNo: tr.dataset.originalPartNo || "" };
   });
 
   if (invalid) {
-    ratecardStatus.textContent = "Each part needs a part no., description, and rate.";
+    ratecardStatus.textContent = "Each part needs a part no., description, and rate (margin, if entered, can't be negative).";
     ratecardStatus.classList.add("is-visible");
     return;
   }
@@ -1010,6 +1019,7 @@ ratecardVerifyBtn.addEventListener("click", function () {
         hsn: entry.hsn,
         description: entry.description,
         rate: entry.rate,
+        margin: entry.margin,
         poNo: entry.poNo || ""
       });
     });

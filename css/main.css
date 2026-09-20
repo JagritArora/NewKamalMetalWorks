@@ -2506,3 +2506,152 @@ button.login-back {
   .login-shell { padding: 40px 20px; }
   .login-card { padding: 32px 22px 28px; }
 }
+
+/* ================= Supply Overview ================= */
+.supply-filter-row {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+}
+
+.supply-stats-grid {
+  margin-top: 24px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px;
+}
+
+.supply-backfill-box {
+  margin-top: 16px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  background: var(--surface-sunken);
+  border-left: 2px solid var(--accent);
+  border-radius: var(--radius-sm);
+}
+.supply-backfill-box[hidden] { display: none; }
+.supply-backfill-text {
+  margin: 0;
+  flex: 1 1 320px;
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+  line-height: 1.5;
+}
+
+.supply-correction-box {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  border-left-color: var(--ink-muted);
+}
+/* .supply-backfill-text's `flex: 1 1 320px` sets a 320px basis along the
+   flex main axis -- correct as a min-width in the row-direction backfill
+   box, but this box is column-direction, so that same rule would set a
+   320px height instead and blow the box out. Reset it back to auto here. */
+.supply-correction-box > .supply-backfill-text { flex: none; }
+.supply-correction-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.supply-correction-row .login-field { flex: 0 1 160px; }
+.supply-correction-row .login-field input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+
+.stat-tile {
+  padding: 16px 18px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  min-width: 0;
+}
+.stat-tile-label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.stat-tile-value {
+  display: block;
+  margin-top: 8px;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.stat-tile-sub {
+  display: block;
+  margin-top: 3px;
+  font-size: 0.76rem;
+  color: var(--ink-muted);
+}
+.stat-tile--accent .stat-tile-value { color: var(--accent); }
+
+.chart-grid {
+  margin-top: 28px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+}
+.chart-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.chart-toggle-group {
+  display: flex;
+  gap: 2px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--line);
+  border-radius: 980px;
+  padding: 3px;
+}
+.chart-toggle-btn {
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--ink-muted);
+  background: none;
+  border: none;
+  border-radius: 980px;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: background .2s ease, color .2s ease;
+}
+.chart-toggle-btn.is-active { background: var(--accent); color: var(--accent-ink); }
+.chart-canvas-wrap { margin-top: 16px; position: relative; height: 260px; }
+.chart-empty {
+  margin-top: 16px;
+  padding: 40px 10px;
+  text-align: center;
+  color: var(--ink-muted);
+  font-size: 0.88rem;
+}
+
+@media (max-width: 640px) {
+  .chart-canvas-wrap { height: 220px; }
+}

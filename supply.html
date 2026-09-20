@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Supply Overview | New Kamal Metal Works</title>
+<meta name="description" content="Supply and sales overview for New Kamal Metal Works." />
+<meta name="robots" content="noindex" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/main.css?v=53" />
+</head>
+<body class="login-page">
+
+<nav class="site-nav">
+  <a href="index.html#hero" class="brand">New Kamal <span>Metal Works</span></a>
+  <a href="welcome.html" class="nav-icon-btn" aria-label="Back to Welcome">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1H9.5a1 1 0 0 0 1-1v-4a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v4a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-9"/></svg>
+  </a>
+</nav>
+
+<main class="login-shell billing-shell">
+  <div class="billing-wrap" id="supply-wrap" hidden>
+    <a href="welcome.html" class="billing-back-link">&lsaquo; Welcome</a>
+    <span class="login-kicker">Billing</span>
+    <h1 class="welcome-heading" style="font-size: clamp(1.8rem, 4vw, 2.3rem);">Supply Overview.</h1>
+    <p class="welcome-sub">Every item you've delivered, by buyer and item, straight from your invoices.</p>
+    <p class="login-status" id="supply-status" role="status" aria-live="polite"></p>
+
+    <section class="billing-card">
+      <h2 class="billing-card-title">Filters</h2>
+      <div class="supply-filter-row">
+        <div class="login-field">
+          <label for="supply-filter-buyer">Buyer</label>
+          <select id="supply-filter-buyer">
+            <option value="all">All Buyers</option>
+          </select>
+        </div>
+        <div class="login-field">
+          <label for="supply-filter-item">Item</label>
+          <select id="supply-filter-item">
+            <option value="all">All Items</option>
+          </select>
+        </div>
+        <div class="login-field">
+          <label for="supply-filter-fy">Financial Year</label>
+          <select id="supply-filter-fy">
+            <option value="all">All Years</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="supply-backfill-box" id="supply-backfill-box" hidden>
+        <p class="supply-backfill-text" id="supply-backfill-text"></p>
+        <button type="button" class="billing-seed-btn" id="supply-backfill-btn">Backfill now</button>
+      </div>
+
+      <div class="supply-backfill-box supply-correction-box" id="supply-correction-box" hidden>
+        <p class="supply-backfill-text" id="supply-correction-text">Did this item's rate change partway through the year? Enter what it used to be and when the new rate started — every earlier delivery of this item will be corrected to the old rate.</p>
+        <div class="supply-correction-row">
+          <div class="login-field">
+            <label for="supply-correction-oldrate">Old rate (₹)</label>
+            <input type="number" id="supply-correction-oldrate" step="0.01" min="0" placeholder="3.96" />
+          </div>
+          <div class="login-field">
+            <label for="supply-correction-date">New rate effective from</label>
+            <input type="date" id="supply-correction-date" />
+          </div>
+          <button type="button" class="billing-seed-btn" id="supply-correction-btn">Correct earlier deliveries</button>
+        </div>
+      </div>
+
+      <div class="supply-backfill-box" id="supply-margin-backfill-box" hidden>
+        <p class="supply-backfill-text" id="supply-margin-backfill-text"></p>
+        <button type="button" class="billing-seed-btn" id="supply-margin-backfill-btn">Backfill now</button>
+      </div>
+
+      <div class="supply-stats-grid" id="supply-stats-grid">
+        <div class="stat-tile">
+          <span class="stat-tile-label">Qty Delivered</span>
+          <span class="stat-tile-value mono" id="supply-stat-qty">—</span>
+        </div>
+        <div class="stat-tile stat-tile--accent">
+          <span class="stat-tile-label">Sales Value</span>
+          <span class="stat-tile-value" id="supply-stat-value">—</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-tile-label">Profit</span>
+          <span class="stat-tile-value" id="supply-stat-profit">—</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-tile-label">Invoices</span>
+          <span class="stat-tile-value mono" id="supply-stat-invoices">—</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-tile-label">Buyers Served</span>
+          <span class="stat-tile-value mono" id="supply-stat-buyers">—</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-tile-label" id="supply-stat-top-label">Top Buyer</span>
+          <span class="stat-tile-value" id="supply-stat-top-value" style="font-size: 1.05rem;">—</span>
+          <span class="stat-tile-sub" id="supply-stat-top-sub"></span>
+        </div>
+      </div>
+    </section>
+
+    <div class="chart-grid">
+      <section class="billing-card">
+        <div class="chart-card-head">
+          <h2 class="billing-card-title" id="supply-item-chart-title">Item Sale</h2>
+          <div class="chart-toggle-group" role="group" aria-label="Item chart metric">
+            <button type="button" class="chart-toggle-btn is-active" id="supply-item-metric-qty">Qty</button>
+            <button type="button" class="chart-toggle-btn" id="supply-item-metric-value">Value</button>
+          </div>
+        </div>
+        <p class="stat-tile-sub" id="supply-item-chart-sub" style="margin-top: 4px;"></p>
+        <div class="chart-canvas-wrap">
+          <canvas id="supply-item-chart"></canvas>
+        </div>
+        <p class="chart-empty" id="supply-item-chart-empty" hidden>No deliveries match these filters yet.</p>
+      </section>
+
+      <section class="billing-card">
+        <div class="chart-card-head">
+          <h2 class="billing-card-title">Sales Trend</h2>
+        </div>
+        <p class="stat-tile-sub" id="supply-sales-chart-sub" style="margin-top: 4px;"></p>
+        <div class="chart-canvas-wrap">
+          <canvas id="supply-sales-chart"></canvas>
+        </div>
+        <p class="chart-empty" id="supply-sales-chart-empty" hidden>No deliveries match these filters yet.</p>
+      </section>
+    </div>
+
+    <section class="billing-card">
+      <h2 class="billing-card-title">Deliveries</h2>
+      <div class="billing-history-wrap">
+        <table class="billing-history-table" id="supply-table">
+          <thead>
+            <tr>
+              <th>Invoice No.</th>
+              <th>Date</th>
+              <th>Buyer</th>
+              <th>Item</th>
+              <th>Qty</th>
+              <th>Avg. Rate</th>
+              <th>Amount</th>
+              <th>Margin</th>
+              <th>Profit</th>
+            </tr>
+          </thead>
+          <tbody id="supply-table-body">
+            <tr><td colspan="9" class="billing-history-empty">Loading&hellip;</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <div class="login-card login-enter login-loading-card" id="supply-loading">
+    <div class="login-spinner" aria-hidden="true"><span></span><span></span><span></span></div>
+    <p class="login-sub">Loading&hellip;</p>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <div class="footer-top">
+      <a href="index.html#hero" class="footer-brand">New Kamal <span>Metal Works</span></a>
+      <ul class="footer-links">
+        <li><a href="index.html#operations">Operations</a></li>
+        <li><a href="index.html#capabilities">Capabilities</a></li>
+        <li><a href="index.html#materials">Materials</a></li>
+        <li><a href="index.html#tooling">Tooling</a></li>
+        <li><a href="index.html#quality">Quality</a></li>
+        <li><a href="index.html#about">About</a></li>
+        <li><a href="index.html#contact">Contact</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-bottom">
+      <p class="footer-legal">&copy; <span id="year"></span> New Kamal Metal Works, Faridabad. All rights reserved.</p>
+      <p class="footer-meta">ISO 9001:2015 certified &middot; GSTIN 06AGQPA5950R1ZR</p>
+      <div class="footer-credit">
+        <p class="footer-credit-name">Designed by <span class="footer-credit-highlight">Jagrit Arora</span></p>
+        <p class="footer-credit-links">
+          <a href="mailto:jagrit.arora007@icloud.com">jagrit.arora007@icloud.com</a>
+          <span class="footer-credit-dot" aria-hidden="true">&middot;</span>
+          <a href="tel:+919599030400">+91 95990 30400</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import {
+  initializeFirestore,
+  doc,
+  getDoc,
+  setDoc,
+  getDocs,
+  collection,
+  writeBatch,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+var firebaseConfig = {
+  apiKey: "AIzaSyDkEyDAOah5XzAOVjUux9SLhH60To2oTKs",
+  authDomain: "new-kamal-metal-works.firebaseapp.com",
+  projectId: "new-kamal-metal-works",
+  storageBucket: "new-kamal-metal-works.firebasestorage.app",
+  messagingSenderId: "595817400572",
+  appId: "1:595817400572:web:8617eb7419e5049524af79"
+};
+
+var app = initializeApp(firebaseConfig);
+var auth = getAuth(app);
+var db = initializeFirestore(app, { experimentalForceLongPolling: true });
+
+document.getElementById("year").textContent = new Date().getFullYear();
+
+function formatCurrency(n) {
+  return "₹" + (n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function formatCompactCurrency(n) {
+  n = n || 0;
+  if (n >= 10000000) return "₹" + (n / 10000000).toFixed(2) + "Cr";
+  if (n >= 100000) return "₹" + (n / 100000).toFixed(2) + "L";
+  if (n >= 1000) return "₹" + (n / 1000).toFixed(1) + "k";
+  return "₹" + n.toFixed(0);
+}
+function formatDisplayDate(dateStr) {
+  if (!dateStr) return "—";
+  return new Date(dateStr + "T00:00:00").toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+}
+function monthKey(dateStr) { return dateStr ? dateStr.slice(0, 7) : ""; }
+function monthLabel(key) {
+  var parts = key.split("-");
+  var d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, 1);
+  return d.toLocaleDateString("en-IN", { month: "short", year: "2-digit" });
+}
+function showStatus(message) {
+  var el = document.getElementById("supply-status");
+  el.textContent = message;
+  el.classList.add("is-visible");
+}
+function hideStatus() {
+  document.getElementById("supply-status").classList.remove("is-visible");
+}
+
+// ---------------------------------------------------------------------
+// Themed confirm dialog -- same pattern as payments.html's "mark cleared"
+// confirm, reused here before the backfill write below.
+// ---------------------------------------------------------------------
+function showConfirmDialog(title, body, confirmLabel) {
+  return new Promise(function (resolve) {
+    var overlay = document.createElement("div");
+    overlay.className = "confirm-overlay";
+
+    var dialog = document.createElement("div");
+    dialog.className = "confirm-dialog";
+
+    var titleEl = document.createElement("p");
+    titleEl.className = "confirm-dialog-title";
+    titleEl.textContent = title;
+
+    var bodyEl = document.createElement("p");
+    bodyEl.className = "confirm-dialog-body";
+    bodyEl.textContent = body;
+
+    var actions = document.createElement("div");
+    actions.className = "confirm-dialog-actions";
+
+    var cancelBtn = document.createElement("button");
+    cancelBtn.type = "button";
+    cancelBtn.className = "confirm-dialog-cancel";
+    cancelBtn.textContent = "Cancel";
+
+    var confirmBtn = document.createElement("button");
+    confirmBtn.type = "button";
+    confirmBtn.className = "confirm-dialog-confirm";
+    confirmBtn.textContent = confirmLabel;
+
+    function close(result) {
+      document.removeEventListener("keydown", onKeydown);
+      overlay.classList.remove("is-visible");
+      overlay.remove();
+      resolve(result);
+    }
+    function onKeydown(e) { if (e.key === "Escape") close(false); }
+
+    cancelBtn.addEventListener("click", function () { close(false); });
+    confirmBtn.addEventListener("click", function () { close(true); });
+    overlay.addEventListener("click", function (e) { if (e.target === overlay) close(false); });
+    document.addEventListener("keydown", onKeydown);
+
+    actions.appendChild(cancelBtn);
+    actions.appendChild(confirmBtn);
+    dialog.appendChild(titleEl);
+    dialog.appendChild(bodyEl);
+    dialog.appendChild(actions);
+    overlay.appendChild(dialog);
+    document.body.appendChild(overlay);
+    requestAnimationFrame(function () { overlay.classList.add("is-visible"); });
+  });
+}
+
+// ---------------------------------------------------------------------
+// Supply Overview -- sourced from /supply (one doc per invoice line item:
+// buyer, date, part, qty -- written by billing.html's queueSupplyDocs on
+// every invoice, and also the target of past bulk imports of older FY
+// data) joined with /payments (one doc per invoice: buyer, date, net
+// amount, cleared/pending -- see payments.html) matched on invoiceNo.
+//
+// /supply has no per-line rate, so a line's ₹ value is its invoice's real
+// payments.amount pro-rated by quantity across that invoice's other
+// lines -- it always ties out to real billed money instead of guessing a
+// price, and a line whose invoice has no matching /payments doc just
+// shows "—" for value rather than a fabricated number.
+// ---------------------------------------------------------------------
+var allLines = [];
+var itemChart = null;
+var salesChart = null;
+var itemMetric = "qty";
+var ChartLib = null;
+
+// The historical-data cleanup (Backfill + rate correction) is done for
+// now -- flip this back to true to bring both maintenance boxes back
+// instead of restoring anything by hand.
+var MAINTENANCE_TOOLS_ENABLED = false;
+
+function financialYearFor(dateStr) {
+  if (!dateStr) return "";
+  var parts = dateStr.split("-");
+  var y = parseInt(parts[0], 10);
+  var m = parseInt(parts[1], 10);
+  if (!y || !m) return "";
+  var startY = m >= 4 ? y : y - 1;
+  var endY = (startY + 1) % 100;
+  return startY + "-" + (endY < 10 ? "0" + endY : "" + endY);
+}
+
+function loadSupplyData() {
+  return Promise.all([
+    getDocs(collection(db, "supply")),
+    getDocs(collection(db, "payments"))
+  ])
+    .then(function (results) {
+      var supplySnap = results[0];
+      var paymentsSnap = results[1];
+
+      var paymentsByInvoiceNo = {};
+      paymentsSnap.forEach(function (d) {
+        var p = d.data();
+        if (p.invoiceNo) paymentsByInvoiceNo[p.invoiceNo] = p;
+      });
+
+      var rawLines = [];
+      var buyerIds = {};
+      var invoiceIds = {};
+      supplySnap.forEach(function (d) {
+        var s = d.data();
+        if (!s.partNo) return;
+        if (s.buyerId) buyerIds[s.buyerId] = true;
+        if (s.invoiceId) invoiceIds[s.invoiceId] = true;
+        rawLines.push({
+          supplyId: d.id,
+          invoiceId: s.invoiceId || null,
+          invoiceNo: s.invoiceNo || "",
+          date: s.date || "",
+          buyerId: s.buyerId || "",
+          buyerName: s.buyerName || "",
+          partNo: s.partNo,
+          description: s.description || s.partNo,
+          qty: s.qty || 0,
+          literalRate: s.rate != null ? s.rate : null,
+          literalMargin: s.margin != null ? s.margin : null
+        });
+      });
+
+      // Four price sources, tried in order of trust:
+      //  0. A rate written directly onto the /supply doc itself -- either
+      //     backfilled (see the "Backfill" action below) or present from
+      //     the original import. Permanent: nothing else can change it.
+      //  1. The invoice's own frozen line-item rate (/invoices/{id}.items)
+      //     -- set once at Generate time and never touched again, so it's
+      //     immune to the rate card changing later. Only exists for lines
+      //     billed through the live Generate-Invoice flow.
+      //  2. The buyer's CURRENT rate card -- accurate for a delivery priced
+      //     at today's rate, but an approximation for an older delivery if
+      //     the rate has changed since (there's nowhere in Firestore that
+      //     keeps rate-card history to do better than this for those rows).
+      //  3. The invoice's real /payments total, pro-rated by quantity --
+      //     last resort when a part isn't in the rate card at all.
+      return Promise.all([
+        Promise.all(
+          Object.keys(buyerIds).map(function (buyerId) {
+            return getDocs(collection(db, "buyers", buyerId, "parts"))
+              .then(function (partsSnap) {
+                var rates = {};
+                var margins = {};
+                partsSnap.forEach(function (p) {
+                  var data = p.data();
+                  if (data && data.rate != null) rates[p.id] = data.rate;
+                  if (data && data.margin != null) margins[p.id] = data.margin;
+                });
+                return { buyerId: buyerId, rates: rates, margins: margins };
+              })
+              .catch(function () { return { buyerId: buyerId, rates: {}, margins: {} }; });
+          })
+        ),
+        Promise.all(
+          Object.keys(invoiceIds).map(function (invoiceId) {
+            return getDoc(doc(db, "invoices", invoiceId))
+              .then(function (snap) { return { invoiceId: invoiceId, data: snap.exists() ? snap.data() : null }; })
+              .catch(function () { return { invoiceId: invoiceId, data: null }; });
+          })
+        )
+      ]).then(function (results) {
+        var rateCards = results[0];
+        var invoiceDocs = results[1];
+
+        var rateByBuyerAndPart = {};
+        var marginByBuyerAndPart = {};
+        rateCards.forEach(function (rc) {
+          rateByBuyerAndPart[rc.buyerId] = rc.rates;
+          marginByBuyerAndPart[rc.buyerId] = rc.margins;
+        });
+
+        var frozenRateByInvoiceAndPart = {};
+        var frozenMarginByInvoiceAndPart = {};
+        invoiceDocs.forEach(function (inv) {
+          if (!inv.data || !inv.data.items) return;
+          var byPartRate = {};
+          var byPartMargin = {};
+          inv.data.items.forEach(function (it) {
+            if (!it || !it.partNo) return;
+            if (it.rate != null) byPartRate[it.partNo] = it.rate;
+            if (it.margin != null) byPartMargin[it.partNo] = it.margin;
+          });
+          frozenRateByInvoiceAndPart[inv.invoiceId] = byPartRate;
+          frozenMarginByInvoiceAndPart[inv.invoiceId] = byPartMargin;
+        });
+
+        var qtyByInvoiceNo = {};
+        rawLines.forEach(function (l) {
+          qtyByInvoiceNo[l.invoiceNo] = (qtyByInvoiceNo[l.invoiceNo] || 0) + l.qty;
+        });
+
+        var literalCount = 0, frozenCount = 0, currentRateCount = 0, proRatedCount = 0;
+        allLines = rawLines.map(function (l) {
+          var frozenRate = l.invoiceId && frozenRateByInvoiceAndPart[l.invoiceId] && frozenRateByInvoiceAndPart[l.invoiceId][l.partNo];
+          var cardRate = rateByBuyerAndPart[l.buyerId] && rateByBuyerAndPart[l.buyerId][l.partNo];
+          var amount, rate, priceSource;
+          if (l.literalRate != null) {
+            rate = l.literalRate;
+            amount = l.literalRate * l.qty;
+            priceSource = "supply";
+            literalCount++;
+          } else if (frozenRate != null) {
+            rate = frozenRate;
+            amount = frozenRate * l.qty;
+            priceSource = "invoice";
+            frozenCount++;
+          } else if (cardRate != null) {
+            rate = cardRate;
+            amount = cardRate * l.qty;
+            priceSource = "ratecard";
+            currentRateCount++;
+          } else {
+            var pay = paymentsByInvoiceNo[l.invoiceNo];
+            var totalQty = qtyByInvoiceNo[l.invoiceNo];
+            amount = (pay && totalQty) ? (pay.amount || 0) * (l.qty / totalQty) : null;
+            rate = (amount != null && l.qty) ? amount / l.qty : null;
+            if (amount != null) { priceSource = "prorated"; proRatedCount++; }
+          }
+
+          // Margin/profit -- same trust order as rate, minus the pro-rated
+          // fallback (there's no /payments equivalent to derive a margin
+          // from, so a line with no rate-card entry and no frozen invoice
+          // margin is just unknown, shown as "—" rather than guessed).
+          var frozenMargin = l.invoiceId && frozenMarginByInvoiceAndPart[l.invoiceId] && frozenMarginByInvoiceAndPart[l.invoiceId][l.partNo];
+          var cardMargin = marginByBuyerAndPart[l.buyerId] && marginByBuyerAndPart[l.buyerId][l.partNo];
+          var margin, marginSource;
+          if (l.literalMargin != null) {
+            margin = l.literalMargin;
+            marginSource = "supply";
+          } else if (frozenMargin != null) {
+            margin = frozenMargin;
+            marginSource = "invoice";
+          } else if (cardMargin != null) {
+            margin = cardMargin;
+            marginSource = "ratecard";
+          } else {
+            margin = null;
+            marginSource = null;
+          }
+          var profit = margin != null ? margin * l.qty : null;
+
+          return {
+            supplyId: l.supplyId,
+            invoiceId: l.invoiceId,
+            invoiceNo: l.invoiceNo,
+            date: l.date,
+            financialYear: financialYearFor(l.date),
+            buyerId: l.buyerId,
+            buyerName: l.buyerName,
+            partNo: l.partNo,
+            description: l.description,
+            qty: l.qty,
+            amount: amount,
+            rate: rate,
+            priceSource: priceSource,
+            margin: margin,
+            profit: profit,
+            marginSource: marginSource
+          };
+        });
+        allLines.sort(function (a, b) { return (b.date || "").localeCompare(a.date || ""); });
+
+        populateFilters();
+        applyFilters();
+        renderBackfillBox();
+        renderMarginBackfillBox();
+
+        var unpriced = allLines.length - literalCount - frozenCount - currentRateCount - proRatedCount;
+        if (!allLines.length) {
+          showStatus("No delivery records found in /supply yet.");
+        } else if (currentRateCount || proRatedCount || unpriced) {
+          var bits = [];
+          if (currentRateCount) bits.push(currentRateCount + " priced at today's rate card (may differ from the price at the time if it's changed since)");
+          if (proRatedCount) bits.push(proRatedCount + " pro-rated from their invoice total (no rate-card entry)");
+          if (unpriced) bits.push(unpriced + " unpriced (\"—\")");
+          showStatus((literalCount + frozenCount) + " of " + allLines.length + " deliveries priced from a permanent record (their own invoice or a locked-in rate); " + bits.join(", ") + ".");
+        } else {
+          hideStatus();
+        }
+      });
+    })
+    .catch(function (err) {
+      if (err && err.code === "permission-denied") {
+        showStatus("Firestore denied this read (permission-denied) — the signed-in account may not have the \"master\" role on its /profiles doc.");
+      } else {
+        showStatus("Couldn't load supply data (" + (err && err.code ? err.code : "unknown error") + ") — please try again.");
+      }
+      console.error(err);
+    });
+}
+
+// ---------------------------------------------------------------------
+// Backfill -- for a delivery currently priced off the CURRENT rate card
+// (priceSource "ratecard") that falls in the FY that's happening right
+// now, this writes that rate directly onto its /supply doc so it becomes
+// a permanent "supply" (tier 0) record. Deliberately scoped to the
+// current FY only: for a past FY there's no way to know whether the rate
+// card has changed since, so applying today's price there could make an
+// old record LESS accurate, not more.
+// ---------------------------------------------------------------------
+function backfillCandidates() {
+  var currentFY = financialYearFor(new Date().toISOString().slice(0, 10));
+  return allLines.filter(function (l) { return l.priceSource === "ratecard" && l.financialYear === currentFY; });
+}
+
+function renderBackfillBox() {
+  var box = document.getElementById("supply-backfill-box");
+  if (!MAINTENANCE_TOOLS_ENABLED) { box.hidden = true; return; }
+  var text = document.getElementById("supply-backfill-text");
+  var candidates = backfillCandidates();
+  if (!candidates.length) {
+    box.hidden = true;
+    return;
+  }
+  var currentFY = financialYearFor(new Date().toISOString().slice(0, 10));
+  var n = candidates.length;
+  text.textContent = n + (n === 1 ? " delivery" : " deliveries") + " in FY " + currentFY + " " + (n === 1 ? "is" : "are") +
+    " priced from today's rate card. Since rates haven't changed this year, you can lock today's rate onto " +
+    (n === 1 ? "it" : "them") + " now, so a future rate-card change won't affect " + (n === 1 ? "it" : "these records") + ".";
+  box.hidden = false;
+}
+
+function runBackfill(candidates) {
+  var chunks = [];
+  for (var i = 0; i < candidates.length; i += 400) chunks.push(candidates.slice(i, i + 400));
+  return chunks.reduce(function (chain, chunk) {
+    return chain.then(function () {
+      var batch = writeBatch(db);
+      chunk.forEach(function (l) {
+        batch.set(doc(db, "supply", l.supplyId), {
+          rate: l.rate,
+          amount: l.amount,
+          rateBackfilledAt: serverTimestamp()
+        }, { merge: true });
+      });
+      return batch.commit();
+    });
+  }, Promise.resolve());
+}
+
+document.getElementById("supply-backfill-btn").addEventListener("click", function () {
+  if (!MAINTENANCE_TOOLS_ENABLED) return;
+  var candidates = backfillCandidates();
+  if (!candidates.length) return;
+  var currentFY = financialYearFor(new Date().toISOString().slice(0, 10));
+  showConfirmDialog(
+    "Backfill " + candidates.length + (candidates.length === 1 ? " rate" : " rates") + "?",
+    "This permanently writes each part's current rate-card price onto its historical /supply record for FY " + currentFY +
+      ". A future rate-card change will no longer affect " + (candidates.length === 1 ? "this delivery" : "these " + candidates.length + " deliveries") + ".",
+    "Backfill"
+  ).then(function (confirmed) {
+    if (!confirmed) return;
+    var btn = document.getElementById("supply-backfill-btn");
+    btn.disabled = true;
+    btn.textContent = "Backfilling…";
+    runBackfill(candidates)
+      .then(function () { return loadSupplyData(); })
+      .then(function () {
+        showStatus("Backfilled " + candidates.length + (candidates.length === 1 ? " delivery" : " deliveries") + " for FY " + currentFY + ".");
+      })
+      .catch(function (err) {
+        showStatus("Backfill failed (" + (err && err.code ? err.code : "unknown error") + ") — please try again.");
+        console.error(err);
+      })
+      .finally(function () {
+        btn.disabled = false;
+        btn.textContent = "Backfill now";
+      });
+  });
+});
+
+// ---------------------------------------------------------------------
+// Margin backfill -- identical pattern to the rate backfill above, just
+// for the profit margin instead: locks today's rate-card margin onto
+// this FY's deliveries so a future margin change can't rewrite history.
+// A separate switch from MAINTENANCE_TOOLS_ENABLED since margins were
+// only just added and still need their own one-time cleanup.
+// ---------------------------------------------------------------------
+var MARGIN_BACKFILL_ENABLED = true;
+
+function marginBackfillCandidates() {
+  var currentFY = financialYearFor(new Date().toISOString().slice(0, 10));
+  return allLines.filter(function (l) { return l.marginSource === "ratecard" && l.financialYear === currentFY; });
+}
+
+function renderMarginBackfillBox() {
+  var box = document.getElementById("supply-margin-backfill-box");
+  if (!MARGIN_BACKFILL_ENABLED) { box.hidden = true; return; }
+  var text = document.getElementById("supply-margin-backfill-text");
+  var candidates = marginBackfillCandidates();
+  if (!candidates.length) {
+    box.hidden = true;
+    return;
+  }
+  var currentFY = financialYearFor(new Date().toISOString().slice(0, 10));
+  var n = candidates.length;
+  text.textContent = n + (n === 1 ? " delivery" : " deliveries") + " in FY " + currentFY + " " + (n === 1 ? "is" : "are") +
+    " priced from today's rate-card margin. Since margins haven't changed this year, you can lock today's margin onto " +
+    (n === 1 ? "it" : "them") + " now, so a future margin change won't affect " + (n === 1 ? "it" : "these records") + ".";
+  box.hidden = false;
+}
+
+function runMarginBackfill(candidates) {
+  var chunks = [];
+  for (var i = 0; i < candidates.length; i += 400) chunks.push(candidates.slice(i, i + 400));
+  return chunks.reduce(function (chain, chunk) {
+    return chain.then(function () {
+      var batch = writeBatch(db);
+      chunk.forEach(function (l) {
+        batch.set(doc(db, "supply", l.supplyId), {
+          margin: l.margin,
+          marginBackfilledAt: serverTimestamp()
+        }, { merge: true });
+      });
+      return batch.commit();
+    });
+  }, Promise.resolve());
+}
+
+document.getElementById("supply-margin-backfill-btn").addEventListener("click", function () {
+  if (!MARGIN_BACKFILL_ENABLED) return;
+  var candidates = marginBackfillCandidates();
+  if (!candidates.length) return;
+  var currentFY = financialYearFor(new Date().toISOString().slice(0, 10));
+  showConfirmDialog(
+    "Backfill " + candidates.length + (candidates.length === 1 ? " margin" : " margins") + "?",
+    "This permanently writes each part's current rate-card margin onto its historical /supply record for FY " + currentFY +
+      ". A future margin change will no longer affect " + (candidates.length === 1 ? "this delivery" : "these " + candidates.length + " deliveries") + ".",
+    "Backfill"
+  ).then(function (confirmed) {
+    if (!confirmed) return;
+    var btn = document.getElementById("supply-margin-backfill-btn");
+    btn.disabled = true;
+    btn.textContent = "Backfilling…";
+    runMarginBackfill(candidates)
+      .then(function () { return loadSupplyData(); })
+      .then(function () {
+        showStatus("Backfilled " + candidates.length + (candidates.length === 1 ? " margin" : " margins") + " for FY " + currentFY + ".");
+      })
+      .catch(function (err) {
+        showStatus("Margin backfill failed (" + (err && err.code ? err.code : "unknown error") + ") — please try again.");
+        console.error(err);
+      })
+      .finally(function () {
+        btn.disabled = false;
+        btn.textContent = "Backfill now";
+      });
+  });
+});
+
+function populateFilters() {
+  var buyerSel = document.getElementById("supply-filter-buyer");
+  var itemSel = document.getElementById("supply-filter-item");
+  var fySel = document.getElementById("supply-filter-fy");
+
+  var buyers = {};
+  var items = {};
+  var years = {};
+  allLines.forEach(function (l) {
+    if (l.buyerId) buyers[l.buyerId] = l.buyerName || l.buyerId;
+    if (l.partNo) items[l.partNo] = l.description || l.partNo;
+    if (l.financialYear) years[l.financialYear] = true;
+  });
+
+  var buyerIds = Object.keys(buyers).sort(function (a, b) { return buyers[a].localeCompare(buyers[b]); });
+  buyerSel.innerHTML = '<option value="all">All Buyers</option>' + buyerIds.map(function (id) {
+    return '<option value="' + id + '">' + buyers[id] + '</option>';
+  }).join("");
+
+  var partNos = Object.keys(items).sort(function (a, b) { return items[a].localeCompare(items[b]); });
+  itemSel.innerHTML = '<option value="all">All Items</option>' + partNos.map(function (p) {
+    return '<option value="' + p + '">' + items[p] + " (" + p + ")</option>";
+  }).join("");
+
+  var yearsSorted = Object.keys(years).sort().reverse();
+  fySel.innerHTML = '<option value="all">All Years</option>' + yearsSorted.map(function (y) {
+    return '<option value="' + y + '">FY ' + y + "</option>";
+  }).join("");
+  // Default to the most recent financial year with real activity, since
+  // that's the view a master is almost always after -- "All Years" stays
+  // one click away for the full picture.
+  if (yearsSorted.length) fySel.value = yearsSorted[0];
+}
+
+function currentFilters() {
+  return {
+    buyerId: document.getElementById("supply-filter-buyer").value,
+    partNo: document.getElementById("supply-filter-item").value,
+    fy: document.getElementById("supply-filter-fy").value
+  };
+}
+
+function filteredLines() {
+  var f = currentFilters();
+  return allLines.filter(function (l) {
+    if (f.buyerId !== "all" && l.buyerId !== f.buyerId) return false;
+    if (f.partNo !== "all" && l.partNo !== f.partNo) return false;
+    if (f.fy !== "all" && l.financialYear !== f.fy) return false;
+    return true;
+  });
+}
+
+function applyFilters() {
+  var lines = filteredLines();
+  renderStats(lines);
+  renderTable(lines);
+  renderItemChart(lines);
+  renderSalesChart(lines);
+  renderCorrectionBox();
+}
+
+// ---------------------------------------------------------------------
+// Rate correction -- for the rare case a part's rate genuinely changed
+// partway through a year (unlike the Backfill action above, which only
+// ever assumes ONE rate for the whole current FY). Only shown once a
+// specific Item is selected, since it needs one unambiguous part to
+// apply to. Overwrites rate/amount outright (even an already-backfilled
+// one) for every matching delivery dated before the date given, since
+// those are exactly the ones that would otherwise be priced wrong.
+// Leaves any line priced from its own frozen invoice alone -- that
+// invoice already recorded whatever the rate genuinely was that day.
+// ---------------------------------------------------------------------
+function renderCorrectionBox() {
+  var box = document.getElementById("supply-correction-box");
+  if (!MAINTENANCE_TOOLS_ENABLED) { box.hidden = true; return; }
+  var text = document.getElementById("supply-correction-text");
+  var f = currentFilters();
+  if (f.partNo === "all") {
+    box.hidden = true;
+    return;
+  }
+  var itemLabel = document.getElementById("supply-filter-item").selectedOptions[0].textContent;
+  text.textContent = "Did " + itemLabel + "'s rate change partway through the year? Enter what it used to be and when the new rate started — every earlier delivery of this item will be corrected to the old rate.";
+  box.hidden = false;
+}
+
+document.getElementById("supply-correction-btn").addEventListener("click", function () {
+  if (!MAINTENANCE_TOOLS_ENABLED) return;
+  var f = currentFilters();
+  if (f.partNo === "all") return;
+
+  var oldRate = parseFloat(document.getElementById("supply-correction-oldrate").value);
+  var cutoverDate = document.getElementById("supply-correction-date").value;
+  if (!oldRate || oldRate <= 0 || !cutoverDate) {
+    showStatus("Enter a valid old rate and the date the new rate took effect first.");
+    return;
+  }
+
+  var itemLabel = document.getElementById("supply-filter-item").selectedOptions[0].textContent;
+  var candidates = allLines.filter(function (l) {
+    return l.partNo === f.partNo &&
+      (f.buyerId === "all" || l.buyerId === f.buyerId) &&
+      l.priceSource !== "invoice" &&
+      l.date && l.date < cutoverDate;
+  });
+
+  if (!candidates.length) {
+    showStatus("No deliveries of " + itemLabel + " before " + formatDisplayDate(cutoverDate) + " were found to correct.");
+    return;
+  }
+
+  showConfirmDialog(
+    "Correct " + candidates.length + (candidates.length === 1 ? " delivery" : " deliveries") + "?",
+    "Every delivery of " + itemLabel + " dated before " + formatDisplayDate(cutoverDate) + " will be repriced at ₹" + oldRate.toFixed(2) +
+      " per unit, overwriting whatever it currently shows. Deliveries on or after that date are left untouched.",
+    "Correct"
+  ).then(function (confirmed) {
+    if (!confirmed) return;
+    var btn = document.getElementById("supply-correction-btn");
+    btn.disabled = true;
+    btn.textContent = "Correcting…";
+
+    var chunks = [];
+    for (var i = 0; i < candidates.length; i += 400) chunks.push(candidates.slice(i, i + 400));
+    chunks.reduce(function (chain, chunk) {
+      return chain.then(function () {
+        var batch = writeBatch(db);
+        chunk.forEach(function (l) {
+          batch.set(doc(db, "supply", l.supplyId), {
+            rate: oldRate,
+            amount: oldRate * l.qty,
+            rateCorrectedAt: serverTimestamp()
+          }, { merge: true });
+        });
+        return batch.commit();
+      });
+    }, Promise.resolve())
+      .then(function () { return loadSupplyData(); })
+      .then(function () {
+        showStatus("Corrected " + candidates.length + (candidates.length === 1 ? " delivery" : " deliveries") + " of " + itemLabel + " to ₹" + oldRate.toFixed(2) + ".");
+      })
+      .catch(function (err) {
+        showStatus("Correction failed (" + (err && err.code ? err.code : "unknown error") + ") — please try again.");
+        console.error(err);
+      })
+      .finally(function () {
+        btn.disabled = false;
+        btn.textContent = "Correct earlier deliveries";
+      });
+  });
+});
+
+function renderStats(lines) {
+  var qty = 0, value = 0, profit = 0, knownProfitCount = 0;
+  var invoiceNos = {}, buyerIds = {};
+  lines.forEach(function (l) {
+    qty += l.qty;
+    value += l.amount || 0;
+    if (l.profit != null) { profit += l.profit; knownProfitCount++; }
+    if (l.invoiceNo) invoiceNos[l.invoiceNo] = true;
+    buyerIds[l.buyerId] = true;
+  });
+
+  document.getElementById("supply-stat-qty").textContent = qty.toLocaleString("en-IN");
+  document.getElementById("supply-stat-value").textContent = formatCompactCurrency(value);
+  document.getElementById("supply-stat-profit").textContent = knownProfitCount ? formatCompactCurrency(profit) : "—";
+  document.getElementById("supply-stat-invoices").textContent = Object.keys(invoiceNos).length.toLocaleString("en-IN");
+  document.getElementById("supply-stat-buyers").textContent = Object.keys(buyerIds).length.toLocaleString("en-IN");
+
+  var f = currentFilters();
+  var topLabel = document.getElementById("supply-stat-top-label");
+  var topValue = document.getElementById("supply-stat-top-value");
+  var topSub = document.getElementById("supply-stat-top-sub");
+
+  var groups = {};
+  var groupKind;
+  if (f.buyerId !== "all") {
+    groupKind = "item";
+    lines.forEach(function (l) {
+      groups[l.partNo] = groups[l.partNo] || { label: l.description, qty: 0, value: 0 };
+      groups[l.partNo].qty += l.qty;
+      groups[l.partNo].value += l.amount || 0;
+    });
+    topLabel.textContent = "Top Item";
+  } else {
+    groupKind = "buyer";
+    lines.forEach(function (l) {
+      groups[l.buyerId] = groups[l.buyerId] || { label: l.buyerName, qty: 0, value: 0 };
+      groups[l.buyerId].qty += l.qty;
+      groups[l.buyerId].value += l.amount || 0;
+    });
+    topLabel.textContent = f.partNo !== "all" ? "Top Buyer for this Item" : "Top Buyer";
+  }
+
+  var best = null;
+  Object.keys(groups).forEach(function (k) {
+    if (!best || groups[k].value > best.value) best = groups[k];
+  });
+
+  if (best) {
+    topValue.textContent = best.label;
+    topSub.textContent = formatCurrency(best.value) + " · " + best.qty.toLocaleString("en-IN") + " pcs";
+  } else {
+    topValue.textContent = "—";
+    topSub.textContent = "";
+  }
+}
+
+function renderTable(lines) {
+  var body = document.getElementById("supply-table-body");
+  if (!lines.length) {
+    body.innerHTML = '<tr><td colspan="9" class="billing-history-empty">No deliveries match these filters.</td></tr>';
+    return;
+  }
+  var shown = lines.slice(0, 200);
+  body.innerHTML = shown.map(function (l) {
+    return "<tr>" +
+      "<td>" + l.invoiceNo + "</td>" +
+      "<td>" + formatDisplayDate(l.date) + "</td>" +
+      "<td>" + l.buyerName + "</td>" +
+      "<td>" + l.description + "</td>" +
+      "<td>" + l.qty.toLocaleString("en-IN") + "</td>" +
+      "<td>" + (l.rate != null ? l.rate.toFixed(2) : "—") + "</td>" +
+      "<td>" + (l.amount != null ? formatCurrency(l.amount) : "—") + "</td>" +
+      "<td>" + (l.margin != null ? l.margin.toFixed(2) : "—") + "</td>" +
+      "<td>" + (l.profit != null ? formatCurrency(l.profit) : "—") + "</td>" +
+      "</tr>";
+  }).join("");
+  if (lines.length > shown.length) {
+    showStatus("Showing the latest " + shown.length + " of " + lines.length + " matching deliveries — narrow the filters above to see more.");
+  } else {
+    document.getElementById("supply-status").classList.remove("is-visible");
+  }
+}
+
+// ---------------------------------------------------------------------
+// Charts -- Item Sale ranks items (or, with one item selected, shows that
+// item's month-by-month delivery trend) and Sales Trend tracks revenue
+// over time for whatever buyer/item/year is currently selected.
+// ---------------------------------------------------------------------
+function chartTheme() {
+  var cs = getComputedStyle(document.documentElement);
+  return {
+    accent: cs.getPropertyValue("--accent").trim(),
+    ink: cs.getPropertyValue("--ink").trim(),
+    inkMuted: cs.getPropertyValue("--ink-muted").trim(),
+    line: cs.getPropertyValue("--line").trim(),
+    surface: cs.getPropertyValue("--surface").trim()
+  };
+}
+
+function baseScales(theme, valueFormatter) {
+  return {
+    x: {
+      grid: { display: false },
+      ticks: { color: theme.inkMuted, font: { family: "IBM Plex Sans" } },
+      border: { color: theme.line }
+    },
+    y: {
+      beginAtZero: true,
+      grid: { color: theme.line },
+      ticks: {
+        color: theme.inkMuted,
+        font: { family: "IBM Plex Sans" },
+        callback: valueFormatter
+      },
+      border: { display: false }
+    }
+  };
+}
+
+function renderItemChart(lines) {
+  var canvas = document.getElementById("supply-item-chart");
+  var empty = document.getElementById("supply-item-chart-empty");
+  var titleEl = document.getElementById("supply-item-chart-title");
+  var subEl = document.getElementById("supply-item-chart-sub");
+  var f = currentFilters();
+  var theme = chartTheme();
+
+  if (!ChartLib) {
+    empty.textContent = "Loading chart…";
+    empty.hidden = false;
+    canvas.style.display = "none";
+    return;
+  }
+
+  if (!lines.length) {
+    empty.textContent = "No deliveries match these filters yet.";
+    empty.hidden = false;
+    canvas.style.display = "none";
+    if (itemChart) { itemChart.destroy(); itemChart = null; }
+    return;
+  }
+  empty.hidden = true;
+  canvas.style.display = "block";
+
+  var labels, values, isTrend = f.partNo !== "all";
+
+  if (isTrend) {
+    var monthly = {};
+    lines.forEach(function (l) {
+      var k = monthKey(l.date);
+      monthly[k] = monthly[k] || 0;
+      monthly[k] += itemMetric === "qty" ? l.qty : (l.amount || 0);
+    });
+    var keys = Object.keys(monthly).sort();
+    labels = keys.map(monthLabel);
+    values = keys.map(function (k) { return monthly[k]; });
+    titleEl.textContent = lines[0].description;
+    subEl.textContent = "Monthly deliveries" + (f.buyerId !== "all" ? " to " + lines[0].buyerName : "") +
+      (itemMetric === "value" ? " · ₹ from rate card" : "");
+  } else {
+    var byItem = {};
+    lines.forEach(function (l) {
+      byItem[l.partNo] = byItem[l.partNo] || { label: l.description, qty: 0, value: 0 };
+      byItem[l.partNo].qty += l.qty;
+      byItem[l.partNo].value += l.amount || 0;
+    });
+    var ranked = Object.keys(byItem).map(function (k) { return byItem[k]; })
+      .sort(function (a, b) { return (itemMetric === "qty" ? b.qty - a.qty : b.value - a.value); })
+      .slice(0, 8);
+    labels = ranked.map(function (r) { return r.label; });
+    values = ranked.map(function (r) { return itemMetric === "qty" ? r.qty : r.value; });
+    titleEl.textContent = "Item Sale";
+    subEl.textContent = "Top items by " + (itemMetric === "qty" ? "quantity delivered" : "sales value") +
+      (f.buyerId !== "all" ? " · " + document.getElementById("supply-filter-buyer").selectedOptions[0].textContent : "") +
+      (itemMetric === "value" ? " · ₹ from rate card" : "");
+  }
+
+  var valueFormatter = itemMetric === "qty"
+    ? function (v) { return v.toLocaleString("en-IN"); }
+    : function (v) { return formatCompactCurrency(v); };
+
+  if (!itemChart) {
+    itemChart = new ChartLib(canvas.getContext("2d"), {
+      type: "bar",
+      data: {
+        labels: labels,
+        datasets: [{
+          label: itemMetric === "qty" ? "Qty" : "Sales Value",
+          data: values,
+          backgroundColor: theme.accent,
+          borderRadius: 4,
+          maxBarThickness: 42
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function (ctx) {
+                return itemMetric === "qty"
+                  ? ctx.parsed.y.toLocaleString("en-IN") + " pcs"
+                  : formatCurrency(ctx.parsed.y);
+              }
+            }
+          }
+        },
+        scales: baseScales(theme, valueFormatter)
+      }
+    });
+  } else {
+    itemChart.data.labels = labels;
+    itemChart.data.datasets[0].data = values;
+    itemChart.data.datasets[0].label = itemMetric === "qty" ? "Qty" : "Sales Value";
+    itemChart.data.datasets[0].backgroundColor = theme.accent;
+    itemChart.options.scales = baseScales(theme, valueFormatter);
+    itemChart.options.plugins.tooltip.callbacks.label = function (ctx) {
+      return itemMetric === "qty"
+        ? ctx.parsed.y.toLocaleString("en-IN") + " pcs"
+        : formatCurrency(ctx.parsed.y);
+    };
+    itemChart.update();
+  }
+}
+
+function renderSalesChart(lines) {
+  var canvas = document.getElementById("supply-sales-chart");
+  var empty = document.getElementById("supply-sales-chart-empty");
+  var subEl = document.getElementById("supply-sales-chart-sub");
+  var theme = chartTheme();
+
+  if (!ChartLib) {
+    empty.textContent = "Loading chart…";
+    empty.hidden = false;
+    canvas.style.display = "none";
+    return;
+  }
+
+  if (!lines.length) {
+    empty.textContent = "No deliveries match these filters yet.";
+    empty.hidden = false;
+    canvas.style.display = "none";
+    if (salesChart) { salesChart.destroy(); salesChart = null; }
+    return;
+  }
+  empty.hidden = true;
+  canvas.style.display = "block";
+
+  var monthly = {};
+  lines.forEach(function (l) {
+    var k = monthKey(l.date);
+    monthly[k] = monthly[k] || 0;
+    monthly[k] += l.amount || 0;
+  });
+  var keys = Object.keys(monthly).sort();
+  var labels = keys.map(monthLabel);
+  var values = keys.map(function (k) { return monthly[k]; });
+
+  var f = currentFilters();
+  var bits = [];
+  if (f.buyerId !== "all") bits.push(document.getElementById("supply-filter-buyer").selectedOptions[0].textContent);
+  if (f.partNo !== "all") bits.push(document.getElementById("supply-filter-item").selectedOptions[0].textContent);
+  subEl.textContent = (bits.length ? "Revenue by month · " + bits.join(" · ") : "Revenue by month, all buyers and items") +
+    " · priced from rate card";
+
+  if (!salesChart) {
+    salesChart = new ChartLib(canvas.getContext("2d"), {
+      type: "line",
+      data: {
+        labels: labels,
+        datasets: [{
+          label: "Sales Value",
+          data: values,
+          borderColor: theme.accent,
+          backgroundColor: theme.accent + "26",
+          pointBackgroundColor: theme.accent,
+          pointRadius: 3,
+          pointHoverRadius: 5,
+          borderWidth: 2,
+          tension: 0.3,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function (ctx) { return formatCurrency(ctx.parsed.y); }
+            }
+          }
+        },
+        scales: baseScales(theme, function (v) { return formatCompactCurrency(v); })
+      }
+    });
+  } else {
+    salesChart.data.labels = labels;
+    salesChart.data.datasets[0].data = values;
+    salesChart.data.datasets[0].borderColor = theme.accent;
+    salesChart.data.datasets[0].backgroundColor = theme.accent + "26";
+    salesChart.data.datasets[0].pointBackgroundColor = theme.accent;
+    salesChart.options.scales = baseScales(theme, function (v) { return formatCompactCurrency(v); });
+    salesChart.update();
+  }
+}
+
+function retheme() {
+  if (!ChartLib) return;
+  var theme = chartTheme();
+  ChartLib.defaults.color = theme.inkMuted;
+  ChartLib.defaults.font.family = "IBM Plex Sans";
+  applyFilters();
+}
+
+["supply-filter-buyer", "supply-filter-item", "supply-filter-fy"].forEach(function (id) {
+  document.getElementById(id).addEventListener("change", applyFilters);
+});
+
+document.getElementById("supply-item-metric-qty").addEventListener("click", function () {
+  if (itemMetric === "qty") return;
+  itemMetric = "qty";
+  this.classList.add("is-active");
+  document.getElementById("supply-item-metric-value").classList.remove("is-active");
+  applyFilters();
+});
+document.getElementById("supply-item-metric-value").addEventListener("click", function () {
+  if (itemMetric === "value") return;
+  itemMetric = "value";
+  this.classList.add("is-active");
+  document.getElementById("supply-item-metric-qty").classList.remove("is-active");
+  applyFilters();
+});
+
+if (window.matchMedia) {
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", retheme);
+}
+
+// ---------------------------------------------------------------------
+// Auth + role guard
+// ---------------------------------------------------------------------
+onAuthStateChanged(auth, function (user) {
+  if (!user) { window.location.replace("login.html"); return; }
+  if (!user.emailVerified) {
+    signOut(auth).then(function () { window.location.replace("login.html?unverified=1"); });
+    return;
+  }
+
+  getDoc(doc(db, "profiles", user.uid)).then(function (snap) {
+    var data = snap.exists() ? snap.data() : {};
+    if (data.role !== "master") { window.location.replace("welcome.html"); return; }
+    if (data.email !== user.email) {
+      setDoc(doc(db, "profiles", user.uid), { email: user.email }, { merge: true }).catch(function () {});
+    }
+
+    document.getElementById("supply-loading").hidden = true;
+    document.getElementById("supply-wrap").hidden = false;
+
+    // Filters, stats and the deliveries table only need Firestore data, not
+    // the chart library -- load them immediately so a slow/blocked CDN
+    // (chart.js, below) never leaves the buyer/item dropdowns stuck empty.
+    loadSupplyData();
+
+    import("https://cdn.jsdelivr.net/npm/chart.js@4.4.4/+esm").then(function (mod) {
+      ChartLib = mod.Chart;
+      ChartLib.register.apply(ChartLib, mod.registerables);
+      ChartLib.defaults.font.family = "IBM Plex Sans";
+      ChartLib.defaults.color = chartTheme().inkMuted;
+      applyFilters();
+    }).catch(function (err) {
+      console.error(err);
+      ["supply-item-chart-empty", "supply-sales-chart-empty"].forEach(function (id) {
+        var el = document.getElementById(id);
+        el.textContent = "Charts couldn't load — check your connection and reload the page.";
+        el.hidden = false;
+      });
+    });
+  }).catch(function () {
+    window.location.replace("welcome.html");
+  });
+});
+</script>
+<script src="js/bot-widget.js?v=2" defer></script>
+</body>
+</html>
