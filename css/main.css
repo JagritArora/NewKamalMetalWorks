@@ -2279,6 +2279,67 @@ button.login-back {
 }
 .confirm-dialog-confirm:hover { filter: brightness(1.06); }
 
+/* ================= Send-invoice dialog ================= */
+.mail-dialog { max-width: 460px; text-align: left; }
+.mail-dialog-to-list { display: flex; flex-direction: column; gap: 10px; margin: 0 0 12px; }
+.mail-dialog-to-row { display: flex; align-items: center; gap: 8px; }
+.mail-dialog-to-input {
+  flex: 1;
+  min-width: 0;
+  font-family: inherit;
+  font-size: 0.9rem;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: var(--surface-sunken);
+  color: var(--ink);
+}
+.mail-dialog-to-input:focus { outline: none; border-color: var(--accent); }
+.mail-dialog-to-input.is-invalid { border-color: var(--danger); }
+.mail-dialog-to-remove {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--surface-sunken);
+  color: var(--ink-muted);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.mail-dialog-to-remove:hover { color: var(--danger); }
+.mail-dialog-add-btn {
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: none;
+  border: none;
+  padding: 4px 0;
+  margin: 0 0 14px;
+  cursor: pointer;
+  display: block;
+}
+.mail-dialog-add-btn:hover { text-decoration: underline; }
+.mail-dialog-error {
+  font-size: 0.78rem;
+  color: var(--danger);
+  margin: 0 0 12px;
+  min-height: 1em;
+}
+.mail-dialog-cc {
+  font-size: 0.8rem;
+  color: var(--ink-muted);
+  background: var(--surface-sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  margin: 0 0 22px;
+  line-height: 1.5;
+}
+.mail-dialog-cc strong { color: var(--ink); }
+
 @media (max-width: 640px) {
   .billing-card { padding: 24px 18px; }
   .billing-totals { max-width: 100%; }
@@ -2396,6 +2457,10 @@ button.login-back {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+.login-field select:disabled {
+  opacity: .5;
+  cursor: not-allowed;
 }
 .login-field.has-error input {
   border-color: var(--danger);

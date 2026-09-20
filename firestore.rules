@@ -78,5 +78,12 @@ service cloud.firestore {
     match /mail/{mailId} {
       allow create: if isMaster();
     }
+
+    // Recipient addresses typed into the send-invoice dialog (billing.html,
+    // invoices.html), keyed by lowercased email, so they resurface as
+    // suggestions next time. Master only.
+    match /mailRecipients/{emailId} {
+      allow read, write: if isMaster();
+    }
   }
 }

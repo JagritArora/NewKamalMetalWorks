@@ -14,7 +14,8 @@ initializeApp();
 const titanEmailPassword = defineSecret("TITAN_EMAIL_PASSWORD");
 
 // billing.html writes a doc to the "mail" collection shaped like
-// { to: [...emails], message: { subject, html, attachments } } -- this is
+// { to: [...emails], cc: [...emails], message: { subject, html, attachments } }
+// -- this is
 // the replacement for the (now-deprecated, shutting down March 2027)
 // "Trigger Email from Firestore" extension, kept doc-triggered so
 // billing.html didn't need to change at all.
@@ -40,6 +41,7 @@ exports.sendMail = onDocumentCreated(
       await transporter.sendMail({
         from: "New Kamal Metal Works <contact@newkamalmetalworks.co.in>",
         to: data.to,
+        cc: data.cc && data.cc.length ? data.cc : undefined,
         subject: message.subject,
         html: message.html,
         attachments: message.attachments

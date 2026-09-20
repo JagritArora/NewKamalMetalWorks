@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/main.css?v=53" />
+<link rel="stylesheet" href="css/main.css?v=54" />
 </head>
 <body class="login-page">
 
@@ -104,7 +104,8 @@ import {
   query,
   where,
   orderBy,
-  limit
+  limit,
+  serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 var firebaseConfig = {
@@ -164,7 +165,7 @@ function loadHistory() {
           sendBtn.className = "billing-seed-btn";
           sendBtn.textContent = (inv.emailedTo && inv.emailedTo.length) ? "Resend" : "Send";
           sendBtn.addEventListener("click", function () {
-            sendInvoiceEmail(d.id, inv, sendBtn);
+            openSendMailDialog(d.id, inv, sendBtn);
           });
           actionCell.appendChild(sendBtn);
         }
@@ -177,23 +178,300 @@ function loadHistory() {
     });
 }
 
-function sendInvoiceEmail(invoiceId, inv, btn) {
+// ---------------------------------------------------------------------
+// Themed confirm dialog -- replaces window.confirm() so it matches the
+// site's dark/light surface colors instead of the browser's native box.
+// Resolves true if the person confirms, false if they cancel/dismiss.
+// ---------------------------------------------------------------------
+function showConfirmDialog(title, body, confirmLabel) {
+  return new Promise(function (resolve) {
+    var overlay = document.createElement("div");
+    overlay.className = "confirm-overlay";
+
+    var dialog = document.createElement("div");
+    dialog.className = "confirm-dialog";
+
+    var titleEl = document.createElement("p");
+    titleEl.className = "confirm-dialog-title";
+    titleEl.textContent = title;
+
+    var bodyEl = document.createElement("p");
+    bodyEl.className = "confirm-dialog-body";
+    bodyEl.textContent = body;
+
+    var actions = document.createElement("div");
+    actions.className = "confirm-dialog-actions";
+
+    var cancelBtn = document.createElement("button");
+    cancelBtn.type = "button";
+    cancelBtn.className = "confirm-dialog-cancel";
+    cancelBtn.textContent = "Cancel";
+
+    var confirmBtn = document.createElement("button");
+    confirmBtn.type = "button";
+    confirmBtn.className = "confirm-dialog-confirm";
+    confirmBtn.textContent = confirmLabel;
+
+    function close(result) {
+      document.removeEventListener("keydown", onKeydown);
+      overlay.classList.remove("is-visible");
+      overlay.remove();
+      resolve(result);
+    }
+    function onKeydown(e) { if (e.key === "Escape") close(false); }
+
+    cancelBtn.addEventListener("click", function () { close(false); });
+    confirmBtn.addEventListener("click", function () { close(true); });
+    overlay.addEventListener("click", function (e) { if (e.target === overlay) close(false); });
+    document.addEventListener("keydown", onKeydown);
+
+    actions.appendChild(cancelBtn);
+    actions.appendChild(confirmBtn);
+    dialog.appendChild(titleEl);
+    dialog.appendChild(bodyEl);
+    dialog.appendChild(actions);
+    overlay.appendChild(dialog);
+    document.body.appendChild(overlay);
+    requestAnimationFrame(function () { overlay.classList.add("is-visible"); });
+  });
+}
+
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+// Recipients previously typed into the send-invoice dialog, kept in
+// /mailRecipients so they resurface as suggestions on the next send.
+var savedRecipientsCache = null;
+function loadSavedRecipients() {
+  if (savedRecipientsCache) return Promise.resolve(savedRecipientsCache);
+  return getDocs(collection(db, "mailRecipients"))
+    .then(function (snap) {
+      var emails = [];
+      snap.forEach(function (d) { if (d.data().email) emails.push(d.data().email); });
+      emails.sort();
+      savedRecipientsCache = emails;
+      return emails;
+    })
+    .catch(function () { return []; });
+}
+
+function rememberRecipients(emails) {
+  emails.forEach(function (email) {
+    var key = email.toLowerCase();
+    if (savedRecipientsCache && savedRecipientsCache.indexOf(key) === -1) savedRecipientsCache.push(key);
+  });
+  return Promise.all(emails.map(function (email) {
+    var key = email.toLowerCase();
+    return setDoc(doc(db, "mailRecipients", key), { email: key, addedAt: serverTimestamp() }, { merge: true })
+      .catch(function () {});
+  }));
+}
+
+// Opens the "who to send this invoice to" dialog: a "To" field (with a
+// "+" to add more recipients and suggestions from previously used
+// addresses), always CC'd to every master account, and a final
+// confirmation naming the invoice, amount and recipients before anything
+// is queued to the "mail" collection.
+function openSendMailDialog(invoiceId, inv, btn) {
+  var originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "Loading…";
+
+  Promise.all([
+    getDocs(query(collection(db, "profiles"), where("role", "==", "master"))),
+    loadSavedRecipients()
+  ])
+    .then(function (results) {
+      var masterEmails = [];
+      results[0].forEach(function (d) { if (d.data().email) masterEmails.push(d.data().email); });
+      btn.disabled = false;
+      btn.textContent = originalText;
+
+      if (!masterEmails.length) {
+        showStatus("No master email is on file to CC — add one from Profile.");
+        return;
+      }
+      showSendMailModal(invoiceId, inv, masterEmails, results[1], btn);
+    })
+    .catch(function (err) {
+      btn.disabled = false;
+      btn.textContent = originalText;
+      showStatus("Couldn't open the send dialog — please try again.");
+      console.error(err);
+    });
+}
+
+function showSendMailModal(invoiceId, inv, masterEmails, savedEmails, btn) {
+  var overlay = document.createElement("div");
+  overlay.className = "confirm-overlay";
+
+  var dialog = document.createElement("div");
+  dialog.className = "confirm-dialog mail-dialog";
+
+  var titleEl = document.createElement("p");
+  titleEl.className = "confirm-dialog-title";
+  titleEl.textContent = "Send Invoice " + inv.invoiceNo;
+
+  var toList = document.createElement("div");
+  toList.className = "mail-dialog-to-list";
+
+  var datalistId = "mail-dialog-recipients-" + invoiceId;
+  var datalist = document.createElement("datalist");
+  datalist.id = datalistId;
+  savedEmails.forEach(function (email) {
+    var opt = document.createElement("option");
+    opt.value = email;
+    datalist.appendChild(opt);
+  });
+
+  var errorEl = document.createElement("p");
+  errorEl.className = "mail-dialog-error";
+
+  function addRow(value) {
+    var row = document.createElement("div");
+    row.className = "mail-dialog-to-row";
+
+    var input = document.createElement("input");
+    input.type = "email";
+    input.className = "mail-dialog-to-input";
+    input.placeholder = "name@example.com";
+    input.setAttribute("list", datalistId);
+    input.value = value || "";
+    input.addEventListener("input", function () {
+      input.classList.remove("is-invalid");
+      errorEl.textContent = "";
+    });
+
+    var removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.className = "mail-dialog-to-remove";
+    removeBtn.setAttribute("aria-label", "Remove recipient");
+    removeBtn.innerHTML = "&times;";
+    removeBtn.addEventListener("click", function () {
+      if (toList.children.length <= 1) return;
+      row.remove();
+    });
+
+    row.appendChild(input);
+    row.appendChild(removeBtn);
+    toList.appendChild(row);
+    return input;
+  }
+
+  var firstInput = addRow();
+
+  var addBtn = document.createElement("button");
+  addBtn.type = "button";
+  addBtn.className = "mail-dialog-add-btn";
+  addBtn.textContent = "+ Add recipient";
+  addBtn.addEventListener("click", function () { addRow().focus(); });
+
+  var ccEl = document.createElement("p");
+  ccEl.className = "mail-dialog-cc";
+  ccEl.innerHTML = "<strong>Always CC:</strong> " + masterEmails.join(", ");
+
+  var actions = document.createElement("div");
+  actions.className = "confirm-dialog-actions";
+
+  var cancelBtn = document.createElement("button");
+  cancelBtn.type = "button";
+  cancelBtn.className = "confirm-dialog-cancel";
+  cancelBtn.textContent = "Cancel";
+
+  var sendBtn = document.createElement("button");
+  sendBtn.type = "button";
+  sendBtn.className = "confirm-dialog-confirm";
+  sendBtn.textContent = "Review & send";
+
+  function close() {
+    document.removeEventListener("keydown", onKeydown);
+    overlay.classList.remove("is-visible");
+    overlay.remove();
+  }
+  function onKeydown(e) { if (e.key === "Escape") close(); }
+
+  cancelBtn.addEventListener("click", close);
+  overlay.addEventListener("click", function (e) { if (e.target === overlay) close(); });
+  document.addEventListener("keydown", onKeydown);
+
+  sendBtn.addEventListener("click", function () {
+    var inputs = Array.prototype.slice.call(toList.querySelectorAll(".mail-dialog-to-input"));
+    var emails = [];
+    var seen = {};
+    var hasError = false;
+
+    inputs.forEach(function (input) {
+      var value = input.value.trim();
+      if (!value || !isValidEmail(value)) {
+        input.classList.add("is-invalid");
+        hasError = true;
+        return;
+      }
+      var key = value.toLowerCase();
+      if (!seen[key]) { seen[key] = true; emails.push(value); }
+    });
+
+    if (hasError) {
+      errorEl.textContent = "Enter a valid email address for every recipient.";
+      return;
+    }
+    if (!emails.length) {
+      errorEl.textContent = "Add at least one recipient.";
+      return;
+    }
+    errorEl.textContent = "";
+
+    var namesLine = emails.length === 1
+      ? emails[0]
+      : emails.slice(0, -1).join(", ") + " & " + emails[emails.length - 1];
+
+    showConfirmDialog(
+      "Confirm send",
+      "Invoice " + inv.invoiceNo + " amounting " + formatCurrency(inv.net || 0) + " will be shared with " + namesLine + ".",
+      "Send"
+    ).then(function (confirmed) {
+      if (!confirmed) return;
+      close();
+      dispatchInvoiceEmail(invoiceId, inv, emails, masterEmails, btn);
+    });
+  });
+
+  actions.appendChild(cancelBtn);
+  actions.appendChild(sendBtn);
+
+  dialog.appendChild(titleEl);
+  dialog.appendChild(toList);
+  dialog.appendChild(addBtn);
+  dialog.appendChild(errorEl);
+  dialog.appendChild(ccEl);
+  dialog.appendChild(actions);
+  dialog.appendChild(datalist);
+  overlay.appendChild(dialog);
+  document.body.appendChild(overlay);
+  requestAnimationFrame(function () {
+    overlay.classList.add("is-visible");
+    firstInput.focus();
+  });
+}
+
+function dispatchInvoiceEmail(invoiceId, inv, toEmails, masterEmails, btn) {
   var originalText = btn.textContent;
   btn.disabled = true;
   btn.textContent = "Sending…";
-  var masterEmails = [];
 
-  getDocs(query(collection(db, "profiles"), where("role", "==", "master")))
-    .then(function (snap) {
-      snap.forEach(function (d) { if (d.data().email) masterEmails.push(d.data().email); });
-      if (!masterEmails.length) {
-        return Promise.reject(new Error("NO_MASTER_EMAIL"));
-      }
-      var safeInvoiceNo = inv.invoiceNo.replace(/[^\w.-]+/g, "_");
-      var dateObj = new Date(inv.date + "T00:00:00");
-      var dateStr = dateObj.toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" });
+  var toLower = toEmails.map(function (e) { return e.toLowerCase(); });
+  var ccEmails = masterEmails.filter(function (email) { return toLower.indexOf(email.toLowerCase()) === -1; });
+
+  var safeInvoiceNo = inv.invoiceNo.replace(/[^\w.-]+/g, "_");
+  var dateObj = new Date(inv.date + "T00:00:00");
+  var dateStr = dateObj.toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" });
+
+  rememberRecipients(toEmails)
+    .then(function () {
       return addDoc(collection(db, "mail"), {
-        to: masterEmails,
+        to: toEmails,
+        cc: ccEmails,
         message: {
           subject: "Invoice " + inv.invoiceNo + " — New Kamal Metal Works",
           html: "<div style=\"font-family: Helvetica, Arial, sans-serif; font-size: 18px; color: #1a1a1a; line-height: 1.6;\">" +
@@ -223,9 +501,11 @@ function sendInvoiceEmail(invoiceId, inv, btn) {
             "</div>",
           attachments: [{ filename: safeInvoiceNo + ".pdf", path: inv.pdfUrl }]
         }
-      }).then(function () {
-        return updateDoc(doc(db, "invoices", invoiceId), { emailedTo: masterEmails, status: "sent" });
       });
+    })
+    .then(function () {
+      var emailedTo = toEmails.concat(ccEmails);
+      return updateDoc(doc(db, "invoices", invoiceId), { emailedTo: emailedTo, status: "sent" });
     })
     .then(function () {
       showStatus("Invoice " + inv.invoiceNo + " emailed.");
@@ -234,12 +514,8 @@ function sendInvoiceEmail(invoiceId, inv, btn) {
     .catch(function (err) {
       btn.disabled = false;
       btn.textContent = originalText;
-      if (err && err.message === "NO_MASTER_EMAIL") {
-        showStatus("No master email is on file to send to — add one from Profile.");
-      } else {
-        showStatus("Couldn't send the invoice email — please try again.");
-        console.error(err);
-      }
+      showStatus("Couldn't send the invoice email — please try again.");
+      console.error(err);
     });
 }
 

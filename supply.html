@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/main.css?v=53" />
+<link rel="stylesheet" href="css/main.css?v=54" />
 </head>
 <body class="login-page">
 
@@ -31,7 +31,13 @@
     <p class="login-status" id="supply-status" role="status" aria-live="polite"></p>
 
     <section class="billing-card">
-      <h2 class="billing-card-title">Filters</h2>
+      <div class="chart-card-head">
+        <h2 class="billing-card-title">Filters</h2>
+        <div class="chart-toggle-group" role="group" aria-label="Filter by item or invoice">
+          <button type="button" class="chart-toggle-btn is-active" id="supply-filter-mode-item">Item</button>
+          <button type="button" class="chart-toggle-btn" id="supply-filter-mode-invoice">Invoice</button>
+        </div>
+      </div>
       <div class="supply-filter-row">
         <div class="login-field">
           <label for="supply-filter-buyer">Buyer</label>
@@ -39,10 +45,16 @@
             <option value="all">All Buyers</option>
           </select>
         </div>
-        <div class="login-field">
+        <div class="login-field" id="supply-filter-item-field">
           <label for="supply-filter-item">Item</label>
           <select id="supply-filter-item">
             <option value="all">All Items</option>
+          </select>
+        </div>
+        <div class="login-field" id="supply-filter-invoice-field">
+          <label for="supply-filter-invoice">Invoice</label>
+          <select id="supply-filter-invoice" disabled>
+            <option value="all">All Invoices</option>
           </select>
         </div>
         <div class="login-field">
@@ -320,6 +332,10 @@ var itemChart = null;
 var salesChart = null;
 var itemMetric = "qty";
 var ChartLib = null;
+// Whether the second filter dropdown narrows by Item or by Invoice --
+// toggled by the buttons above the Filters row. Only one of the two
+// filters below applies at a time; the hidden one just sits at "all".
+var supplyFilterMode = "item";
 
 // The historical-data cleanup (Backfill + rate correction) is done for
 // now -- flip this back to true to bring both maintenance boxes back
@@ -706,15 +722,22 @@ document.getElementById("supply-margin-backfill-btn").addEventListener("click", 
 function populateFilters() {
   var buyerSel = document.getElementById("supply-filter-buyer");
   var itemSel = document.getElementById("supply-filter-item");
+  var invoiceSel = document.getElementById("supply-filter-invoice");
   var fySel = document.getElementById("supply-filter-fy");
 
   var buyers = {};
   var items = {};
   var years = {};
+  var invoices = {};
   allLines.forEach(function (l) {
     if (l.buyerId) buyers[l.buyerId] = l.buyerName || l.buyerId;
     if (l.partNo) items[l.partNo] = l.description || l.partNo;
     if (l.financialYear) years[l.financialYear] = true;
+    if (l.invoiceNo) {
+      var inv = invoices[l.invoiceNo] || { latestDate: "" };
+      if ((l.date || "") > inv.latestDate) inv.latestDate = l.date || "";
+      invoices[l.invoiceNo] = inv;
+    }
   });
 
   var buyerIds = Object.keys(buyers).sort(function (a, b) { return buyers[a].localeCompare(buyers[b]); });
@@ -725,6 +748,15 @@ function populateFilters() {
   var partNos = Object.keys(items).sort(function (a, b) { return items[a].localeCompare(items[b]); });
   itemSel.innerHTML = '<option value="all">All Items</option>' + partNos.map(function (p) {
     return '<option value="' + p + '">' + items[p] + " (" + p + ")</option>";
+  }).join("");
+
+  // Latest invoice first -- sort by each invoice's most recent delivery
+  // date, falling back to the invoice number itself for ties.
+  var invoiceNos = Object.keys(invoices).sort(function (a, b) {
+    return invoices[b].latestDate.localeCompare(invoices[a].latestDate) || b.localeCompare(a);
+  });
+  invoiceSel.innerHTML = '<option value="all">All Invoices</option>' + invoiceNos.map(function (no) {
+    return '<option value="' + no + '">' + no + '</option>';
   }).join("");
 
   var yearsSorted = Object.keys(years).sort().reverse();
@@ -741,6 +773,7 @@ function currentFilters() {
   return {
     buyerId: document.getElementById("supply-filter-buyer").value,
     partNo: document.getElementById("supply-filter-item").value,
+    invoiceNo: document.getElementById("supply-filter-invoice").value,
     fy: document.getElementById("supply-filter-fy").value
   };
 }
@@ -749,11 +782,25 @@ function filteredLines() {
   var f = currentFilters();
   return allLines.filter(function (l) {
     if (f.buyerId !== "all" && l.buyerId !== f.buyerId) return false;
-    if (f.partNo !== "all" && l.partNo !== f.partNo) return false;
+    if (supplyFilterMode === "invoice") {
+      if (f.invoiceNo !== "all" && l.invoiceNo !== f.invoiceNo) return false;
+    } else if (f.partNo !== "all" && l.partNo !== f.partNo) return false;
     if (f.fy !== "all" && l.financialYear !== f.fy) return false;
     return true;
   });
 }
+
+function setSupplyFilterMode(mode) {
+  if (supplyFilterMode === mode) return;
+  supplyFilterMode = mode;
+  document.getElementById("supply-filter-mode-item").classList.toggle("is-active", mode === "item");
+  document.getElementById("supply-filter-mode-invoice").classList.toggle("is-active", mode === "invoice");
+  document.getElementById("supply-filter-item").disabled = mode !== "item";
+  document.getElementById("supply-filter-invoice").disabled = mode !== "invoice";
+  applyFilters();
+}
+document.getElementById("supply-filter-mode-item").addEventListener("click", function () { setSupplyFilterMode("item"); });
+document.getElementById("supply-filter-mode-invoice").addEventListener("click", function () { setSupplyFilterMode("invoice"); });
 
 function applyFilters() {
   var lines = filteredLines();
@@ -990,7 +1037,8 @@ function renderItemChart(lines) {
     values = ranked.map(function (r) { return itemMetric === "qty" ? r.qty : r.value; });
     titleEl.textContent = "Item Sale";
     subEl.textContent = "Top items by " + (itemMetric === "qty" ? "quantity delivered" : "sales value") +
-      (f.buyerId !== "all" ? " · " + document.getElementById("supply-filter-buyer").selectedOptions[0].textContent : "");
+      (f.buyerId !== "all" ? " · " + document.getElementById("supply-filter-buyer").selectedOptions[0].textContent : "") +
+      (supplyFilterMode === "invoice" && f.invoiceNo !== "all" ? " · Invoice " + f.invoiceNo : "");
   }
 
   var valueFormatter = itemMetric === "qty"
@@ -1086,7 +1134,11 @@ function renderSalesChart(lines) {
   var f = currentFilters();
   var bits = [];
   if (f.buyerId !== "all") bits.push(document.getElementById("supply-filter-buyer").selectedOptions[0].textContent);
-  if (f.partNo !== "all") bits.push(document.getElementById("supply-filter-item").selectedOptions[0].textContent);
+  if (supplyFilterMode === "invoice") {
+    if (f.invoiceNo !== "all") bits.push("Invoice " + f.invoiceNo);
+  } else if (f.partNo !== "all") {
+    bits.push(document.getElementById("supply-filter-item").selectedOptions[0].textContent);
+  }
   subEl.textContent = bits.length ? "Revenue & profit by month · " + bits.join(" · ") : "Revenue & profit by month, all buyers and items";
 
   if (!salesChart) {
@@ -1155,7 +1207,7 @@ function retheme() {
   applyFilters();
 }
 
-["supply-filter-buyer", "supply-filter-item", "supply-filter-fy"].forEach(function (id) {
+["supply-filter-buyer", "supply-filter-item", "supply-filter-invoice", "supply-filter-fy"].forEach(function (id) {
   document.getElementById(id).addEventListener("change", applyFilters);
 });
 
