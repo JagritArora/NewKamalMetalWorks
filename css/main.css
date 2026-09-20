@@ -1930,6 +1930,12 @@ button.login-back {
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 16px;
 }
+/* Grid items default to min-width: auto, so a native control with its own
+   intrinsic minimum size (mobile Safari's <input type="date"> widget is
+   the culprit) can force its track wider than 1fr and blow out of the
+   card. min-width: 0 lets the track -- and the input inside it -- actually
+   shrink to fit. */
+.billing-grid > .login-field { min-width: 0; }
 .billing-grid select, .billing-grid input {
   width: 100%;
   box-sizing: border-box;
@@ -1948,6 +1954,11 @@ button.login-back {
   cursor: default;
 }
 .billing-grid input:read-only::-webkit-calendar-picker-indicator { opacity: 0.35; pointer-events: none; }
+/* `readonly` on <input type="date"> stops typing but most mobile browsers
+   still open the native date wheel on tap -- unlike the indicator-icon
+   click it blocks on desktop, there's no separate tap target to disable
+   on mobile, so the only reliable fix is to block the whole control. */
+.billing-grid input[type="date"]:read-only { pointer-events: none; }
 .billing-optional { font-weight: 400; color: var(--ink-muted); text-transform: none; letter-spacing: 0; }
 
 .billing-seed-btn {
