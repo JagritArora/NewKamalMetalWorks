@@ -878,7 +878,7 @@ function openRatecardPanel() {
   if (partNos.length) {
     partNos.forEach(function (partNo) {
       var p = parts[partNo];
-      addRatecardRow({ partNo: partNo, description: p.description, hsn: p.hsn, rate: p.rate, poNo: p.poNo });
+      addRatecardRow({ partNo: partNo, description: p.description, hsn: p.hsn, rate: p.rate, margin: p.margin, poNo: p.poNo });
     });
   } else if (buyerId === "hella") {
     // No rate card saved yet for Hella -- prefill with the known part list
