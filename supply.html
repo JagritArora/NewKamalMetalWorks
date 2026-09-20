@@ -25,8 +25,7 @@
 
 <main class="login-shell billing-shell">
   <div class="billing-wrap" id="supply-wrap" hidden>
-    <a href="welcome.html" class="billing-back-link">&lsaquo; Welcome</a>
-    <span class="login-kicker">Billing</span>
+    <a href="welcome.html" class="billing-back-link" style="color: var(--ink);">Back to <span style="color: var(--accent);">Dashboard</span></a>
     <h1 class="welcome-heading" style="font-size: clamp(1.8rem, 4vw, 2.3rem);">Supply Overview.</h1>
     <p class="welcome-sub">Every item you've delivered, by buyer and item, straight from your invoices.</p>
     <p class="login-status" id="supply-status" role="status" aria-live="polite"></p>
@@ -117,7 +116,7 @@
 
       <section class="billing-card">
         <div class="chart-card-head">
-          <h2 class="billing-card-title">Sales Trend</h2>
+          <h2 class="billing-card-title">Sales &amp; Profit Trend</h2>
         </div>
         <p class="stat-tile-sub" id="supply-sales-chart-sub" style="margin-top: 4px;"></p>
         <div class="chart-canvas-wrap">
@@ -901,13 +900,14 @@ function renderTable(lines) {
 
 // ---------------------------------------------------------------------
 // Charts -- Item Sale ranks items (or, with one item selected, shows that
-// item's month-by-month delivery trend) and Sales Trend tracks revenue
-// over time for whatever buyer/item/year is currently selected.
+// item's month-by-month delivery trend) and Sales & Profit Trend tracks
+// revenue and profit over time for whatever buyer/item/year is selected.
 // ---------------------------------------------------------------------
 function chartTheme() {
   var cs = getComputedStyle(document.documentElement);
   return {
     accent: cs.getPropertyValue("--accent").trim(),
+    success: cs.getPropertyValue("--success").trim(),
     ink: cs.getPropertyValue("--ink").trim(),
     inkMuted: cs.getPropertyValue("--ink-muted").trim(),
     line: cs.getPropertyValue("--line").trim(),
@@ -960,7 +960,7 @@ function renderItemChart(lines) {
   empty.hidden = true;
   canvas.style.display = "block";
 
-  var labels, values, isTrend = f.partNo !== "all";
+  var labels, values, tooltipTitles, isTrend = f.partNo !== "all";
 
   if (isTrend) {
     var monthly = {};
@@ -972,25 +972,25 @@ function renderItemChart(lines) {
     var keys = Object.keys(monthly).sort();
     labels = keys.map(monthLabel);
     values = keys.map(function (k) { return monthly[k]; });
+    tooltipTitles = labels;
     titleEl.textContent = lines[0].description;
-    subEl.textContent = "Monthly deliveries" + (f.buyerId !== "all" ? " to " + lines[0].buyerName : "") +
-      (itemMetric === "value" ? " · ₹ from rate card" : "");
+    subEl.textContent = "Monthly deliveries" + (f.buyerId !== "all" ? " to " + lines[0].buyerName : "");
   } else {
     var byItem = {};
     lines.forEach(function (l) {
-      byItem[l.partNo] = byItem[l.partNo] || { label: l.description, qty: 0, value: 0 };
+      byItem[l.partNo] = byItem[l.partNo] || { partNo: l.partNo, label: l.description, qty: 0, value: 0 };
       byItem[l.partNo].qty += l.qty;
       byItem[l.partNo].value += l.amount || 0;
     });
     var ranked = Object.keys(byItem).map(function (k) { return byItem[k]; })
       .sort(function (a, b) { return (itemMetric === "qty" ? b.qty - a.qty : b.value - a.value); })
       .slice(0, 8);
-    labels = ranked.map(function (r) { return r.label; });
+    labels = ranked.map(function (r) { return r.partNo; });
+    tooltipTitles = ranked.map(function (r) { return r.label; });
     values = ranked.map(function (r) { return itemMetric === "qty" ? r.qty : r.value; });
     titleEl.textContent = "Item Sale";
     subEl.textContent = "Top items by " + (itemMetric === "qty" ? "quantity delivered" : "sales value") +
-      (f.buyerId !== "all" ? " · " + document.getElementById("supply-filter-buyer").selectedOptions[0].textContent : "") +
-      (itemMetric === "value" ? " · ₹ from rate card" : "");
+      (f.buyerId !== "all" ? " · " + document.getElementById("supply-filter-buyer").selectedOptions[0].textContent : "");
   }
 
   var valueFormatter = itemMetric === "qty"
@@ -1017,6 +1017,7 @@ function renderItemChart(lines) {
           legend: { display: false },
           tooltip: {
             callbacks: {
+              title: function (items) { return tooltipTitles[items[0].dataIndex]; },
               label: function (ctx) {
                 return itemMetric === "qty"
                   ? ctx.parsed.y.toLocaleString("en-IN") + " pcs"
@@ -1034,6 +1035,7 @@ function renderItemChart(lines) {
     itemChart.data.datasets[0].label = itemMetric === "qty" ? "Qty" : "Sales Value";
     itemChart.data.datasets[0].backgroundColor = theme.accent;
     itemChart.options.scales = baseScales(theme, valueFormatter);
+    itemChart.options.plugins.tooltip.callbacks.title = function (items) { return tooltipTitles[items[0].dataIndex]; };
     itemChart.options.plugins.tooltip.callbacks.label = function (ctx) {
       return itemMetric === "qty"
         ? ctx.parsed.y.toLocaleString("en-IN") + " pcs"
@@ -1067,21 +1069,25 @@ function renderSalesChart(lines) {
   canvas.style.display = "block";
 
   var monthly = {};
+  var monthlyProfit = {};
   lines.forEach(function (l) {
     var k = monthKey(l.date);
     monthly[k] = monthly[k] || 0;
     monthly[k] += l.amount || 0;
+    if (l.profit != null) {
+      monthlyProfit[k] = (monthlyProfit[k] || 0) + l.profit;
+    }
   });
   var keys = Object.keys(monthly).sort();
   var labels = keys.map(monthLabel);
   var values = keys.map(function (k) { return monthly[k]; });
+  var profitValues = keys.map(function (k) { return monthlyProfit[k] || 0; });
 
   var f = currentFilters();
   var bits = [];
   if (f.buyerId !== "all") bits.push(document.getElementById("supply-filter-buyer").selectedOptions[0].textContent);
   if (f.partNo !== "all") bits.push(document.getElementById("supply-filter-item").selectedOptions[0].textContent);
-  subEl.textContent = (bits.length ? "Revenue by month · " + bits.join(" · ") : "Revenue by month, all buyers and items") +
-    " · priced from rate card";
+  subEl.textContent = bits.length ? "Revenue & profit by month · " + bits.join(" · ") : "Revenue & profit by month, all buyers and items";
 
   if (!salesChart) {
     salesChart = new ChartLib(canvas.getContext("2d"), {
@@ -1099,16 +1105,27 @@ function renderSalesChart(lines) {
           borderWidth: 2,
           tension: 0.3,
           fill: true
+        }, {
+          label: "Profit",
+          data: profitValues,
+          borderColor: theme.success,
+          backgroundColor: theme.success + "26",
+          pointBackgroundColor: theme.success,
+          pointRadius: 3,
+          pointHoverRadius: 5,
+          borderWidth: 2,
+          tension: 0.3,
+          fill: true
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { display: false },
+          legend: { display: true, position: "top", align: "end", labels: { boxWidth: 12, font: { family: "IBM Plex Sans" } } },
           tooltip: {
             callbacks: {
-              label: function (ctx) { return formatCurrency(ctx.parsed.y); }
+              label: function (ctx) { return ctx.dataset.label + ": " + formatCurrency(ctx.parsed.y); }
             }
           }
         },
@@ -1121,6 +1138,10 @@ function renderSalesChart(lines) {
     salesChart.data.datasets[0].borderColor = theme.accent;
     salesChart.data.datasets[0].backgroundColor = theme.accent + "26";
     salesChart.data.datasets[0].pointBackgroundColor = theme.accent;
+    salesChart.data.datasets[1].data = profitValues;
+    salesChart.data.datasets[1].borderColor = theme.success;
+    salesChart.data.datasets[1].backgroundColor = theme.success + "26";
+    salesChart.data.datasets[1].pointBackgroundColor = theme.success;
     salesChart.options.scales = baseScales(theme, function (v) { return formatCompactCurrency(v); });
     salesChart.update();
   }
