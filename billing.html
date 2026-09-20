@@ -102,7 +102,7 @@
                 <tr>
                   <th>Part No.</th>
                   <th>Description</th>
-                  <th>HSN/SAC</th>
+                  <th class="billing-hsn-col">HSN/SAC</th>
                   <th>Qty</th>
                   <th>Rate</th>
                   <th>Amount</th>
@@ -187,7 +187,7 @@
               <th>S.No</th>
               <th>Part No.</th>
               <th>Description</th>
-              <th>HSN/SAC</th>
+              <th class="billing-hsn-col">HSN/SAC</th>
               <th>Qty</th>
               <th>Rate</th>
               <th>Amount</th>
@@ -1713,12 +1713,15 @@ var PREVIEW_PDF_PATH = "invoices/preview/preview.pdf";
 // the exact data buildInvoicePdf() (and, for Generate, the Firestore
 // writes) need from it. Returns { error, focusRow? } if invalid.
 // ---------------------------------------------------------------------
-function collectInvoiceFormData() {
+var EWAY_REQUIRED_THRESHOLD = 50000;
+
+function collectInvoiceFormData(requireEway) {
   var buyerId = currentBuyerId();
   var buyer = buyersById[buyerId];
   var invoiceNo = invoiceNoInput.value.trim();
   var dateVal = dateInput.value;
   var vehicleNo = document.getElementById("billing-vehicle-no").value.trim();
+  var ewayBillNo = document.getElementById("billing-eway-no").value.trim();
   var totals = recomputeTotals();
 
   if (!buyer) return { error: "Load the rate card for this buyer first." };
@@ -1730,6 +1733,12 @@ function collectInvoiceFormData() {
     return { error: "Enter a quantity for every item you've picked before generating.", focusRow: missingQtyRow };
   }
   if (!totals.items.length) return { error: "Add at least one line item with a part and quantity." };
+  if (requireEway && !ewayBillNo && totals.net >= EWAY_REQUIRED_THRESHOLD) {
+    return {
+      error: "EWAY Bill No. is required for invoices of ₹" + EWAY_REQUIRED_THRESHOLD.toLocaleString("en-IN") + " or more.",
+      focusId: "billing-eway-no"
+    };
+  }
 
   var dateObj = new Date(dateVal + "T00:00:00");
   var dateStr = dateObj.toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" });
@@ -1751,7 +1760,7 @@ function collectInvoiceFormData() {
       dateStr: dateStr,
       poNo: document.getElementById("billing-po-no").value.trim(),
       scheduleNo: document.getElementById("billing-schedule-no").value.trim(),
-      ewayBillNo: document.getElementById("billing-eway-no").value.trim(),
+      ewayBillNo: ewayBillNo,
       vehicleNo: vehicleNo,
       termsOfDelivery: document.getElementById("billing-terms").value.trim(),
       buyer: buyer,
@@ -1773,10 +1782,11 @@ function collectInvoiceFormData() {
 // ---------------------------------------------------------------------
 previewBtn.addEventListener("click", function () {
   statusEl().classList.remove("is-visible");
-  var form = collectInvoiceFormData();
+  var form = collectInvoiceFormData(false);
   if (form.error) {
     showStatus(form.error, true);
     if (form.focusRow) form.focusRow.querySelector(".billing-qty-input").focus();
+    if (form.focusId) document.getElementById(form.focusId).focus();
     return;
   }
 
@@ -1813,10 +1823,11 @@ previewBtn.addEventListener("click", function () {
 
 generateBtn.addEventListener("click", function () {
   statusEl().classList.remove("is-visible");
-  var form = collectInvoiceFormData();
+  var form = collectInvoiceFormData(true);
   if (form.error) {
     showStatus(form.error, true);
     if (form.focusRow) form.focusRow.querySelector(".billing-qty-input").focus();
+    if (form.focusId) document.getElementById(form.focusId).focus();
     return;
   }
   var buyerId = form.buyerId;

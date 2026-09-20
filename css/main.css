@@ -2101,6 +2101,12 @@ button.login-back {
   vertical-align: middle;
   color: var(--ink);
 }
+/* HSN/SAC is auto-filled from the rate card the moment a part is picked,
+   so showing it while entering a line item is just noise -- it's still
+   collected into every row (tr.dataset.hsn) and printed on the PDF, just
+   not shown on screen here. The rate-card editor's own HSN column (where
+   the value is actually typed in) is untouched. */
+.billing-hsn-col, .billing-hsn-cell, .ie-hsn-cell { display: none; }
 .billing-items-table select, .billing-items-table input {
   width: 100%;
   box-sizing: border-box;
