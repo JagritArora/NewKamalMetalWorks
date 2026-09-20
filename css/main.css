@@ -1971,6 +1971,13 @@ button.login-back {
 }
 .billing-ratecard-hint { font-size: 0.86rem; color: var(--ink-muted); }
 
+.billing-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 .billing-ratecard-panel {
   margin-top: 18px;
   padding: 22px;
@@ -2452,6 +2459,8 @@ button.login-back {
   border-left: 2px solid var(--accent);
   border-radius: var(--radius-sm);
 }
+.login-status.is-error { color: var(--danger); }
+.login-status.is-error.is-visible { border-left-color: var(--danger); }
 
 .login-signed-in { margin-top: 30px; text-align: center; }
 .login-signed-in .login-heading { margin-top: 12px; }

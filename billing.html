@@ -208,7 +208,10 @@
 
       <p class="login-status" id="billing-status" role="status" aria-live="polite"></p>
 
-      <button type="button" class="btn btn-primary billing-generate-btn" id="billing-generate-btn">Generate</button>
+      <div class="billing-actions-row" id="billing-actions-row">
+        <button type="button" class="billing-seed-btn billing-preview-btn" id="billing-preview-btn">Preview</button>
+        <button type="button" class="btn btn-primary billing-generate-btn" id="billing-generate-btn">Generate</button>
+      </div>
     </section>
 
     <section class="billing-card">
@@ -464,10 +467,11 @@ function formatCurrency(n) {
 }
 
 function statusEl() { return document.getElementById("billing-status"); }
-function showStatus(message) {
+function showStatus(message, isError) {
   var el = statusEl();
   el.textContent = message;
   el.classList.add("is-visible");
+  el.classList.toggle("is-error", !!isError);
 }
 
 // ---------------------------------------------------------------------
@@ -506,7 +510,7 @@ var NEW_INVOICE_BODY_IDS = [
   "billing-items-wrap",
   "billing-new-invoice-totals",
   "billing-status",
-  "billing-generate-btn"
+  "billing-actions-row"
 ];
 
 function setNewInvoiceBodyCollapsed(collapsed) {
@@ -1696,9 +1700,20 @@ function buildInvoicePdf(data) {
 // Generate
 // ---------------------------------------------------------------------
 var generateBtn = document.getElementById("billing-generate-btn");
+var previewBtn = document.getElementById("billing-preview-btn");
 
-generateBtn.addEventListener("click", function () {
-  statusEl().classList.remove("is-visible");
+// A fixed path, always overwritten by the next preview -- unlike a real
+// invoice's storage path (keyed by buyer + invoice no.), a preview isn't a
+// record worth keeping, so it never accumulates versions and its download
+// link stays the same every time.
+var PREVIEW_PDF_PATH = "invoices/preview/preview.pdf";
+
+// ---------------------------------------------------------------------
+// Shared by both Preview and Generate -- validates the form and builds
+// the exact data buildInvoicePdf() (and, for Generate, the Firestore
+// writes) need from it. Returns { error, focusRow? } if invalid.
+// ---------------------------------------------------------------------
+function collectInvoiceFormData() {
   var buyerId = currentBuyerId();
   var buyer = buyersById[buyerId];
   var invoiceNo = invoiceNoInput.value.trim();
@@ -1706,43 +1721,116 @@ generateBtn.addEventListener("click", function () {
   var vehicleNo = document.getElementById("billing-vehicle-no").value.trim();
   var totals = recomputeTotals();
 
-  if (!buyer) { showStatus("Load the rate card for this buyer first."); return; }
-  if (!invoiceNo) { showStatus("Enter an invoice number."); return; }
-  if (!dateVal) { showStatus("Pick a date."); return; }
-  if (!vehicleNo) { showStatus("Enter a vehicle number."); return; }
+  if (!buyer) return { error: "Load the rate card for this buyer first." };
+  if (!invoiceNo) return { error: "Enter an invoice number." };
+  if (!dateVal) return { error: "Pick a date." };
+  if (!vehicleNo) return { error: "Enter a vehicle number." };
   var missingQtyRow = findRowMissingQty();
   if (missingQtyRow) {
-    showStatus("Enter a quantity for every item you've picked before generating.");
-    missingQtyRow.querySelector(".billing-qty-input").focus();
-    return;
+    return { error: "Enter a quantity for every item you've picked before generating.", focusRow: missingQtyRow };
   }
-  if (!totals.items.length) { showStatus("Add at least one line item with a part and quantity."); return; }
-
-  generateBtn.disabled = true;
-  generateBtn.textContent = "Generating…";
+  if (!totals.items.length) return { error: "Add at least one line item with a part and quantity." };
 
   var dateObj = new Date(dateVal + "T00:00:00");
-  var fy = financialYearFor(dateObj);
   var dateStr = dateObj.toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" });
   var netWords = numberToWordsIndian(totals.net);
   var seqMatch = invoiceNo.match(/(\d+)\s*$/);
   var typedSeq = seqMatch ? parseInt(seqMatch[1], 10) : null;
 
-  var pdfData = {
-    invoiceNo: invoiceNo,
-    dateStr: dateStr,
-    poNo: document.getElementById("billing-po-no").value.trim(),
-    scheduleNo: document.getElementById("billing-schedule-no").value.trim(),
-    ewayBillNo: document.getElementById("billing-eway-no").value.trim(),
-    vehicleNo: document.getElementById("billing-vehicle-no").value.trim(),
-    termsOfDelivery: document.getElementById("billing-terms").value.trim(),
+  return {
+    buyerId: buyerId,
     buyer: buyer,
-    items: totals.items,
-    subtotal: totals.subtotal,
-    igst: totals.igst,
-    net: totals.net,
-    netWords: netWords
+    invoiceNo: invoiceNo,
+    dateVal: dateVal,
+    dateObj: dateObj,
+    totals: totals,
+    netWords: netWords,
+    typedSeq: typedSeq,
+    pdfData: {
+      invoiceNo: invoiceNo,
+      dateStr: dateStr,
+      poNo: document.getElementById("billing-po-no").value.trim(),
+      scheduleNo: document.getElementById("billing-schedule-no").value.trim(),
+      ewayBillNo: document.getElementById("billing-eway-no").value.trim(),
+      vehicleNo: vehicleNo,
+      termsOfDelivery: document.getElementById("billing-terms").value.trim(),
+      buyer: buyer,
+      items: totals.items,
+      subtotal: totals.subtotal,
+      igst: totals.igst,
+      net: totals.net,
+      netWords: netWords
+    }
   };
+}
+
+// ---------------------------------------------------------------------
+// Preview -- builds the exact same PDF Generate would, but only ever
+// writes it to the fixed PREVIEW_PDF_PATH above and touches nothing in
+// Firestore (no invoice/supply/payment doc, no counter change). Opens
+// the tab synchronously on click so the async upload can't get it
+// blocked as a popup.
+// ---------------------------------------------------------------------
+previewBtn.addEventListener("click", function () {
+  statusEl().classList.remove("is-visible");
+  var form = collectInvoiceFormData();
+  if (form.error) {
+    showStatus(form.error, true);
+    if (form.focusRow) form.focusRow.querySelector(".billing-qty-input").focus();
+    return;
+  }
+
+  var previewTab = window.open("", "_blank");
+
+  previewBtn.disabled = true;
+  previewBtn.textContent = "Preparing…";
+
+  var fileRef = storageRef(storage, PREVIEW_PDF_PATH);
+
+  INVOICE_PDF_ASSETS_PROMISE
+    .then(function () {
+      var pdf = buildInvoicePdf(form.pdfData);
+      return pdf.output("blob");
+    })
+    .then(function (pdfBlob) {
+      return uploadBytes(fileRef, pdfBlob, { contentType: "application/pdf" });
+    })
+    .then(function () { return getDownloadURL(fileRef); })
+    .then(function (pdfUrl) {
+      if (previewTab) { previewTab.location.href = pdfUrl; } else { window.open(pdfUrl, "_blank"); }
+      showStatus("Preview opened in a new tab — nothing has been saved yet.");
+    })
+    .catch(function (err) {
+      if (previewTab) previewTab.close();
+      showStatus("Couldn't build the preview — please try again.", true);
+      console.error(err);
+    })
+    .finally(function () {
+      previewBtn.disabled = false;
+      previewBtn.textContent = "Preview";
+    });
+});
+
+generateBtn.addEventListener("click", function () {
+  statusEl().classList.remove("is-visible");
+  var form = collectInvoiceFormData();
+  if (form.error) {
+    showStatus(form.error, true);
+    if (form.focusRow) form.focusRow.querySelector(".billing-qty-input").focus();
+    return;
+  }
+  var buyerId = form.buyerId;
+  var buyer = form.buyer;
+  var invoiceNo = form.invoiceNo;
+  var dateVal = form.dateVal;
+  var totals = form.totals;
+  var netWords = form.netWords;
+  var typedSeq = form.typedSeq;
+  var pdfData = form.pdfData;
+  var fy = financialYearFor(form.dateObj);
+
+  generateBtn.disabled = true;
+  generateBtn.textContent = "Generating…";
 
   var safeInvoiceNo = invoiceNo.replace(/[^\w.-]+/g, "_");
   var pdfPath = "invoices/" + buyerId + "/" + safeInvoiceNo + ".pdf";
@@ -1812,7 +1900,7 @@ generateBtn.addEventListener("click", function () {
       loadHistory();
     })
     .catch(function (err) {
-      showStatus("Something went wrong generating the invoice — please try again.");
+      showStatus("Something went wrong generating the invoice — please try again.", true);
       console.error(err);
     })
     .finally(function () {
@@ -1925,9 +2013,9 @@ function sendInvoiceEmail(invoiceId, inv, btn) {
       btn.disabled = false;
       btn.textContent = originalText;
       if (err && err.message === "NO_MASTER_EMAIL") {
-        showStatus("No master email is on file to send to — add one from Profile.");
+        showStatus("No master email is on file to send to — add one from Profile.", true);
       } else {
-        showStatus("Couldn't send the invoice email — please try again.");
+        showStatus("Couldn't send the invoice email — please try again.", true);
         console.error(err);
       }
     });
