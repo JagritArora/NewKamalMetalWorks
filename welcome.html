@@ -33,37 +33,37 @@
 
 <main class="login-shell welcome-shell">
   <div class="welcome-card" id="welcome-card" hidden>
-    <span class="login-kicker welcome-fade" id="welcome-kicker" style="--d:0s">Client access</span>
+    <span class="login-kicker welcome-fade" id="welcome-kicker" style="--d:0s">Client Access</span>
     <h1 class="welcome-heading welcome-fade" id="welcome-heading" style="--d:.08s">Welcome.</h1>
     <p class="welcome-sub welcome-fade" style="--d:.16s">How can we help you today?</p>
   </div>
 
   <section class="qa-section welcome-fade" id="welcome-quick-actions" style="--d:.34s" hidden>
-    <h2 class="qa-heading">Quick actions.</h2>
+    <h2 class="qa-heading">Quick Actions.</h2>
     <div class="qa-slider">
       <div class="qa-track" id="qa-track">
         <a href="billing.html" class="qa-card">
           <span class="qa-plus" aria-hidden="true">+</span>
           <span class="qa-kicker">Billing</span>
-          <span class="qa-title">Generate a new invoice.</span>
+          <span class="qa-title">Generate a New Invoice.</span>
           <span class="qa-desc">Pick the buyer and items, then raise a tax invoice and email it out in one go.</span>
         </a>
-        <a href="coming-soon.html?feature=Historical+Invoices" class="qa-card">
+        <a href="invoices.html" class="qa-card">
           <span class="qa-plus" aria-hidden="true">+</span>
           <span class="qa-kicker">Billing</span>
-          <span class="qa-title">Browse historical invoices.</span>
+          <span class="qa-title">Browse Historical Invoices.</span>
           <span class="qa-desc">Search and filter every invoice you've ever raised, all in one place.</span>
         </a>
-        <a href="coming-soon.html?feature=Mark+Payment" class="qa-card">
+        <a href="payments.html" class="qa-card">
           <span class="qa-plus" aria-hidden="true">+</span>
           <span class="qa-kicker">Billing</span>
-          <span class="qa-title">Mark a payment.</span>
+          <span class="qa-title">Payment Info</span>
           <span class="qa-desc">Log an incoming payment against an invoice and keep your books current.</span>
         </a>
         <a href="coming-soon.html?feature=Pending+Amount" class="qa-card">
           <span class="qa-plus" aria-hidden="true">+</span>
           <span class="qa-kicker">Billing</span>
-          <span class="qa-title">Check pending amount.</span>
+          <span class="qa-title">Check Pending Amount.</span>
           <span class="qa-desc">See exactly what's still outstanding, per buyer or across the board.</span>
         </a>
       </div>
@@ -190,7 +190,7 @@ function firstName(fullName) {
 
 function reveal(name, role) {
   heading.textContent = name ? "Welcome, " + name + "." : "Welcome.";
-  kicker.textContent = role === "master" ? "Master access" : "Client access";
+  kicker.textContent = role === "master" ? "Master Access" : "Client Access";
   document.getElementById("welcome-quick-actions").hidden = role !== "master";
   loadingCard.hidden = true;
   welcomeCard.hidden = false;

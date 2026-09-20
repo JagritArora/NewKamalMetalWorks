@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Coming soon | New Kamal Metal Works</title>
+<title>Coming Soon | New Kamal Metal Works</title>
 <meta name="description" content="This feature is on its way." />
 <meta name="robots" content="noindex" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -24,8 +24,8 @@
 
 <main class="login-shell">
   <div class="login-card login-enter" id="soon-card" hidden>
-    <span class="login-kicker">Coming soon</span>
-    <h1 class="welcome-heading" id="soon-heading" style="font-size: clamp(1.6rem, 4vw, 2rem);">This is on its way.</h1>
+    <span class="login-kicker">Coming Soon</span>
+    <h1 class="welcome-heading" id="soon-heading" style="font-size: clamp(1.6rem, 4vw, 2rem);">This Is on Its Way.</h1>
     <p class="welcome-sub">Stay tuned &mdash; we're building this out and it'll be ready soon.</p>
     <a href="welcome.html" class="welcome-action-link" style="display:inline-block; margin-top: 28px;">&lsaquo; Back to welcome</a>
   </div>
@@ -85,7 +85,7 @@ var auth = getAuth(app);
 
 var feature = new URLSearchParams(window.location.search).get("feature");
 if (feature) {
-  document.getElementById("soon-heading").textContent = feature + " is on its way.";
+  document.getElementById("soon-heading").textContent = feature + " Is on Its Way.";
 }
 
 onAuthStateChanged(auth, function (user) {

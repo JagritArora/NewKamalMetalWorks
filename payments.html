@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Payments | New Kamal Metal Works</title>
+<meta name="description" content="Payment tracking for New Kamal Metal Works." />
+<meta name="robots" content="noindex" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/main.css?v=48" />
+</head>
+<body class="login-page">
+
+<nav class="site-nav">
+  <a href="index.html#hero" class="brand">New Kamal <span>Metal Works</span></a>
+  <a href="welcome.html" class="nav-icon-btn" aria-label="Back to Welcome">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1H9.5a1 1 0 0 0 1-1v-4a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v4a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-9"/></svg>
+  </a>
+</nav>
+
+<main class="login-shell billing-shell">
+  <div class="billing-wrap" id="payments-wrap" hidden>
+    <a href="welcome.html" class="billing-back-link">&lsaquo; Welcome</a>
+    <span class="login-kicker">Billing</span>
+    <h1 class="welcome-heading" style="font-size: clamp(1.8rem, 4vw, 2.3rem);">Payments.</h1>
+    <p class="welcome-sub">Track which invoices are still pending and mark them cleared as payments come in.</p>
+
+    <section class="billing-card">
+      <h2 class="billing-card-title">Payments</h2>
+      <div class="billing-history-wrap">
+        <table class="billing-history-table" id="billing-payments-table">
+          <thead>
+            <tr>
+              <th>Invoice No.</th>
+              <th>Date</th>
+              <th>Buyer</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Cleared on</th>
+              <th>PDF</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="billing-payments-body">
+            <tr><td colspan="8" class="billing-history-empty">Loading&hellip;</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <div class="login-card login-enter login-loading-card" id="payments-loading">
+    <div class="login-spinner" aria-hidden="true"><span></span><span></span><span></span></div>
+    <p class="login-sub">Loading&hellip;</p>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <div class="footer-top">
+      <a href="index.html#hero" class="footer-brand">New Kamal <span>Metal Works</span></a>
+      <ul class="footer-links">
+        <li><a href="index.html#operations">Operations</a></li>
+        <li><a href="index.html#capabilities">Capabilities</a></li>
+        <li><a href="index.html#materials">Materials</a></li>
+        <li><a href="index.html#tooling">Tooling</a></li>
+        <li><a href="index.html#quality">Quality</a></li>
+        <li><a href="index.html#about">About</a></li>
+        <li><a href="index.html#contact">Contact</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-bottom">
+      <p class="footer-legal">&copy; <span id="year"></span> New Kamal Metal Works, Faridabad. All rights reserved.</p>
+      <p class="footer-meta">ISO 9001:2015 certified &middot; GSTIN 06AGQPA5950R1ZR</p>
+      <div class="footer-credit">
+        <p class="footer-credit-name">Designed by <span class="footer-credit-highlight">Jagrit Arora</span></p>
+        <p class="footer-credit-links">
+          <a href="mailto:jagrit.arora007@icloud.com">jagrit.arora007@icloud.com</a>
+          <span class="footer-credit-dot" aria-hidden="true">&middot;</span>
+          <a href="tel:+919599030400">+91 95990 30400</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import {
+  initializeFirestore,
+  doc,
+  getDoc,
+  setDoc,
+  getDocs,
+  updateDoc,
+  collection,
+  query,
+  orderBy,
+  limit,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+var firebaseConfig = {
+  apiKey: "AIzaSyDkEyDAOah5XzAOVjUux9SLhH60To2oTKs",
+  authDomain: "new-kamal-metal-works.firebaseapp.com",
+  projectId: "new-kamal-metal-works",
+  storageBucket: "new-kamal-metal-works.firebasestorage.app",
+  messagingSenderId: "595817400572",
+  appId: "1:595817400572:web:8617eb7419e5049524af79"
+};
+
+var app = initializeApp(firebaseConfig);
+var auth = getAuth(app);
+var db = initializeFirestore(app, { experimentalForceLongPolling: true });
+
+document.getElementById("year").textContent = new Date().getFullYear();
+
+function formatCurrency(n) {
+  return "₹" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function formatDisplayDate(dateStr) {
+  if (!dateStr) return "—";
+  return new Date(dateStr + "T00:00:00").toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+// ---------------------------------------------------------------------
+// Themed confirm dialog -- replaces window.confirm() so it matches the
+// site's dark/light surface colors instead of the browser's native box.
+// Resolves true if the person confirms, false if they cancel/dismiss.
+// ---------------------------------------------------------------------
+function showConfirmDialog(title, body, confirmLabel) {
+  return new Promise(function (resolve) {
+    var overlay = document.createElement("div");
+    overlay.className = "confirm-overlay";
+
+    var dialog = document.createElement("div");
+    dialog.className = "confirm-dialog";
+
+    var titleEl = document.createElement("p");
+    titleEl.className = "confirm-dialog-title";
+    titleEl.textContent = title;
+
+    var bodyEl = document.createElement("p");
+    bodyEl.className = "confirm-dialog-body";
+    bodyEl.textContent = body;
+
+    var actions = document.createElement("div");
+    actions.className = "confirm-dialog-actions";
+
+    var cancelBtn = document.createElement("button");
+    cancelBtn.type = "button";
+    cancelBtn.className = "confirm-dialog-cancel";
+    cancelBtn.textContent = "Cancel";
+
+    var confirmBtn = document.createElement("button");
+    confirmBtn.type = "button";
+    confirmBtn.className = "confirm-dialog-confirm";
+    confirmBtn.textContent = confirmLabel;
+
+    function close(result) {
+      document.removeEventListener("keydown", onKeydown);
+      overlay.classList.remove("is-visible");
+      overlay.remove();
+      resolve(result);
+    }
+    function onKeydown(e) { if (e.key === "Escape") close(false); }
+
+    cancelBtn.addEventListener("click", function () { close(false); });
+    confirmBtn.addEventListener("click", function () { close(true); });
+    overlay.addEventListener("click", function (e) { if (e.target === overlay) close(false); });
+    document.addEventListener("keydown", onKeydown);
+
+    actions.appendChild(cancelBtn);
+    actions.appendChild(confirmBtn);
+    dialog.appendChild(titleEl);
+    dialog.appendChild(bodyEl);
+    dialog.appendChild(actions);
+    overlay.appendChild(dialog);
+    document.body.appendChild(overlay);
+    requestAnimationFrame(function () { overlay.classList.add("is-visible"); });
+  });
+}
+
+// ---------------------------------------------------------------------
+// Payments -- lists every /payments doc sorted by date descending
+// (latest first), regardless of status, and lets a pending invoice be
+// marked cleared, or a cleared one reverted, in place.
+// ---------------------------------------------------------------------
+function loadPayments() {
+  var body = document.getElementById("billing-payments-body");
+  return getDocs(query(collection(db, "payments"), orderBy("createdAt", "desc"), limit(50)))
+    .then(function (snap) {
+      if (snap.empty) {
+        body.innerHTML = '<tr><td colspan="8" class="billing-history-empty">No payments yet.</td></tr>';
+        return;
+      }
+      var rows = [];
+      snap.forEach(function (d) { rows.push({ id: d.id, data: d.data() }); });
+      rows.sort(function (a, b) { return (b.data.date || "").localeCompare(a.data.date || ""); });
+
+      // A payment doc shares its id with the invoice it was raised from
+      // (see billing.html's invoice-generate/edit flow), so that same id
+      // looks the matching invoice up for its PDF link.
+      return Promise.all(rows.map(function (row) {
+        return getDoc(doc(db, "invoices", row.id))
+          .then(function (invSnap) { row.pdfUrl = invSnap.exists() ? invSnap.data().pdfUrl : null; })
+          .catch(function () { row.pdfUrl = null; });
+      })).then(function () {
+        body.innerHTML = "";
+        rows.forEach(function (row) { body.appendChild(buildPaymentRow(row.id, row.data, row.pdfUrl)); });
+      });
+    })
+    .catch(function (err) {
+      body.innerHTML = '<tr><td colspan="8" class="billing-history-empty">Couldn’t load payments.</td></tr>';
+      console.error(err);
+    });
+}
+
+function buildPaymentRow(paymentId, pay, pdfUrl) {
+  var isCleared = pay.status === "cleared";
+  var tr = document.createElement("tr");
+  tr.innerHTML =
+    "<td>" + (pay.invoiceNo || "") + "</td>" +
+    "<td>" + formatDisplayDate(pay.date) + "</td>" +
+    "<td>" + (pay.buyerName || "") + "</td>" +
+    "<td>" + formatCurrency(pay.amount || 0) + "</td>" +
+    "<td><span class=\"billing-payment-status " + (isCleared ? "is-cleared" : "is-pending") + "\">" +
+      (isCleared ? "Cleared" : "Pending") + "</span></td>" +
+    "<td>" + (isCleared ? formatDisplayDate(pay.clearedOn) : "—") + "</td>" +
+    "<td>" + (pdfUrl ? '<a href="' + pdfUrl + '" target="_blank" rel="noopener">View</a>' : "—") + "</td>" +
+    "<td></td>";
+
+  var actionCell = tr.lastElementChild;
+  if (isCleared) {
+    var undoBtn = document.createElement("button");
+    undoBtn.type = "button";
+    undoBtn.className = "billing-ratecard-link-btn";
+    undoBtn.textContent = "Mark pending";
+    undoBtn.addEventListener("click", function () {
+      showConfirmDialog(
+        "Mark as pending?",
+        "Invoice " + (pay.invoiceNo || "this payment") + " will be moved back to pending and its cleared date cleared.",
+        "Mark pending"
+      ).then(function (confirmed) {
+        if (!confirmed) return;
+        undoBtn.disabled = true;
+        updateDoc(doc(db, "payments", paymentId), { status: "pending", clearedOn: null, updatedAt: serverTimestamp() })
+          .then(loadPayments)
+          .catch(function (err) { undoBtn.disabled = false; console.error(err); });
+      });
+    });
+    actionCell.appendChild(undoBtn);
+  } else {
+    var clearBtn = document.createElement("button");
+    clearBtn.type = "button";
+    clearBtn.className = "billing-seed-btn";
+    clearBtn.textContent = "Mark cleared";
+    clearBtn.addEventListener("click", function () {
+      actionCell.innerHTML = "";
+      var wrap = document.createElement("div");
+      wrap.className = "billing-payment-clear-row";
+
+      var dateInputEl = document.createElement("input");
+      dateInputEl.type = "date";
+      dateInputEl.value = new Date().toISOString().slice(0, 10);
+      dateInputEl.max = new Date().toISOString().slice(0, 10);
+
+      var confirmBtn = document.createElement("button");
+      confirmBtn.type = "button";
+      confirmBtn.className = "billing-payment-clear-confirm";
+      confirmBtn.setAttribute("aria-label", "Confirm cleared");
+      confirmBtn.innerHTML = "&#10003;";
+      confirmBtn.addEventListener("click", function () {
+        if (!dateInputEl.value) return;
+        confirmBtn.disabled = true;
+        updateDoc(doc(db, "payments", paymentId), {
+          status: "cleared",
+          clearedOn: dateInputEl.value,
+          updatedAt: serverTimestamp()
+        }).then(loadPayments).catch(function (err) { confirmBtn.disabled = false; console.error(err); });
+      });
+
+      var cancelBtn = document.createElement("button");
+      cancelBtn.type = "button";
+      cancelBtn.className = "billing-payment-clear-cancel";
+      cancelBtn.setAttribute("aria-label", "Cancel");
+      cancelBtn.innerHTML = "&times;";
+      cancelBtn.addEventListener("click", function () { loadPayments(); });
+
+      wrap.appendChild(dateInputEl);
+      wrap.appendChild(confirmBtn);
+      wrap.appendChild(cancelBtn);
+      actionCell.appendChild(wrap);
+    });
+    actionCell.appendChild(clearBtn);
+  }
+
+  return tr;
+}
+
+// ---------------------------------------------------------------------
+// Auth + role guard
+// ---------------------------------------------------------------------
+onAuthStateChanged(auth, function (user) {
+  if (!user) { window.location.replace("login.html"); return; }
+  if (!user.emailVerified) {
+    signOut(auth).then(function () { window.location.replace("login.html?unverified=1"); });
+    return;
+  }
+
+  getDoc(doc(db, "profiles", user.uid)).then(function (snap) {
+    var data = snap.exists() ? snap.data() : {};
+    if (data.role !== "master") { window.location.replace("welcome.html"); return; }
+    if (data.email !== user.email) {
+      setDoc(doc(db, "profiles", user.uid), { email: user.email }, { merge: true }).catch(function () {});
+    }
+
+    document.getElementById("payments-loading").hidden = true;
+    document.getElementById("payments-wrap").hidden = false;
+    loadPayments();
+  }).catch(function () {
+    window.location.replace("welcome.html");
+  });
+});
+</script>
+<script src="js/bot-widget.js?v=2" defer></script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Sign in | New Kamal Metal Works</title>
+<title>Sign In | New Kamal Metal Works</title>
 <meta name="description" content="Client sign-in for New Kamal Metal Works." />
 <meta name="robots" content="noindex" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -23,14 +23,14 @@
 
 <main class="login-shell">
   <div class="login-card login-enter">
-    <span class="login-kicker">Client access</span>
+    <span class="login-kicker">Client Access</span>
 
     <div class="login-tabs" id="login-tabs" role="tablist" aria-label="Sign in or create an account">
       <button type="button" class="login-tab is-active" id="tab-signin" role="tab" aria-selected="true" aria-controls="signin-form">Sign in</button>
       <button type="button" class="login-tab" id="tab-signup" role="tab" aria-selected="false" aria-controls="signup-form">Create account</button>
     </div>
 
-    <h1 class="login-heading" id="login-heading">Sign in</h1>
+    <h1 class="login-heading" id="login-heading">Sign In</h1>
     <p class="login-sub" id="login-sub">Enter your login ID and password to view your orders and quotations.</p>
 
     <form class="login-form" id="signin-form" novalidate>
@@ -215,7 +215,7 @@ function activateTab(name) {
   tabSignup.setAttribute("aria-selected", String(isSignup));
   signinForm.hidden = isSignup;
   signupForm.hidden = !isSignup;
-  heading.textContent = isSignup ? "Create your account" : "Sign in";
+  heading.textContent = isSignup ? "Create Your Account" : "Sign In";
   sub.textContent = isSignup
     ? "Set a password and tell us a bit about your company so we can process your orders and quotations."
     : "Enter your login ID and password to view your orders and quotations.";
@@ -305,7 +305,7 @@ function showResetView() {
   signinForm.hidden = true;
   signupForm.hidden = true;
   resetForm.hidden = false;
-  heading.textContent = "Reset your password";
+  heading.textContent = "Reset Your Password";
   sub.textContent = "Enter your login ID and we'll email you a link to set a new password.";
   resetStatus.classList.remove("is-visible");
   resetEmailInput.value = document.getElementById("login-id").value.trim();

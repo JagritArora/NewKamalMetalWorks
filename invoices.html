@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Historical Invoices | New Kamal Metal Works</title>
+<meta name="description" content="Every invoice raised by New Kamal Metal Works." />
+<meta name="robots" content="noindex" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/main.css?v=48" />
+</head>
+<body class="login-page">
+
+<nav class="site-nav">
+  <a href="index.html#hero" class="brand">New Kamal <span>Metal Works</span></a>
+  <a href="welcome.html" class="nav-icon-btn" aria-label="Back to Welcome">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1H9.5a1 1 0 0 0 1-1v-4a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v4a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-9"/></svg>
+  </a>
+</nav>
+
+<main class="login-shell billing-shell">
+  <div class="billing-wrap" id="invoices-wrap" hidden>
+    <a href="welcome.html" class="billing-back-link">&lsaquo; Welcome</a>
+    <span class="login-kicker">Billing</span>
+    <h1 class="welcome-heading" style="font-size: clamp(1.8rem, 4vw, 2.3rem);">Historical Invoices.</h1>
+    <p class="welcome-sub">Every invoice ever raised, most recent first.</p>
+
+    <section class="billing-card">
+      <h2 class="billing-card-title">All Invoices</h2>
+      <p class="login-status" id="invoices-status" role="status" aria-live="polite"></p>
+      <div class="billing-history-wrap">
+        <table class="billing-history-table" id="billing-invoices-table">
+          <thead>
+            <tr>
+              <th>Invoice No.</th>
+              <th>Date</th>
+              <th>Buyer</th>
+              <th>Net Amount</th>
+              <th>Emailed to</th>
+              <th>PDF</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="billing-invoices-body">
+            <tr><td colspan="7" class="billing-history-empty">Loading&hellip;</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <div class="login-card login-enter login-loading-card" id="invoices-loading">
+    <div class="login-spinner" aria-hidden="true"><span></span><span></span><span></span></div>
+    <p class="login-sub">Loading&hellip;</p>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <div class="footer-top">
+      <a href="index.html#hero" class="footer-brand">New Kamal <span>Metal Works</span></a>
+      <ul class="footer-links">
+        <li><a href="index.html#operations">Operations</a></li>
+        <li><a href="index.html#capabilities">Capabilities</a></li>
+        <li><a href="index.html#materials">Materials</a></li>
+        <li><a href="index.html#tooling">Tooling</a></li>
+        <li><a href="index.html#quality">Quality</a></li>
+        <li><a href="index.html#about">About</a></li>
+        <li><a href="index.html#contact">Contact</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-bottom">
+      <p class="footer-legal">&copy; <span id="year"></span> New Kamal Metal Works, Faridabad. All rights reserved.</p>
+      <p class="footer-meta">ISO 9001:2015 certified &middot; GSTIN 06AGQPA5950R1ZR</p>
+      <div class="footer-credit">
+        <p class="footer-credit-name">Designed by <span class="footer-credit-highlight">Jagrit Arora</span></p>
+        <p class="footer-credit-links">
+          <a href="mailto:jagrit.arora007@icloud.com">jagrit.arora007@icloud.com</a>
+          <span class="footer-credit-dot" aria-hidden="true">&middot;</span>
+          <a href="tel:+919599030400">+91 95990 30400</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import {
+  initializeFirestore,
+  doc,
+  getDoc,
+  setDoc,
+  addDoc,
+  updateDoc,
+  getDocs,
+  collection,
+  query,
+  where,
+  orderBy,
+  limit
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+var firebaseConfig = {
+  apiKey: "AIzaSyDkEyDAOah5XzAOVjUux9SLhH60To2oTKs",
+  authDomain: "new-kamal-metal-works.firebaseapp.com",
+  projectId: "new-kamal-metal-works",
+  storageBucket: "new-kamal-metal-works.firebasestorage.app",
+  messagingSenderId: "595817400572",
+  appId: "1:595817400572:web:8617eb7419e5049524af79"
+};
+
+var app = initializeApp(firebaseConfig);
+var auth = getAuth(app);
+var db = initializeFirestore(app, { experimentalForceLongPolling: true });
+
+document.getElementById("year").textContent = new Date().getFullYear();
+
+function formatCurrency(n) {
+  return "₹" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function showStatus(message) {
+  var el = document.getElementById("invoices-status");
+  el.textContent = message;
+  el.classList.add("is-visible");
+}
+
+// ---------------------------------------------------------------------
+// Historical invoices -- every /invoices doc, most recent first. Unlike
+// the "Recent Invoices" card on billing.html (capped at 2), this page
+// has no limit.
+// ---------------------------------------------------------------------
+function loadHistory() {
+  var body = document.getElementById("billing-invoices-body");
+  return getDocs(query(collection(db, "invoices"), orderBy("createdAt", "desc"), limit(500)))
+    .then(function (snap) {
+      if (snap.empty) {
+        body.innerHTML = '<tr><td colspan="7" class="billing-history-empty">No invoices yet.</td></tr>';
+        return;
+      }
+      body.innerHTML = "";
+      snap.forEach(function (d) {
+        var inv = d.data();
+        var tr = document.createElement("tr");
+        tr.innerHTML =
+          "<td>" + inv.invoiceNo + "</td>" +
+          "<td>" + inv.date + "</td>" +
+          "<td>" + (inv.buyer ? inv.buyer.name : "") + "</td>" +
+          "<td>" + formatCurrency(inv.net || 0) + "</td>" +
+          "<td>" + (inv.emailedTo ? inv.emailedTo.length : 0) + "</td>" +
+          "<td>" + (inv.pdfUrl ? '<a href="' + inv.pdfUrl + '" target="_blank" rel="noopener">View</a>' : "—") + "</td>" +
+          "<td></td>";
+        var actionCell = tr.lastElementChild;
+        if (inv.pdfUrl) {
+          var sendBtn = document.createElement("button");
+          sendBtn.type = "button";
+          sendBtn.className = "billing-seed-btn";
+          sendBtn.textContent = (inv.emailedTo && inv.emailedTo.length) ? "Resend" : "Send";
+          sendBtn.addEventListener("click", function () {
+            sendInvoiceEmail(d.id, inv, sendBtn);
+          });
+          actionCell.appendChild(sendBtn);
+        }
+        body.appendChild(tr);
+      });
+    })
+    .catch(function (err) {
+      body.innerHTML = '<tr><td colspan="7" class="billing-history-empty">Couldn’t load invoices.</td></tr>';
+      console.error(err);
+    });
+}
+
+function sendInvoiceEmail(invoiceId, inv, btn) {
+  var originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "Sending…";
+  var masterEmails = [];
+
+  getDocs(query(collection(db, "profiles"), where("role", "==", "master")))
+    .then(function (snap) {
+      snap.forEach(function (d) { if (d.data().email) masterEmails.push(d.data().email); });
+      if (!masterEmails.length) {
+        return Promise.reject(new Error("NO_MASTER_EMAIL"));
+      }
+      var safeInvoiceNo = inv.invoiceNo.replace(/[^\w.-]+/g, "_");
+      var dateObj = new Date(inv.date + "T00:00:00");
+      var dateStr = dateObj.toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" });
+      return addDoc(collection(db, "mail"), {
+        to: masterEmails,
+        message: {
+          subject: "Invoice " + inv.invoiceNo + " — New Kamal Metal Works",
+          html: "<div style=\"font-family: Helvetica, Arial, sans-serif; font-size: 18px; color: #1a1a1a; line-height: 1.6;\">" +
+            "<p style=\"margin: 0 0 18px;\">Dear Sir/Ma'am,</p>" +
+            "<p style=\"margin: 0 0 22px;\">Please find attached the tax invoice raised against the following order, for your reference and records:</p>" +
+            "<table cellpadding=\"0\" cellspacing=\"0\" style=\"border-collapse: collapse; margin: 0 0 26px; font-size: 18px;\">" +
+              "<tr>" +
+                "<td style=\"padding: 10px 28px 10px 0; color: #666666;\">Invoice No.</td>" +
+                "<td style=\"padding: 10px 0; font-weight: 700;\">" + inv.invoiceNo + "</td>" +
+              "</tr>" +
+              "<tr>" +
+                "<td style=\"padding: 10px 28px 10px 0; color: #666666; border-top: 1px solid #eeeeee;\">Date</td>" +
+                "<td style=\"padding: 10px 0; font-weight: 700; border-top: 1px solid #eeeeee;\">" + dateStr + "</td>" +
+              "</tr>" +
+              "<tr>" +
+                "<td style=\"padding: 10px 28px 10px 0; color: #666666; border-top: 1px solid #eeeeee;\">Amount</td>" +
+                "<td style=\"padding: 10px 0; font-weight: 700; color: #C4501C; border-top: 1px solid #eeeeee;\">" + formatCurrency(inv.net || 0) + "</td>" +
+              "</tr>" +
+            "</table>" +
+            "<p style=\"background: #FFF4EC; border-left: 4px solid #C4501C; padding: 16px 18px; margin: 0 0 26px; line-height: 1.6;\">" +
+              "If you have any concern related to the same, please contact us <strong>within 7 days</strong> — else it will be treated as agreed and booked in your accounts." +
+            "</p>" +
+            "<p style=\"margin: 0 0 26px;\">Thank you.</p>" +
+            "<p style=\"margin: 0;\">Regards,<br>" +
+              "<a href=\"https://www.newkamalmetalworks.co.in\" style=\"color: #C4501C; font-weight: 600; text-decoration: none;\">New Kamal Metal Works</a>" +
+            "</p>" +
+            "</div>",
+          attachments: [{ filename: safeInvoiceNo + ".pdf", path: inv.pdfUrl }]
+        }
+      }).then(function () {
+        return updateDoc(doc(db, "invoices", invoiceId), { emailedTo: masterEmails, status: "sent" });
+      });
+    })
+    .then(function () {
+      showStatus("Invoice " + inv.invoiceNo + " emailed.");
+      loadHistory();
+    })
+    .catch(function (err) {
+      btn.disabled = false;
+      btn.textContent = originalText;
+      if (err && err.message === "NO_MASTER_EMAIL") {
+        showStatus("No master email is on file to send to — add one from Profile.");
+      } else {
+        showStatus("Couldn't send the invoice email — please try again.");
+        console.error(err);
+      }
+    });
+}
+
+// ---------------------------------------------------------------------
+// Auth + role guard
+// ---------------------------------------------------------------------
+onAuthStateChanged(auth, function (user) {
+  if (!user) { window.location.replace("login.html"); return; }
+  if (!user.emailVerified) {
+    signOut(auth).then(function () { window.location.replace("login.html?unverified=1"); });
+    return;
+  }
+
+  getDoc(doc(db, "profiles", user.uid)).then(function (snap) {
+    var data = snap.exists() ? snap.data() : {};
+    if (data.role !== "master") { window.location.replace("welcome.html"); return; }
+    if (data.email !== user.email) {
+      setDoc(doc(db, "profiles", user.uid), { email: user.email }, { merge: true }).catch(function () {});
+    }
+
+    document.getElementById("invoices-loading").hidden = true;
+    document.getElementById("invoices-wrap").hidden = false;
+    loadHistory();
+  }).catch(function () {
+    window.location.replace("welcome.html");
+  });
+});
+</script>
+<script src="js/bot-widget.js?v=2" defer></script>
+</body>
+</html>
