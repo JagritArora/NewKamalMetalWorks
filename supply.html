@@ -96,15 +96,6 @@
           <span class="stat-tile-label">Invoices</span>
           <span class="stat-tile-value mono" id="supply-stat-invoices">—</span>
         </div>
-        <div class="stat-tile">
-          <span class="stat-tile-label">Buyers Served</span>
-          <span class="stat-tile-value mono" id="supply-stat-buyers">—</span>
-        </div>
-        <div class="stat-tile">
-          <span class="stat-tile-label" id="supply-stat-top-label">Top Buyer</span>
-          <span class="stat-tile-value" id="supply-stat-top-value" style="font-size: 1.05rem;">—</span>
-          <span class="stat-tile-sub" id="supply-stat-top-sub"></span>
-        </div>
       </div>
     </section>
 
@@ -867,58 +858,18 @@ document.getElementById("supply-correction-btn").addEventListener("click", funct
 
 function renderStats(lines) {
   var qty = 0, value = 0, profit = 0, knownProfitCount = 0;
-  var invoiceNos = {}, buyerIds = {};
+  var invoiceNos = {};
   lines.forEach(function (l) {
     qty += l.qty;
     value += l.amount || 0;
     if (l.profit != null) { profit += l.profit; knownProfitCount++; }
     if (l.invoiceNo) invoiceNos[l.invoiceNo] = true;
-    buyerIds[l.buyerId] = true;
   });
 
   document.getElementById("supply-stat-qty").textContent = qty.toLocaleString("en-IN");
-  document.getElementById("supply-stat-value").textContent = formatCompactCurrency(value);
-  document.getElementById("supply-stat-profit").textContent = knownProfitCount ? formatCompactCurrency(profit) : "—";
+  document.getElementById("supply-stat-value").textContent = formatCurrency(value);
+  document.getElementById("supply-stat-profit").textContent = knownProfitCount ? formatCurrency(profit) : "—";
   document.getElementById("supply-stat-invoices").textContent = Object.keys(invoiceNos).length.toLocaleString("en-IN");
-  document.getElementById("supply-stat-buyers").textContent = Object.keys(buyerIds).length.toLocaleString("en-IN");
-
-  var f = currentFilters();
-  var topLabel = document.getElementById("supply-stat-top-label");
-  var topValue = document.getElementById("supply-stat-top-value");
-  var topSub = document.getElementById("supply-stat-top-sub");
-
-  var groups = {};
-  var groupKind;
-  if (f.buyerId !== "all") {
-    groupKind = "item";
-    lines.forEach(function (l) {
-      groups[l.partNo] = groups[l.partNo] || { label: l.description, qty: 0, value: 0 };
-      groups[l.partNo].qty += l.qty;
-      groups[l.partNo].value += l.amount || 0;
-    });
-    topLabel.textContent = "Top Item";
-  } else {
-    groupKind = "buyer";
-    lines.forEach(function (l) {
-      groups[l.buyerId] = groups[l.buyerId] || { label: l.buyerName, qty: 0, value: 0 };
-      groups[l.buyerId].qty += l.qty;
-      groups[l.buyerId].value += l.amount || 0;
-    });
-    topLabel.textContent = f.partNo !== "all" ? "Top Buyer for this Item" : "Top Buyer";
-  }
-
-  var best = null;
-  Object.keys(groups).forEach(function (k) {
-    if (!best || groups[k].value > best.value) best = groups[k];
-  });
-
-  if (best) {
-    topValue.textContent = best.label;
-    topSub.textContent = formatCurrency(best.value) + " · " + best.qty.toLocaleString("en-IN") + " pcs";
-  } else {
-    topValue.textContent = "—";
-    topSub.textContent = "";
-  }
 }
 
 function renderTable(lines) {
