@@ -2427,6 +2427,16 @@ button.login-back {
   line-height: 1.5;
 }
 .mail-dialog-cc strong { color: var(--ink); }
+.mail-dialog-inspection-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--ink);
+  margin: 0 0 22px;
+  cursor: pointer;
+}
+.mail-dialog-inspection-row input { cursor: pointer; }
 
 @media (max-width: 640px) {
   .billing-card { padding: 24px 18px; }

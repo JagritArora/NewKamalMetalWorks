@@ -1882,7 +1882,7 @@ function buildInspectionReportPdf(data) {
   var metaPairs = [
     ["Invoice No.", data.invoiceNo, "Date", data.dateStr],
     ["Item Code", data.itemCode, "Item Name", data.itemName],
-    ["Sample Size", String(sampleCount), "Invoice Qty.", data.qty != null ? String(data.qty) : ""]
+    ["Sample Size", String(sampleCount), "Invoice Qty.", data.qty != null ? Number(data.qty).toLocaleString("en-IN") : ""]
   ];
   metaPairs.forEach(function (pair, i) {
     var labelTop = INSP_HB[i * 2], valueTop = INSP_HB[i * 2 + 1];
@@ -2413,6 +2413,13 @@ function showSendMailModal(invoiceId, inv, masterEmails, savedEmails, btn) {
   ccEl.className = "mail-dialog-cc";
   ccEl.innerHTML = "<strong>Always CC:</strong> " + masterEmails.join(", ");
 
+  var inspectionRow = document.createElement("label");
+  inspectionRow.className = "mail-dialog-inspection-row";
+  var inspectionCheckbox = document.createElement("input");
+  inspectionCheckbox.type = "checkbox";
+  inspectionRow.appendChild(inspectionCheckbox);
+  inspectionRow.appendChild(document.createTextNode("Include Inspection Report"));
+
   var actions = document.createElement("div");
   actions.className = "confirm-dialog-actions";
 
@@ -2467,16 +2474,17 @@ function showSendMailModal(invoiceId, inv, masterEmails, savedEmails, btn) {
     var namesLine = emails.length === 1
       ? emails[0]
       : emails.slice(0, -1).join(", ") + " & " + emails[emails.length - 1];
+    var includeInspection = inspectionCheckbox.checked;
 
     showConfirmDialog(
       "Confirm send",
       "Invoice " + inv.invoiceNo + " amounting " + formatCurrency(inv.net || 0) + " will be shared with " + namesLine +
-        ", along with the Inspection Report for each item on it.",
+        (includeInspection ? ", along with the Inspection Report for each item on it." : "."),
       "Send"
     ).then(function (confirmed) {
       if (!confirmed) return;
       close();
-      dispatchInvoiceEmail(invoiceId, inv, emails, masterEmails, btn);
+      dispatchInvoiceEmail(invoiceId, inv, emails, masterEmails, btn, includeInspection);
     });
   });
 
@@ -2488,6 +2496,7 @@ function showSendMailModal(invoiceId, inv, masterEmails, savedEmails, btn) {
   dialog.appendChild(addBtn);
   dialog.appendChild(errorEl);
   dialog.appendChild(ccEl);
+  dialog.appendChild(inspectionRow);
   dialog.appendChild(actions);
   dialog.appendChild(datalist);
   overlay.appendChild(dialog);
@@ -2540,7 +2549,7 @@ function buildInspectionReportAttachments(inv) {
   });
 }
 
-function dispatchInvoiceEmail(invoiceId, inv, toEmails, masterEmails, btn) {
+function dispatchInvoiceEmail(invoiceId, inv, toEmails, masterEmails, btn, includeInspection) {
   var originalText = btn.textContent;
   btn.disabled = true;
   btn.textContent = "Sending…";
@@ -2556,7 +2565,7 @@ function dispatchInvoiceEmail(invoiceId, inv, toEmails, masterEmails, btn) {
   var dateObj = new Date(inv.date + "T00:00:00");
   var dateStr = dateObj.toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" });
 
-  buildInspectionReportAttachments(inv)
+  (includeInspection ? buildInspectionReportAttachments(inv) : Promise.resolve([]))
     .catch(function (err) { console.error(err); return []; })
     .then(function (inspectionAttachments) {
       return rememberRecipients(toEmails).then(function () { return inspectionAttachments; });
