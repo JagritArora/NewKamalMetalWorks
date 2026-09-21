@@ -23,7 +23,7 @@
 
 <main class="login-shell">
   <div class="login-card login-enter" id="profile-card" hidden>
-    <span class="login-kicker">Client Access</span>
+    <span class="login-kicker" id="profile-kicker">Client Access</span>
     <h1 class="login-heading" id="profile-heading">Your Profile</h1>
     <p class="login-sub" id="profile-email-line"></p>
 
@@ -188,6 +188,7 @@ document.querySelectorAll(".login-password-toggle").forEach(function (btn) {
 });
 
 var profileCard = document.getElementById("profile-card");
+var profileKicker = document.getElementById("profile-kicker");
 var loadingCard = document.getElementById("profile-loading");
 var emailLine = document.getElementById("profile-email-line");
 var emptyNote = document.getElementById("profile-empty");
@@ -450,6 +451,7 @@ onAuthStateChanged(auth, function (user) {
     } else {
       emptyNote.hidden = false;
     }
+    profileKicker.textContent = currentRole === "master" ? "Master Access" : "Client Access";
     loadingCard.hidden = true;
     profileCard.hidden = false;
   }).catch(function () {
