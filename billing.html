@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/main.css?v=54" />
+<link rel="stylesheet" href="css/main.css?v=55" />
 </head>
 <body class="login-page">
 
@@ -902,6 +902,22 @@ document.getElementById("billing-ratecard-cancel").addEventListener("click", clo
 document.getElementById("billing-ratecard-add-row").addEventListener("click", function () { addRatecardRow({}); });
 
 // ---------------------------------------------------------------------
+// Per-part inspection/QC specification -- read-only here, just to build
+// the Inspection Report PDF attached alongside an invoice email. Editing
+// specs happens on inspection.html now (OTP-gated there, like the rate
+// card); this page never writes to the inspection subcollection.
+// ---------------------------------------------------------------------
+function inspectionSpecRef(buyerId, partNo) {
+  return doc(db, "buyers", buyerId, "parts", partNo, "inspection", "spec");
+}
+
+function loadInspectionSpec(buyerId, partNo) {
+  return getDoc(inspectionSpecRef(buyerId, partNo)).then(function (snap) {
+    return snap.exists() ? snap.data() : null;
+  });
+}
+
+// ---------------------------------------------------------------------
 // Rate card save -- gated behind a 6-digit code emailed to the signed-in
 // master account. The code is generated and checked entirely server-side
 // (requestRateCardCode / verifyRateCardCode Cloud Functions); Firestore
@@ -1706,6 +1722,239 @@ function buildInvoicePdf(data) {
 }
 
 // ---------------------------------------------------------------------
+// Inspection Report PDF -- one per distinct part on an invoice, shared
+// alongside the invoice PDF when it's emailed (see dispatchInvoiceEmail).
+// Deliberately built from the same constants/fonts/signature/header-block
+// style as buildInvoicePdf() above so it reads as a companion document to
+// the invoice rather than a different tool entirely; only the body
+// (item-table+totals -> spec table) and declaration text differ, matching
+// the "Inspection Report" sheet layout in the source .numbers workbook.
+// ---------------------------------------------------------------------
+// ---------------------------------------------------------------------
+// Inspection Report PDF layout -- pixel-exact per a fixed external
+// reference spec (A4 portrait, 595.28 x 841.89 pt, its own frame/grid,
+// independent of the invoice's own layout constants above). Every
+// coordinate, font size, and colour below is dictated by that spec --
+// do not "tidy" or approximate these numbers.
+// ---------------------------------------------------------------------
+var INSP_L = 11.4, INSP_R = 584.4, INSP_T = 74.2, INSP_B = 759.7;
+var INSP_ROW_H = 21.76;
+var INSP_MIDX = 305.6; // Obs1/Obs2 column boundary; also the declaration/signature split
+
+// Item-table column boundaries: S.No | Parameters | Specifications | Obs 1-5 | Remarks
+var INSP_COLS = [11.4, 49.1, 159.5, 249.8, 305.6, 361.3, 417.1, 472.8, 528.6, 584.4];
+var INSP_SAMPLE_COUNT = 5;
+
+var INSP_THEAD_TOP = 270.1, INSP_THEAD_MID = 290.5, INSP_THEAD_BOT = 310.9;
+var INSP_BODY_TOP = 310.9, INSP_BODY_BOT = 680.8;
+var INSP_BODY_ROWS = 17;
+var INSP_DECL_TOP = 680.8, INSP_DECL_BOT = 759.7;
+
+// Header-block field bands (right side): Invoice No./Date, Item Code/Item
+// Name, Sample Size/Invoice Qty. label+value rows, then the Special
+// Mention/Comments label row and its comment-text area.
+var INSP_HB = [74.2, 96.0, 117.8, 139.5, 161.3, 183.0, 204.8, 226.6, 270.1];
+var INSP_HB_SPLIT_X = 417.1; // right-side vertical split, field-pair rows only
+
+var C_INSP_HEADER_FILL = [146, 146, 146]; // #929292
+var C_INSP_SHADED = [213, 213, 213];      // #D5D5D5
+var C_INSP_PANEL_FILL = [247, 247, 246];  // #F7F7F6 -- buyer cell + declaration/signature block
+var C_INSP_HAIR = [191, 191, 191];        // #BFBFBF
+var C_INSP_DIVIDER = [166, 166, 166];     // #A6A6A6
+
+var INSP_DECLARATION_LINES = [
+  { num: "",   text: "We declare that the supplied sheet metal components meet all specified" },
+  { num: "",   text: "requirements and standards." },
+  { num: "1.", text: "Assert that the components have undergone thorough inspection and" },
+  { num: "",   text: "testing to ensure quality and reliability." },
+  { num: "2.", text: "Confirm that the components adhere to the dimensions, tolerances, and" },
+  { num: "",   text: "material specifications outlined in the engineering drawings." }
+];
+
+function buildInspectionReportPdf(data) {
+  var pdf = new window.jspdf.jsPDF({ unit: "pt", format: "a4" });
+  var haveInvoiceFont = INVOICE_FONT_REGULAR_B64 && INVOICE_FONT_BOLD_B64;
+  if (haveInvoiceFont) {
+    pdf.addFileToVFS("InvoiceFont-Regular.ttf", INVOICE_FONT_REGULAR_B64);
+    pdf.addFont("InvoiceFont-Regular.ttf", "InvoiceFont", "normal");
+    pdf.addFileToVFS("InvoiceFont-Bold.ttf", INVOICE_FONT_BOLD_B64);
+    pdf.addFont("InvoiceFont-Bold.ttf", "InvoiceFont", "bold");
+  }
+  var FONT = haveInvoiceFont ? "InvoiceFont" : "helvetica";
+  function setF(weight, size) { pdf.setFont(FONT, weight); pdf.setFontSize(size); }
+  function fill(rgb) { pdf.setFillColor(rgb[0], rgb[1], rgb[2]); }
+  function drawColor(rgb) { pdf.setDrawColor(rgb[0], rgb[1], rgb[2]); }
+  function hline(x1, x2, y, w, rgb) { drawColor(rgb); pdf.setLineWidth(w); pdf.line(x1, y, x2, y); }
+  function vline(x, y1, y2, w, rgb) { drawColor(rgb); pdf.setLineWidth(w); pdf.line(x, y1, x, y2); }
+
+  pdf.setTextColor(0, 0, 0);
+  var X = INSP_COLS;
+  var colCenter = [];
+  for (var ci = 0; ci < X.length - 1; ci++) colCenter.push((X[ci] + X[ci + 1]) / 2);
+
+  var sampleCount = Math.max(1, Math.min(INSP_SAMPLE_COUNT, data.sampleSize || INSP_SAMPLE_COUNT));
+  var specs = (data.specs || []).slice(0, INSP_BODY_ROWS);
+
+  // ================= 1. FILLS (bottom layer, painted first) =================
+  fill(C_INSP_PANEL_FILL); pdf.rect(INSP_L, 183.0, 249.8 - INSP_L, INSP_HB[8] - 183.0, "F"); // buyer cell
+  fill(C_INSP_HEADER_FILL); pdf.rect(INSP_L, INSP_THEAD_TOP, INSP_R - INSP_L, INSP_THEAD_BOT - INSP_THEAD_TOP, "F");
+
+  for (var r = 0; r < INSP_BODY_ROWS; r++) {
+    var rowTop = INSP_BODY_TOP + r * INSP_ROW_H;
+    var shaded = (r % 2) === 0; // row 1 (index 0) starts SHADED
+    fill(shaded ? C_INSP_SHADED : [255, 255, 255]);
+    pdf.rect(INSP_L, rowTop, INSP_R - INSP_L, INSP_ROW_H, "F");
+  }
+
+  fill(C_INSP_PANEL_FILL); pdf.rect(INSP_L, INSP_DECL_TOP, INSP_R - INSP_L, INSP_DECL_BOT - INSP_DECL_TOP, "F"); // declaration/signature block
+
+  // ================= 2. HAIRLINES (header block) =================
+  hline(249.3, 584.9, 117.8, 0.25, C_INSP_HAIR);
+  hline(249.3, 584.9, 161.3, 0.25, C_INSP_HAIR);
+  hline(249.3, 584.9, 204.8, 0.25, C_INSP_HAIR);
+  hline(10.9, 249.8, 183.0, 0.25, C_INSP_HAIR);
+  vline(249.8, INSP_T, INSP_HB[8], 0.25, C_INSP_HAIR);
+  vline(INSP_HB_SPLIT_X, INSP_T, 204.8, 0.25, C_INSP_HAIR);
+
+  // ================= 3. BODY COLUMN RULES (faint, per row) =================
+  var innerCols = [X[1], X[2], X[3], X[4], X[5], X[6], X[7], X[8]];
+  for (var rr = 0; rr < INSP_BODY_ROWS; rr++) {
+    var top = INSP_BODY_TOP + rr * INSP_ROW_H;
+    var isShaded = (rr % 2) === 0;
+    var hw = isShaded ? 0.35 : 1.0;
+    var hc = isShaded ? [255, 255, 255] : C_INSP_SHADED;
+    for (var cc = 0; cc < innerCols.length; cc++) {
+      vline(innerCols[cc], top, top + INSP_ROW_H, hw, hc);
+    }
+  }
+
+  // ================= 4. HEAVY BLACK STRUCTURAL RULES =================
+  pdf.setDrawColor(0, 0, 0);
+  pdf.setLineWidth(2.0);
+  pdf.rect(INSP_L, INSP_T, INSP_R - INSP_L, INSP_B - INSP_T); // outer frame
+
+  pdf.setLineWidth(2.0);
+  pdf.line(10.9, INSP_THEAD_TOP, 584.9, INSP_THEAD_TOP);
+  pdf.line(249.3, INSP_THEAD_MID, 529.1, INSP_THEAD_MID); // under "Observations" only
+  pdf.line(10.9, INSP_THEAD_BOT, 584.9, INSP_THEAD_BOT);
+  [49.1, 159.5, 249.8, 528.6].forEach(function (vx) { pdf.line(vx, 269.6, vx, 311.4); });
+  [305.6, 361.3, 417.1, 472.8].forEach(function (vx) { pdf.line(vx, 290.0, vx, 311.4); });
+
+  pdf.setLineWidth(1.0);
+  pdf.line(10.9, INSP_BODY_BOT, 584.9, INSP_BODY_BOT); // table bottom rule -- thinner than the frame
+
+  vline(INSP_MIDX, INSP_DECL_TOP, 760.2, 0.35, C_INSP_DIVIDER); // declaration/signature split
+
+  // ================= 5. TITLE =================
+  setF("bold", 13.6);
+  pdf.text("Inspection Report", 297.64, invCapBaseline(57.3, 13.6), { align: "center" });
+
+  // ================= 6. HEADER BLOCK TEXT =================
+  setF("bold", 15.64);
+  pdf.text(COMPANY.name, 14.8, invCapBaseline(80.6, 15.64));
+  setF("normal", 10.88);
+  var companyLines = [
+    COMPANY.addressLines[0],
+    COMPANY.addressLines[1],
+    "GSTIN: " + COMPANY.gstin,
+    "State: " + COMPANY.state + ", Code:" + COMPANY.stateCode,
+    "Contact: " + COMPANY.contact,
+    "Mail: " + COMPANY.mail
+  ];
+  var companyLineTop = 97.75;
+  companyLines.forEach(function (line) {
+    pdf.text(line, 14.8, invCapBaseline(companyLineTop, 10.88));
+    companyLineTop += 12.24;
+  });
+
+  setF("normal", 10.88);
+  pdf.text("Buyer", 14.8, invCapBaseline(186.9, 10.88));
+  hline(14.8, 43.2, 196.6, 0.8, [0, 0, 0]);
+  setF("bold", 15.64);
+  pdf.text(data.buyer.name, 14.8, invCapBaseline(201.0, 15.64));
+  setF("normal", 10.88);
+  var buyerAddrLines = pdf.splitTextToSize(data.buyer.address, 249.8 - 14.8 - 3.4);
+  var buyerLineY = [218.2, 230.4, 242.7];
+  buyerAddrLines.slice(0, 2).forEach(function (line, i) { pdf.text(line, 14.8, invCapBaseline(buyerLineY[i], 10.88)); });
+  pdf.text("GSTIN: " + data.buyer.gstin, 14.8, invCapBaseline(buyerLineY[Math.min(buyerAddrLines.length, 2)], 10.88));
+
+  // Right side: Invoice No./Date, Item Code/Item Name, Sample Size/Invoice Qty.
+  var metaPairs = [
+    ["Invoice No.", data.invoiceNo, "Date", data.dateStr],
+    ["Item Code", data.itemCode, "Item Name", data.itemName],
+    ["Sample Size", String(sampleCount), "Invoice Qty.", data.qty != null ? String(data.qty) : ""]
+  ];
+  metaPairs.forEach(function (pair, i) {
+    var labelTop = INSP_HB[i * 2], valueTop = INSP_HB[i * 2 + 1];
+    setF("bold", 11.56);
+    pdf.text(pair[0], 252.6, invBaseline(labelTop, INSP_ROW_H, 11.56));
+    pdf.text(pair[2], 419.9, invBaseline(labelTop, INSP_ROW_H, 11.56));
+    setF("normal", 11.56);
+    if (pair[1]) pdf.text(String(pair[1]), 414.3, invBaseline(valueTop, INSP_ROW_H, 11.56), { align: "right" });
+    if (pair[3]) pdf.text(String(pair[3]), 581.0, invBaseline(valueTop, INSP_ROW_H, 11.56), { align: "right" });
+  });
+  setF("bold", 11.56);
+  pdf.text("Special Mention/Comments", 252.6, invBaseline(204.8, INSP_ROW_H, 11.56));
+  if (data.comments) {
+    setF("normal", 11.56);
+    var commentLines = pdf.splitTextToSize(data.comments, INSP_R - 2.8 - 252.6);
+    pdf.text(commentLines, 252.6, invCapBaseline(226.6 + 4, 11.56));
+  }
+
+  // ================= 7. SPEC TABLE HEADER (two tiers) =================
+  setF("bold", 10.88);
+  var fullTierBase = invBaseline(INSP_THEAD_TOP, INSP_THEAD_BOT - INSP_THEAD_TOP, 10.88);
+  pdf.text("S. No.", (X[0] + X[1]) / 2, fullTierBase, { align: "center" });
+  pdf.text("Parameters", (X[1] + X[2]) / 2, fullTierBase, { align: "center" });
+  pdf.text("Specifications", (X[2] + X[3]) / 2, fullTierBase, { align: "center" });
+  pdf.text("Remarks", (X[8] + X[9]) / 2, fullTierBase, { align: "center" });
+  pdf.text("Observations", (X[3] + X[8]) / 2, invBaseline(INSP_THEAD_TOP, INSP_THEAD_MID - INSP_THEAD_TOP, 10.88), { align: "center" });
+  var obsNumBase = invBaseline(INSP_THEAD_MID, INSP_THEAD_BOT - INSP_THEAD_MID, 10.88);
+  ["1", "2", "3", "4", "5"].forEach(function (n, i) {
+    pdf.text(n, (X[3 + i] + X[4 + i]) / 2, obsNumBase, { align: "center" });
+  });
+
+  // ================= 8. SPEC TABLE BODY =================
+  setF("normal", 10.88);
+  for (var b = 0; b < INSP_BODY_ROWS; b++) {
+    var spec = specs[b];
+    if (!spec) continue;
+    var rowTop2 = INSP_BODY_TOP + b * INSP_ROW_H;
+    var base = invBaseline(rowTop2, INSP_ROW_H, 10.88);
+    var cells = [String(b + 1), spec.parameter || "", spec.nominal || ""];
+    for (var si = 0; si < INSP_SAMPLE_COUNT; si++) {
+      cells.push(si < sampleCount ? ((spec.samples || [])[si] || "") : "");
+    }
+    cells.push(spec.remarks || "");
+    cells.forEach(function (text, ci2) { pdf.text(String(text), colCenter[ci2], base, { align: "center" }); });
+  }
+
+  // ================= 9. DECLARATION + SIGNATURE =================
+  setF("bold", 8.5);
+  pdf.text("Declaration:-", 14.8, invCapBaseline(685.3, 8.5));
+  hline(14.8, 61.5, 692.8, 0.625, [0, 0, 0]);
+  var declTop = 696.0;
+  INSP_DECLARATION_LINES.forEach(function (line) {
+    if (line.num) {
+      setF("bold", 8.5);
+      pdf.text(line.num, 14.8, invCapBaseline(declTop, 8.5));
+    }
+    setF("normal", 8.5);
+    pdf.text(line.text, 28.7, invCapBaseline(declTop, 8.5));
+    declTop += 10.2;
+  });
+
+  if (SIGNATURE_IMG_DATAURL) {
+    pdf.addImage(SIGNATURE_IMG_DATAURL, "PNG", 314.6, 680.1, 164.4, 76.2);
+  }
+  setF("bold", 8.84);
+  pdf.text("Authorise Signatory", 581.0, invCapBaseline(736.0, 8.84), { align: "right" });
+  pdf.text("New Kamal Metal Works", 581.0, invCapBaseline(746.9, 8.84), { align: "right" });
+
+  return pdf;
+}
+
+// ---------------------------------------------------------------------
 // Generate
 // ---------------------------------------------------------------------
 var generateBtn = document.getElementById("billing-generate-btn");
@@ -2221,7 +2470,8 @@ function showSendMailModal(invoiceId, inv, masterEmails, savedEmails, btn) {
 
     showConfirmDialog(
       "Confirm send",
-      "Invoice " + inv.invoiceNo + " amounting " + formatCurrency(inv.net || 0) + " will be shared with " + namesLine + ".",
+      "Invoice " + inv.invoiceNo + " amounting " + formatCurrency(inv.net || 0) + " will be shared with " + namesLine +
+        ", along with the Inspection Report for each item on it.",
       "Send"
     ).then(function (confirmed) {
       if (!confirmed) return;
@@ -2248,6 +2498,48 @@ function showSendMailModal(invoiceId, inv, masterEmails, savedEmails, btn) {
   });
 }
 
+// One Inspection Report PDF per distinct part on the invoice (skipping any
+// part with no specification saved yet), uploaded next to the invoice PDF
+// in Storage and returned as extra nodemailer-style { filename, path }
+// attachment entries. Built the same way the invoice PDF itself is --
+// client-side, gated on the same font/signature assets.
+function buildInspectionReportAttachments(inv) {
+  var seen = {};
+  var parts = [];
+  (inv.items || []).forEach(function (it) {
+    if (it.partNo && !seen[it.partNo]) { seen[it.partNo] = true; parts.push(it); }
+  });
+  if (!parts.length) return Promise.resolve([]);
+
+  var safeInvoiceNo = inv.invoiceNo.replace(/[^\w.-]+/g, "_");
+  var dateObj = new Date(inv.date + "T00:00:00");
+  var dateStr = dateObj.toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" });
+
+  return INVOICE_PDF_ASSETS_PROMISE.then(function () {
+    return Promise.all(parts.map(function (it) {
+      return loadInspectionSpec(inv.buyerId, it.partNo).then(function (spec) {
+        if (!spec || !spec.specs || !spec.specs.length) return null;
+        var pdf = buildInspectionReportPdf({
+          invoiceNo: inv.invoiceNo,
+          dateStr: dateStr,
+          buyer: inv.buyer,
+          itemCode: it.partNo,
+          itemName: it.description,
+          sampleSize: spec.sampleSize,
+          qty: it.qty,
+          specs: spec.specs
+        });
+        var safePart = it.partNo.replace(/[^\w.-]+/g, "_");
+        var path = "inspectionReports/" + inv.buyerId + "/" + safeInvoiceNo + "/" + safePart + ".pdf";
+        var fileRef = storageRef(storage, path);
+        return uploadBytes(fileRef, pdf.output("blob"), { contentType: "application/pdf" })
+          .then(function () { return getDownloadURL(fileRef); })
+          .then(function (url) { return { filename: "Inspection Report - " + it.partNo + ".pdf", path: url }; });
+      });
+    })).then(function (results) { return results.filter(Boolean); });
+  });
+}
+
 function dispatchInvoiceEmail(invoiceId, inv, toEmails, masterEmails, btn) {
   var originalText = btn.textContent;
   btn.disabled = true;
@@ -2264,8 +2556,12 @@ function dispatchInvoiceEmail(invoiceId, inv, toEmails, masterEmails, btn) {
   var dateObj = new Date(inv.date + "T00:00:00");
   var dateStr = dateObj.toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" });
 
-  rememberRecipients(toEmails)
-    .then(function () {
+  buildInspectionReportAttachments(inv)
+    .catch(function (err) { console.error(err); return []; })
+    .then(function (inspectionAttachments) {
+      return rememberRecipients(toEmails).then(function () { return inspectionAttachments; });
+    })
+    .then(function (inspectionAttachments) {
       return addDoc(collection(db, "mail"), {
         to: toEmails,
         cc: ccEmails,
@@ -2296,7 +2592,7 @@ function dispatchInvoiceEmail(invoiceId, inv, toEmails, masterEmails, btn) {
               "<a href=\"https://www.newkamalmetalworks.co.in\" style=\"color: #C4501C; font-weight: 600; text-decoration: none;\">New Kamal Metal Works</a>" +
             "</p>" +
             "</div>",
-          attachments: [{ filename: safeInvoiceNo + ".pdf", path: inv.pdfUrl }]
+          attachments: [{ filename: safeInvoiceNo + ".pdf", path: inv.pdfUrl }].concat(inspectionAttachments)
         }
       });
     })

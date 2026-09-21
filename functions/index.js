@@ -66,18 +66,19 @@ exports.sendMail = onDocumentCreated(
   }
 );
 
-// Rate-card verification -- Save on the rate-card editor (billing.html)
-// is gated behind a 6-digit code emailed to the signed-in master account.
-// The code and its "verified" state live only here, written via the Admin
-// SDK, which bypasses firestore.rules entirely -- clients can neither read
-// nor write the rateCardVerify collection directly (see firestore.rules),
+// Emailed 6-digit code gate -- Save on the rate-card editor and on the
+// inspection-spec editor (both billing.html/inspection.html) is gated
+// behind a code emailed to the signed-in master account. The code and its
+// "verified" state live only in the collection named below, written via
+// the Admin SDK, which bypasses firestore.rules entirely -- clients can
+// neither read nor write those collections directly (see firestore.rules),
 // so this check can't be short-circuited from devtools the way a purely
 // client-side confirmation could be.
-const RATE_CARD_CODE_TTL_MS = 10 * 60 * 1000; // how long an emailed code stays usable
-const RATE_CARD_VERIFIED_TTL_MS = 5 * 60 * 1000; // how long a verified save-window stays open
-const RATE_CARD_MAX_ATTEMPTS = 5;
+const CODE_TTL_MS = 10 * 60 * 1000; // how long an emailed code stays usable
+const VERIFIED_TTL_MS = 5 * 60 * 1000; // how long a verified save-window stays open
+const CODE_MAX_ATTEMPTS = 5;
 
-function hashRateCardCode(code, uid) {
+function hashVerifyCode(code, uid) {
   return crypto.createHash("sha256").update(code + ":" + uid).digest("hex");
 }
 
@@ -93,15 +94,18 @@ async function requireMasterWithEmail(request) {
   return { uid: request.auth.uid, email: email };
 }
 
-exports.requestRateCardCode = onCall(
-  { region: "asia-south1" },
-  async function (request) {
+// Builds a {request, verify} pair of onCall functions for one code-gated
+// collection -- identical flow for the rate card and the inspection specs,
+// differing only in which collection holds the pending code and the copy
+// of the email that's sent.
+function makeCodeGate(collectionName, subject, introHtml) {
+  var requestFn = onCall({ region: "asia-south1" }, async function (request) {
     var master = await requireMasterWithEmail(request);
     var db = getFirestore();
     var code = ("" + crypto.randomInt(0, 1000000)).padStart(6, "0");
 
-    await db.collection("rateCardVerify").doc(master.uid).set({
-      codeHash: hashRateCardCode(code, master.uid),
+    await db.collection(collectionName).doc(master.uid).set({
+      codeHash: hashVerifyCode(code, master.uid),
       sentAt: new Date(),
       attempts: 0,
       verifiedUntil: null
@@ -110,52 +114,66 @@ exports.requestRateCardCode = onCall(
     await db.collection("mail").add({
       to: [master.email],
       message: {
-        subject: "Your rate-card verification code",
+        subject: subject,
         html:
-          "<p>Use this code to confirm the rate-card change you're about to make on the New Kamal Metal " +
-          "Works billing tool:</p>" +
+          introHtml +
           "<p style=\"font-size:28px;font-weight:700;letter-spacing:4px;\">" + code + "</p>" +
           "<p>This code expires in 10 minutes. If you didn't request this, you can ignore this email.</p>"
       }
     });
 
     return { ok: true };
-  }
-);
+  });
 
-exports.verifyRateCardCode = onCall(
-  { region: "asia-south1" },
-  async function (request) {
+  var verifyFn = onCall({ region: "asia-south1" }, async function (request) {
     var master = await requireMasterWithEmail(request);
     var code = ((request.data && request.data.code) || "").trim();
     if (!/^\d{6}$/.test(code)) throw new HttpsError("invalid-argument", "Enter the 6-digit code.");
 
     var db = getFirestore();
-    var ref = db.collection("rateCardVerify").doc(master.uid);
+    var ref = db.collection(collectionName).doc(master.uid);
     var snap = await ref.get();
     if (!snap.exists) throw new HttpsError("failed-precondition", "Request a code first.");
     var data = snap.data();
 
     var sentAt = data.sentAt && data.sentAt.toDate ? data.sentAt.toDate() : new Date(data.sentAt);
-    if (Date.now() - sentAt.getTime() > RATE_CARD_CODE_TTL_MS) {
+    if (Date.now() - sentAt.getTime() > CODE_TTL_MS) {
       throw new HttpsError("deadline-exceeded", "That code expired -- request a new one.");
     }
-    if ((data.attempts || 0) >= RATE_CARD_MAX_ATTEMPTS) {
+    if ((data.attempts || 0) >= CODE_MAX_ATTEMPTS) {
       throw new HttpsError("resource-exhausted", "Too many attempts -- request a new code.");
     }
 
-    if (hashRateCardCode(code, master.uid) !== data.codeHash) {
+    if (hashVerifyCode(code, master.uid) !== data.codeHash) {
       await ref.update({ attempts: (data.attempts || 0) + 1 });
       throw new HttpsError("permission-denied", "That code isn't right.");
     }
 
     await ref.update({
-      verifiedUntil: new Date(Date.now() + RATE_CARD_VERIFIED_TTL_MS),
+      verifiedUntil: new Date(Date.now() + VERIFIED_TTL_MS),
       attempts: 0
     });
     return { ok: true };
-  }
+  });
+
+  return { request: requestFn, verify: verifyFn };
+}
+
+var rateCardGate = makeCodeGate(
+  "rateCardVerify",
+  "Your rate-card verification code",
+  "<p>Use this code to confirm the rate-card change you're about to make on the New Kamal Metal Works billing tool:</p>"
 );
+exports.requestRateCardCode = rateCardGate.request;
+exports.verifyRateCardCode = rateCardGate.verify;
+
+var inspectionSpecGate = makeCodeGate(
+  "inspectionSpecVerify",
+  "Your inspection-spec verification code",
+  "<p>Use this code to confirm the inspection-specification change you're about to make on the New Kamal Metal Works billing tool:</p>"
+);
+exports.requestInspectionSpecCode = inspectionSpecGate.request;
+exports.verifyInspectionSpecCode = inspectionSpecGate.verify;
 
 // GenAI billing assistant -- a master-only chat bot (Google Gemini, free
 // tier) that can look up buyers/rate-cards/invoices and prepare a draft

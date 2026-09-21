@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Generate Inspection Report | New Kamal Metal Works</title>
+<meta name="description" content="Generate an Inspection Report against a raised invoice for New Kamal Metal Works." />
+<meta name="robots" content="noindex" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/main.css?v=55" />
+</head>
+<body class="login-page">
+
+<nav class="site-nav">
+  <a href="index.html#hero" class="brand">New Kamal <span>Metal Works</span></a>
+  <a href="welcome.html" class="nav-icon-btn" aria-label="Back to Welcome">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1H9.5a1 1 0 0 0 1-1v-4a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v4a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-9"/></svg>
+  </a>
+</nav>
+
+<main class="login-shell billing-shell">
+  <div class="billing-wrap" id="insp-wrap" hidden>
+    <a href="welcome.html" class="billing-back-link" style="color: var(--ink);">Back to <span style="color: var(--accent);">Dashboard</span></a>
+    <h1 class="welcome-heading" style="font-size: clamp(1.8rem, 4vw, 2.3rem);">Generate Inspection Report.</h1>
+    <p class="welcome-sub">Pick a raised invoice to see what it billed.</p>
+
+    <section class="billing-card">
+      <h2 class="billing-card-title billing-card-title--accent">Select Invoice</h2>
+      <p class="login-status" id="insp-status" role="status" aria-live="polite"></p>
+
+      <div class="login-field">
+        <label for="insp-select-btn">Invoice No.</label>
+        <div class="insp-select" id="insp-select">
+          <button type="button" class="insp-select-btn" id="insp-select-btn" aria-haspopup="listbox" aria-expanded="false">
+            <span id="insp-select-btn-label" class="insp-select-btn-placeholder">Select invoice&hellip;</span>
+            <svg class="insp-select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="insp-select-panel" id="insp-select-panel" role="listbox"></div>
+        </div>
+      </div>
+
+      <div class="insp-breakdown" id="insp-breakdown" hidden>
+        <div class="insp-breakdown-head">
+          <div>
+            <h3 class="insp-breakdown-title" id="insp-breakdown-invoiceno"></h3>
+            <p class="insp-breakdown-meta" id="insp-breakdown-meta"></p>
+          </div>
+          <a class="insp-view-btn" id="insp-view-btn" href="#" target="_blank" rel="noopener">View Invoice</a>
+        </div>
+        <div class="billing-items-wrap">
+          <table class="billing-items-table" id="insp-items-table">
+            <thead>
+              <tr>
+                <th>Part No.</th>
+                <th>Description</th>
+                <th>Qty</th>
+                <th>Rate</th>
+                <th>Amount</th>
+              </tr>
+            </thead>
+            <tbody id="insp-items-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="billing-card">
+      <div class="billing-card-head">
+        <h2 class="billing-card-title">Inspection Specifications</h2>
+      </div>
+      <div class="billing-ratecard-row">
+        <button type="button" class="billing-seed-btn" id="insp-specs-btn">Edit inspection specs</button>
+        <span class="billing-ratecard-hint">Saving a change requires a code emailed to your account, same as the rate card.</span>
+      </div>
+
+      <div class="billing-ratecard-panel" id="insp-specs-panel" hidden>
+        <div class="billing-ratecard-head">
+          <h3>Inspection Specifications &mdash; <span id="insp-specs-buyer-name"></span></h3>
+          <button type="button" class="billing-ratecard-close" id="insp-specs-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="billing-grid">
+          <div class="login-field">
+            <label for="insp-specs-buyer-select">Buyer</label>
+            <select id="insp-specs-buyer-select"></select>
+          </div>
+          <div class="login-field">
+            <label for="insp-specs-part-select">Part</label>
+            <select id="insp-specs-part-select"></select>
+          </div>
+        </div>
+        <div id="insp-specs-editor" hidden>
+          <div class="login-field" style="max-width: 160px;">
+            <label for="insp-specs-sample-size">Sample Size</label>
+            <input type="number" id="insp-specs-sample-size" min="1" max="5" step="1" value="5" />
+          </div>
+          <div class="billing-ratecard-body-wrap">
+            <table class="billing-items-table billing-ratecard-table">
+              <thead>
+                <tr>
+                  <th>Parameter</th>
+                  <th>Specifications</th>
+                  <th>Sample 1</th>
+                  <th>Sample 2</th>
+                  <th>Sample 3</th>
+                  <th>Sample 4</th>
+                  <th>Sample 5</th>
+                  <th>Remarks</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="insp-specs-body"></tbody>
+            </table>
+            <button type="button" class="btn-secondary billing-add-row" id="insp-specs-add-row">+ Add parameter</button>
+          </div>
+          <p class="login-status" id="insp-specs-status" role="status" aria-live="polite"></p>
+          <div class="billing-ratecard-actions" id="insp-specs-actions">
+            <button type="button" class="btn-secondary" id="insp-specs-cancel">Cancel</button>
+            <button type="button" class="billing-seed-btn billing-preview-btn" id="insp-specs-preview-btn">Preview</button>
+            <button type="button" class="btn btn-primary" id="insp-specs-save">Save specifications</button>
+          </div>
+
+          <div class="billing-ratecard-verify" id="insp-specs-verify" hidden>
+            <p class="billing-ratecard-verify-copy" id="insp-specs-verify-copy">Sending a verification code to your email&hellip;</p>
+            <div class="billing-ratecard-verify-row">
+              <input type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" class="billing-ratecard-code-input" id="insp-specs-code-input" placeholder="6-digit code" />
+              <button type="button" class="btn btn-primary" id="insp-specs-verify-btn" disabled>Verify &amp; save</button>
+            </div>
+            <div class="billing-ratecard-verify-links">
+              <button type="button" class="billing-ratecard-link-btn" id="insp-specs-resend" disabled>Resend code</button>
+              <button type="button" class="billing-ratecard-link-btn" id="insp-specs-back">&lsaquo; Back to editing</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="login-card login-enter login-loading-card" id="insp-loading">
+    <div class="login-spinner" aria-hidden="true"><span></span><span></span><span></span></div>
+    <p class="login-sub">Loading&hellip;</p>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <div class="footer-top">
+      <a href="index.html#hero" class="footer-brand">New Kamal <span>Metal Works</span></a>
+      <ul class="footer-links">
+        <li><a href="index.html#operations">Operations</a></li>
+        <li><a href="index.html#capabilities">Capabilities</a></li>
+        <li><a href="index.html#materials">Materials</a></li>
+        <li><a href="index.html#tooling">Tooling</a></li>
+        <li><a href="index.html#quality">Quality</a></li>
+        <li><a href="index.html#about">About</a></li>
+        <li><a href="index.html#contact">Contact</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-bottom">
+      <p class="footer-legal">&copy; <span id="year"></span> New Kamal Metal Works, Faridabad. All rights reserved.</p>
+      <p class="footer-meta">ISO 9001:2015 certified &middot; GSTIN 06AGQPA5950R1ZR</p>
+      <div class="footer-credit">
+        <p class="footer-credit-name">Designed by <span class="footer-credit-highlight">Jagrit Arora</span></p>
+        <p class="footer-credit-links">
+          <a href="mailto:jagrit.arora007@icloud.com">jagrit.arora007@icloud.com</a>
+          <span class="footer-credit-dot" aria-hidden="true">&middot;</span>
+          <a href="tel:+919599030400">+91 95990 30400</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-functions.js";
+import {
+  initializeFirestore,
+  doc,
+  getDoc,
+  setDoc,
+  getDocs,
+  collection,
+  query,
+  orderBy,
+  limit,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import {
+  getStorage,
+  ref as storageRef,
+  uploadBytes,
+  getDownloadURL
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-storage.js";
+
+var firebaseConfig = {
+  apiKey: "AIzaSyDkEyDAOah5XzAOVjUux9SLhH60To2oTKs",
+  authDomain: "new-kamal-metal-works.firebaseapp.com",
+  projectId: "new-kamal-metal-works",
+  storageBucket: "new-kamal-metal-works.firebasestorage.app",
+  messagingSenderId: "595817400572",
+  appId: "1:595817400572:web:8617eb7419e5049524af79"
+};
+
+var app = initializeApp(firebaseConfig);
+var auth = getAuth(app);
+var db = initializeFirestore(app, { experimentalForceLongPolling: true });
+var storage = getStorage(app);
+var functions = getFunctions(app, "asia-south1");
+var requestInspectionSpecCodeFn = httpsCallable(functions, "requestInspectionSpecCode");
+var verifyInspectionSpecCodeFn = httpsCallable(functions, "verifyInspectionSpecCode");
+
+document.getElementById("year").textContent = new Date().getFullYear();
+
+function formatCurrency(n) {
+  return "₹" + (n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function formatDate(dateVal) {
+  return new Date(dateVal + "T00:00:00").toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" });
+}
+
+// ---------------------------------------------------------------------
+// Inspection Report PDF -- generated here (rather than reusing a
+// billing.html-built file) so specs can be previewed straight from this
+// page's editor. Layout constants, font/signature loading and
+// buildInspectionReportPdf() are kept in exact sync with the copies in
+// billing.html and invoices.html; see the comments there for the full
+// design intent.
+// ---------------------------------------------------------------------
+var COMPANY = {
+  name: "NEW KAMAL METAL WORKS",
+  addressLines: ["Plot No. 118, Industrial Area-4", "Dabua Pali Road, Faridabad-121001"],
+  gstin: "06AGQPA5950R1ZR",
+  state: "Haryana",
+  stateCode: "06",
+  contact: "9818650504",
+  mail: "contact@newkamalmetalworks.co.in"
+};
+
+var SIGNATURE_IMG_DATAURL = null;
+var SIGNATURE_IMG_PROMISE = fetch("assets/kmw-signature-stamp.png")
+  .then(function (r) { return r.blob(); })
+  .then(function (blob) {
+    return new Promise(function (resolve) {
+      var reader = new FileReader();
+      reader.onloadend = function () { SIGNATURE_IMG_DATAURL = reader.result; resolve(reader.result); };
+      reader.readAsDataURL(blob);
+    });
+  })
+  .catch(function () { return null; });
+
+var INVOICE_FONT_REGULAR_B64 = null;
+var INVOICE_FONT_BOLD_B64 = null;
+function arrayBufferToBase64(buf) {
+  var bytes = new Uint8Array(buf);
+  var chunk = 0x8000;
+  var parts = [];
+  for (var i = 0; i < bytes.length; i += chunk) {
+    parts.push(String.fromCharCode.apply(null, bytes.subarray(i, i + chunk)));
+  }
+  return btoa(parts.join(""));
+}
+function loadInvoiceFont(url) {
+  return fetch(url).then(function (r) { return r.arrayBuffer(); }).then(arrayBufferToBase64);
+}
+var INVOICE_FONT_PROMISE = Promise.all([
+  loadInvoiceFont("assets/invoice-font-regular.ttf").then(function (b64) { INVOICE_FONT_REGULAR_B64 = b64; }),
+  loadInvoiceFont("assets/invoice-font-bold.ttf").then(function (b64) { INVOICE_FONT_BOLD_B64 = b64; })
+]).catch(function () { return null; });
+
+var INVOICE_PDF_ASSETS_PROMISE = Promise.all([SIGNATURE_IMG_PROMISE, INVOICE_FONT_PROMISE]);
+
+function invBaseline(cellTop, cellHeight, fontSize) {
+  return cellTop + (cellHeight + 0.72 * fontSize) / 2;
+}
+function invCapBaseline(capTop, fontSize) {
+  return capTop + 0.72 * fontSize;
+}
+
+// Inspection Report PDF layout -- pixel-exact per a fixed external
+// reference spec (A4 portrait, 595.28 x 841.89 pt, its own frame/grid).
+// Every coordinate, font size, and colour below is dictated by that spec --
+// do not "tidy" or approximate these numbers.
+var INSP_L = 11.4, INSP_R = 584.4, INSP_T = 74.2, INSP_B = 759.7;
+var INSP_ROW_H = 21.76;
+var INSP_MIDX = 305.6; // Obs1/Obs2 column boundary; also the declaration/signature split
+
+// Item-table column boundaries: S.No | Parameters | Specifications | Obs 1-5 | Remarks
+var INSP_COLS = [11.4, 49.1, 159.5, 249.8, 305.6, 361.3, 417.1, 472.8, 528.6, 584.4];
+var INSP_SAMPLE_COUNT = 5;
+
+var INSP_THEAD_TOP = 270.1, INSP_THEAD_MID = 290.5, INSP_THEAD_BOT = 310.9;
+var INSP_BODY_TOP = 310.9, INSP_BODY_BOT = 680.8;
+var INSP_BODY_ROWS = 17;
+var INSP_DECL_TOP = 680.8, INSP_DECL_BOT = 759.7;
+
+// Header-block field bands (right side): Invoice No./Date, Item Code/Item
+// Name, Sample Size/Invoice Qty. label+value rows, then the Special
+// Mention/Comments label row and its comment-text area.
+var INSP_HB = [74.2, 96.0, 117.8, 139.5, 161.3, 183.0, 204.8, 226.6, 270.1];
+var INSP_HB_SPLIT_X = 417.1; // right-side vertical split, field-pair rows only
+
+var C_INSP_HEADER_FILL = [146, 146, 146]; // #929292
+var C_INSP_SHADED = [213, 213, 213];      // #D5D5D5
+var C_INSP_PANEL_FILL = [247, 247, 246];  // #F7F7F6 -- buyer cell + declaration/signature block
+var C_INSP_HAIR = [191, 191, 191];        // #BFBFBF
+var C_INSP_DIVIDER = [166, 166, 166];     // #A6A6A6
+
+var INSP_DECLARATION_LINES = [
+  { num: "",   text: "We declare that the supplied sheet metal components meet all specified" },
+  { num: "",   text: "requirements and standards." },
+  { num: "1.", text: "Assert that the components have undergone thorough inspection and" },
+  { num: "",   text: "testing to ensure quality and reliability." },
+  { num: "2.", text: "Confirm that the components adhere to the dimensions, tolerances, and" },
+  { num: "",   text: "material specifications outlined in the engineering drawings." }
+];
+
+function buildInspectionReportPdf(data) {
+  var pdf = new window.jspdf.jsPDF({ unit: "pt", format: "a4" });
+  var haveInvoiceFont = INVOICE_FONT_REGULAR_B64 && INVOICE_FONT_BOLD_B64;
+  if (haveInvoiceFont) {
+    pdf.addFileToVFS("InvoiceFont-Regular.ttf", INVOICE_FONT_REGULAR_B64);
+    pdf.addFont("InvoiceFont-Regular.ttf", "InvoiceFont", "normal");
+    pdf.addFileToVFS("InvoiceFont-Bold.ttf", INVOICE_FONT_BOLD_B64);
+    pdf.addFont("InvoiceFont-Bold.ttf", "InvoiceFont", "bold");
+  }
+  var FONT = haveInvoiceFont ? "InvoiceFont" : "helvetica";
+  function setF(weight, size) { pdf.setFont(FONT, weight); pdf.setFontSize(size); }
+  function fill(rgb) { pdf.setFillColor(rgb[0], rgb[1], rgb[2]); }
+  function drawColor(rgb) { pdf.setDrawColor(rgb[0], rgb[1], rgb[2]); }
+  function hline(x1, x2, y, w, rgb) { drawColor(rgb); pdf.setLineWidth(w); pdf.line(x1, y, x2, y); }
+  function vline(x, y1, y2, w, rgb) { drawColor(rgb); pdf.setLineWidth(w); pdf.line(x, y1, x, y2); }
+
+  pdf.setTextColor(0, 0, 0);
+  var X = INSP_COLS;
+  var colCenter = [];
+  for (var ci = 0; ci < X.length - 1; ci++) colCenter.push((X[ci] + X[ci + 1]) / 2);
+
+  var sampleCount = Math.max(1, Math.min(INSP_SAMPLE_COUNT, data.sampleSize || INSP_SAMPLE_COUNT));
+  var specs = (data.specs || []).slice(0, INSP_BODY_ROWS);
+
+  // ================= 1. FILLS (bottom layer, painted first) =================
+  fill(C_INSP_PANEL_FILL); pdf.rect(INSP_L, 183.0, 249.8 - INSP_L, INSP_HB[8] - 183.0, "F"); // buyer cell
+  fill(C_INSP_HEADER_FILL); pdf.rect(INSP_L, INSP_THEAD_TOP, INSP_R - INSP_L, INSP_THEAD_BOT - INSP_THEAD_TOP, "F");
+
+  for (var r = 0; r < INSP_BODY_ROWS; r++) {
+    var rowTop = INSP_BODY_TOP + r * INSP_ROW_H;
+    var shaded = (r % 2) === 0; // row 1 (index 0) starts SHADED
+    fill(shaded ? C_INSP_SHADED : [255, 255, 255]);
+    pdf.rect(INSP_L, rowTop, INSP_R - INSP_L, INSP_ROW_H, "F");
+  }
+
+  fill(C_INSP_PANEL_FILL); pdf.rect(INSP_L, INSP_DECL_TOP, INSP_R - INSP_L, INSP_DECL_BOT - INSP_DECL_TOP, "F"); // declaration/signature block
+
+  // ================= 2. HAIRLINES (header block) =================
+  hline(249.3, 584.9, 117.8, 0.25, C_INSP_HAIR);
+  hline(249.3, 584.9, 161.3, 0.25, C_INSP_HAIR);
+  hline(249.3, 584.9, 204.8, 0.25, C_INSP_HAIR);
+  hline(10.9, 249.8, 183.0, 0.25, C_INSP_HAIR);
+  vline(249.8, INSP_T, INSP_HB[8], 0.25, C_INSP_HAIR);
+  vline(INSP_HB_SPLIT_X, INSP_T, 204.8, 0.25, C_INSP_HAIR);
+
+  // ================= 3. BODY COLUMN RULES (faint, per row) =================
+  var innerCols = [X[1], X[2], X[3], X[4], X[5], X[6], X[7], X[8]];
+  for (var rr = 0; rr < INSP_BODY_ROWS; rr++) {
+    var top = INSP_BODY_TOP + rr * INSP_ROW_H;
+    var isShaded = (rr % 2) === 0;
+    var hw = isShaded ? 0.35 : 1.0;
+    var hc = isShaded ? [255, 255, 255] : C_INSP_SHADED;
+    for (var cc = 0; cc < innerCols.length; cc++) {
+      vline(innerCols[cc], top, top + INSP_ROW_H, hw, hc);
+    }
+  }
+
+  // ================= 4. HEAVY BLACK STRUCTURAL RULES =================
+  pdf.setDrawColor(0, 0, 0);
+  pdf.setLineWidth(2.0);
+  pdf.rect(INSP_L, INSP_T, INSP_R - INSP_L, INSP_B - INSP_T); // outer frame
+
+  pdf.setLineWidth(2.0);
+  pdf.line(10.9, INSP_THEAD_TOP, 584.9, INSP_THEAD_TOP);
+  pdf.line(249.3, INSP_THEAD_MID, 529.1, INSP_THEAD_MID); // under "Observations" only
+  pdf.line(10.9, INSP_THEAD_BOT, 584.9, INSP_THEAD_BOT);
+  [49.1, 159.5, 249.8, 528.6].forEach(function (vx) { pdf.line(vx, 269.6, vx, 311.4); });
+  [305.6, 361.3, 417.1, 472.8].forEach(function (vx) { pdf.line(vx, 290.0, vx, 311.4); });
+
+  pdf.setLineWidth(1.0);
+  pdf.line(10.9, INSP_BODY_BOT, 584.9, INSP_BODY_BOT); // table bottom rule -- thinner than the frame
+
+  vline(INSP_MIDX, INSP_DECL_TOP, 760.2, 0.35, C_INSP_DIVIDER); // declaration/signature split
+
+  // ================= 5. TITLE =================
+  setF("bold", 13.6);
+  pdf.text("Inspection Report", 297.64, invCapBaseline(57.3, 13.6), { align: "center" });
+
+  // ================= 6. HEADER BLOCK TEXT =================
+  setF("bold", 15.64);
+  pdf.text(COMPANY.name, 14.8, invCapBaseline(80.6, 15.64));
+  setF("normal", 10.88);
+  var companyLines = [
+    COMPANY.addressLines[0],
+    COMPANY.addressLines[1],
+    "GSTIN: " + COMPANY.gstin,
+    "State: " + COMPANY.state + ", Code:" + COMPANY.stateCode,
+    "Contact: " + COMPANY.contact,
+    "Mail: " + COMPANY.mail
+  ];
+  var companyLineTop = 97.75;
+  companyLines.forEach(function (line) {
+    pdf.text(line, 14.8, invCapBaseline(companyLineTop, 10.88));
+    companyLineTop += 12.24;
+  });
+
+  setF("normal", 10.88);
+  pdf.text("Buyer", 14.8, invCapBaseline(186.9, 10.88));
+  hline(14.8, 43.2, 196.6, 0.8, [0, 0, 0]);
+  setF("bold", 15.64);
+  pdf.text(data.buyer.name, 14.8, invCapBaseline(201.0, 15.64));
+  setF("normal", 10.88);
+  var buyerAddrLines = pdf.splitTextToSize(data.buyer.address, 249.8 - 14.8 - 3.4);
+  var buyerLineY = [218.2, 230.4, 242.7];
+  buyerAddrLines.slice(0, 2).forEach(function (line, i) { pdf.text(line, 14.8, invCapBaseline(buyerLineY[i], 10.88)); });
+  pdf.text("GSTIN: " + data.buyer.gstin, 14.8, invCapBaseline(buyerLineY[Math.min(buyerAddrLines.length, 2)], 10.88));
+
+  // Right side: Invoice No./Date, Item Code/Item Name, Sample Size/Invoice Qty.
+  var metaPairs = [
+    ["Invoice No.", data.invoiceNo, "Date", data.dateStr],
+    ["Item Code", data.itemCode, "Item Name", data.itemName],
+    ["Sample Size", String(sampleCount), "Invoice Qty.", data.qty != null ? String(data.qty) : ""]
+  ];
+  metaPairs.forEach(function (pair, i) {
+    var labelTop = INSP_HB[i * 2], valueTop = INSP_HB[i * 2 + 1];
+    setF("bold", 11.56);
+    pdf.text(pair[0], 252.6, invBaseline(labelTop, INSP_ROW_H, 11.56));
+    pdf.text(pair[2], 419.9, invBaseline(labelTop, INSP_ROW_H, 11.56));
+    setF("normal", 11.56);
+    if (pair[1]) pdf.text(String(pair[1]), 414.3, invBaseline(valueTop, INSP_ROW_H, 11.56), { align: "right" });
+    if (pair[3]) pdf.text(String(pair[3]), 581.0, invBaseline(valueTop, INSP_ROW_H, 11.56), { align: "right" });
+  });
+  setF("bold", 11.56);
+  pdf.text("Special Mention/Comments", 252.6, invBaseline(204.8, INSP_ROW_H, 11.56));
+  if (data.comments) {
+    setF("normal", 11.56);
+    var commentLines = pdf.splitTextToSize(data.comments, INSP_R - 2.8 - 252.6);
+    pdf.text(commentLines, 252.6, invCapBaseline(226.6 + 4, 11.56));
+  }
+
+  // ================= 7. SPEC TABLE HEADER (two tiers) =================
+  setF("bold", 10.88);
+  var fullTierBase = invBaseline(INSP_THEAD_TOP, INSP_THEAD_BOT - INSP_THEAD_TOP, 10.88);
+  pdf.text("S. No.", (X[0] + X[1]) / 2, fullTierBase, { align: "center" });
+  pdf.text("Parameters", (X[1] + X[2]) / 2, fullTierBase, { align: "center" });
+  pdf.text("Specifications", (X[2] + X[3]) / 2, fullTierBase, { align: "center" });
+  pdf.text("Remarks", (X[8] + X[9]) / 2, fullTierBase, { align: "center" });
+  pdf.text("Observations", (X[3] + X[8]) / 2, invBaseline(INSP_THEAD_TOP, INSP_THEAD_MID - INSP_THEAD_TOP, 10.88), { align: "center" });
+  var obsNumBase = invBaseline(INSP_THEAD_MID, INSP_THEAD_BOT - INSP_THEAD_MID, 10.88);
+  ["1", "2", "3", "4", "5"].forEach(function (n, i) {
+    pdf.text(n, (X[3 + i] + X[4 + i]) / 2, obsNumBase, { align: "center" });
+  });
+
+  // ================= 8. SPEC TABLE BODY =================
+  setF("normal", 10.88);
+  for (var b = 0; b < INSP_BODY_ROWS; b++) {
+    var spec = specs[b];
+    if (!spec) continue;
+    var rowTop2 = INSP_BODY_TOP + b * INSP_ROW_H;
+    var base = invBaseline(rowTop2, INSP_ROW_H, 10.88);
+    var cells = [String(b + 1), spec.parameter || "", spec.nominal || ""];
+    for (var si = 0; si < INSP_SAMPLE_COUNT; si++) {
+      cells.push(si < sampleCount ? ((spec.samples || [])[si] || "") : "");
+    }
+    cells.push(spec.remarks || "");
+    cells.forEach(function (text, ci2) { pdf.text(String(text), colCenter[ci2], base, { align: "center" }); });
+  }
+
+  // ================= 9. DECLARATION + SIGNATURE =================
+  setF("bold", 8.5);
+  pdf.text("Declaration:-", 14.8, invCapBaseline(685.3, 8.5));
+  hline(14.8, 61.5, 692.8, 0.625, [0, 0, 0]);
+  var declTop = 696.0;
+  INSP_DECLARATION_LINES.forEach(function (line) {
+    if (line.num) {
+      setF("bold", 8.5);
+      pdf.text(line.num, 14.8, invCapBaseline(declTop, 8.5));
+    }
+    setF("normal", 8.5);
+    pdf.text(line.text, 28.7, invCapBaseline(declTop, 8.5));
+    declTop += 10.2;
+  });
+
+  if (SIGNATURE_IMG_DATAURL) {
+    pdf.addImage(SIGNATURE_IMG_DATAURL, "PNG", 314.6, 680.1, 164.4, 76.2);
+  }
+  setF("bold", 8.84);
+  pdf.text("Authorise Signatory", 581.0, invCapBaseline(736.0, 8.84), { align: "right" });
+  pdf.text("New Kamal Metal Works", 581.0, invCapBaseline(746.9, 8.84), { align: "right" });
+
+  return pdf;
+}
+
+function inspectionSpecRef(buyerId, partNo) {
+  return doc(db, "buyers", buyerId, "parts", partNo, "inspection", "spec");
+}
+
+function loadInspectionSpec(buyerId, partNo) {
+  return getDoc(inspectionSpecRef(buyerId, partNo)).then(function (snap) {
+    return snap.exists() ? snap.data() : null;
+  });
+}
+
+function saveInspectionSpec(buyerId, partNo, data) {
+  return setDoc(inspectionSpecRef(buyerId, partNo), {
+    sampleSize: data.sampleSize,
+    specs: data.specs,
+    updatedAt: serverTimestamp()
+  });
+}
+
+function showStatus(message, isError) {
+  var el = document.getElementById("insp-status");
+  el.textContent = message;
+  el.classList.toggle("is-error", !!isError);
+  el.classList.add("is-visible");
+}
+
+// ---------------------------------------------------------------------
+// Invoice picker -- a custom dropdown (rather than a native <select>) so
+// the panel can be capped to five visible rows with the rest of the list
+// reachable by scrolling, and each row can carry the buyer/date/amount
+// context needed to tell invoices apart by more than just their number.
+// ---------------------------------------------------------------------
+var allInvoices = [];
+var selectedInvoiceId = null;
+
+var selectEl = document.getElementById("insp-select");
+var selectBtn = document.getElementById("insp-select-btn");
+var selectLabel = document.getElementById("insp-select-btn-label");
+var selectPanel = document.getElementById("insp-select-panel");
+
+function closeSelectPanel() {
+  selectEl.classList.remove("is-open");
+  selectBtn.setAttribute("aria-expanded", "false");
+}
+function toggleSelectPanel() {
+  var isOpen = selectEl.classList.toggle("is-open");
+  selectBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+}
+selectBtn.addEventListener("click", function (e) {
+  e.stopPropagation();
+  toggleSelectPanel();
+});
+document.addEventListener("click", function (e) {
+  if (!selectEl.contains(e.target)) closeSelectPanel();
+});
+document.addEventListener("keydown", function (e) {
+  if (e.key === "Escape") closeSelectPanel();
+});
+
+function renderInvoiceOptions() {
+  if (!allInvoices.length) {
+    selectPanel.innerHTML = '<p class="insp-select-empty">No invoices yet.</p>';
+    return;
+  }
+  selectPanel.innerHTML = "";
+  allInvoices.forEach(function (entry) {
+    var inv = entry.data;
+    var opt = document.createElement("button");
+    opt.type = "button";
+    opt.className = "insp-select-option";
+    opt.setAttribute("role", "option");
+    if (entry.id === selectedInvoiceId) opt.classList.add("is-active");
+    opt.innerHTML =
+      '<span class="insp-select-option-no">' + inv.invoiceNo + '</span>' +
+      '<span class="insp-select-option-meta">' + (inv.buyer ? inv.buyer.name : "") + " &middot; " + formatDate(inv.date) + " &middot; " + formatCurrency(inv.net) + '</span>';
+    opt.addEventListener("click", function () {
+      selectInvoice(entry.id);
+      closeSelectPanel();
+    });
+    selectPanel.appendChild(opt);
+  });
+}
+
+function selectInvoice(invoiceId) {
+  var entry = allInvoices.filter(function (e) { return e.id === invoiceId; })[0];
+  if (!entry) return;
+  selectedInvoiceId = invoiceId;
+  selectLabel.textContent = entry.data.invoiceNo;
+  selectLabel.classList.remove("insp-select-btn-placeholder");
+  renderBreakdown(entry.data);
+  renderInvoiceOptions();
+}
+
+function renderBreakdown(inv) {
+  document.getElementById("insp-breakdown-invoiceno").textContent = "Invoice " + inv.invoiceNo;
+  document.getElementById("insp-breakdown-meta").textContent =
+    (inv.buyer ? inv.buyer.name : "") + " · " + formatDate(inv.date) + " · Net " + formatCurrency(inv.net);
+
+  var viewBtn = document.getElementById("insp-view-btn");
+  if (inv.pdfUrl) {
+    viewBtn.href = inv.pdfUrl;
+    viewBtn.removeAttribute("aria-disabled");
+  } else {
+    viewBtn.href = "#";
+    viewBtn.setAttribute("aria-disabled", "true");
+  }
+
+  var body = document.getElementById("insp-items-body");
+  body.innerHTML = "";
+  (inv.items || []).forEach(function (it) {
+    var tr = document.createElement("tr");
+    tr.innerHTML =
+      "<td>" + (it.partNo || "") + "</td>" +
+      "<td>" + (it.description || "") + "</td>" +
+      "<td>" + (it.qty != null ? it.qty.toLocaleString("en-IN") : "") + "</td>" +
+      "<td>" + formatCurrency(it.rate) + "</td>" +
+      "<td>" + formatCurrency(it.amount) + "</td>";
+    body.appendChild(tr);
+  });
+
+  document.getElementById("insp-breakdown").hidden = false;
+}
+
+function loadInvoices() {
+  return getDocs(query(collection(db, "invoices"), orderBy("createdAt", "desc"), limit(500)))
+    .then(function (snap) {
+      allInvoices = [];
+      snap.forEach(function (d) { allInvoices.push({ id: d.id, data: d.data() }); });
+      renderInvoiceOptions();
+    })
+    .catch(function (err) {
+      showStatus("Couldn't load invoices — please try again.", true);
+      console.error(err);
+    });
+}
+
+// Starter Inspection Report data for the parts already on file, cut
+// straight from the "Inspection Report.numbers" workbook (one sheet per
+// part) -- lets the specs editor below bootstrap itself with real figures
+// instead of an empty form. Keyed by Part No.; only used the first time a
+// part's specs are opened with nothing saved yet.
+var INSPECTION_SPEC_SEED = {
+  "329.084-00": {
+    sampleSize: 5,
+    specs: [
+      { parameter: "Length", nominal: "25.0", samples: ["24.5", "24.5", "24.5", "24.5", "24.5"] },
+      { parameter: "Width", nominal: "7.0", samples: ["6.9", "7.0", "7.0", "6.9", "7.0"] },
+      { parameter: "Punching Diameter", nominal: "4.5 x 3.5", samples: ["4.5 x 3.5", "4.4 x 3.5", "4.5 x 3.4", "4.5 x 3.5", "4.4 x 3.5"] },
+      { parameter: "Degree", nominal: "15º", samples: ["15º", "15º", "15º", "15º", "15º"] },
+      { parameter: "Thickness", nominal: "0.3/0.4", samples: ["0.3", "0.3", "0.3", "0.3", "0.3"] },
+      { parameter: "Material", nominal: "P.B.", samples: ["P.B.", "P.B.", "P.B.", "P.B.", "P.B."] }
+    ]
+  },
+  "329.085-00": {
+    sampleSize: 5,
+    specs: [
+      { parameter: "Length", nominal: "25.0", samples: ["24.5", "24.5", "24.5", "24.5", "24.5"] },
+      { parameter: "Width", nominal: "7.0", samples: ["6.9", "7.0", "7.0", "6.9", "7.0"] },
+      { parameter: "Punching Diameter", nominal: "4.5 x 3.5", samples: ["4.5 x 3.5", "4.4 x 3.5", "4.5 x 3.4", "4.5 x 3.5", "4.4 x 3.5"] },
+      { parameter: "Degree", nominal: "15º", samples: ["15º", "15º", "15º", "15º", "15º"] },
+      { parameter: "Thickness", nominal: "0.3/0.4", samples: ["0.3", "0.3", "0.3", "0.3", "0.3"] },
+      { parameter: "Material", nominal: "Spring Steel", samples: ["S.S.", "S.S.", "S.S.", "S.S.", "S.S."] }
+    ]
+  },
+  "329.116-00": {
+    sampleSize: 5,
+    specs: [
+      { parameter: "Length", nominal: "28.5", samples: ["28.6", "28.5", "28.7", "28.5", "28.6"] },
+      { parameter: "Length", nominal: "24.5", samples: ["24.6", "24.7", "24.6", "24.6", "24.7"] },
+      { parameter: "Width", nominal: "7.0", samples: ["7.1", "7.1", "7.1", "7.1", "7.1"] },
+      { parameter: "Dimension", nominal: "13.0", samples: ["13.1", "13.2", "13.1", "13.0", "13.2"] },
+      { parameter: "Dimension", nominal: "6.5", samples: ["6.6", "6.4", "6.4", "6.5", "6.6"] },
+      { parameter: "Punching Diameter", nominal: "1.8", samples: ["1.9", "2.0", "1.8", "1.9", "1.8"] }
+    ]
+  },
+  "329.115-00": {
+    sampleSize: 5,
+    specs: [
+      { parameter: "Length", nominal: "23.8", samples: ["23.9", "24.0", "23.8", "23.7", "23.8"] },
+      { parameter: "Width", nominal: "7.0", samples: ["7.1", "7.0", "7.1", "7.0", "7.1"] },
+      { parameter: "Thickness", nominal: "0.4", samples: ["0.35", "0.36", "0.35", "0.36", "0.35"] },
+      { parameter: "Dimension", nominal: "3.0", samples: ["3.1", "3.2", "3.1", "3.0", "3.2"] },
+      { parameter: "Dimension", nominal: "6.5", samples: ["6.6", "6.4", "6.4", "6.5", "6.6"] },
+      { parameter: "Punching Diameter", nominal: "1.8", samples: ["1.9", "2.0", "1.8", "1.9", "1.8"] },
+      { parameter: "Material", nominal: "P.B", samples: ["P.B", "P.B", "P.B", "P.B", "P.B"] }
+    ]
+  },
+  "329.461-37": {
+    sampleSize: 5,
+    specs: [
+      { parameter: "Length", nominal: "46.0", samples: ["46.1", "46.1", "46.1", "46.2", "46.2"] },
+      { parameter: "Width", nominal: "48.0", samples: ["48.1", "48.2", "48.2", "48.1", "48.1"] },
+      { parameter: "Width", nominal: "34.0", samples: ["33.9", "34.0", "34.0", "34.1", "34.0"] },
+      { parameter: "Punching Dimension", nominal: "3.0 x 4.1", samples: ["3.1 x 4.1", "3.1 x 4.0", "3.0 x 4.1", "3.0 x 4.1", "3.0 x 4.0"] },
+      { parameter: "Punching Dimension", nominal: "9.3", samples: ["9.2", "9.3", "9.3", "9.2", "9.3"] },
+      { parameter: "Height", nominal: "9.0", samples: ["9.0", "9.0", "9.0", "9.0", "9.0"] },
+      { parameter: "Thickness", nominal: "0.1", samples: ["0.1", "0.1", "0.1", "0.1", "0.1"] },
+      { parameter: "Plating", nominal: "Zn", samples: ["Zn", "Zn", "Zn", "Zn", "Zn"] },
+      { parameter: "Material", nominal: "CRCA", samples: ["CRCA", "CRCA", "CRCA", "CRCA", "CRCA"] }
+    ]
+  },
+  "104.295-00": {
+    sampleSize: 5,
+    specs: [
+      { parameter: "Length", nominal: "42.0", samples: ["42.0", "42.0", "42.0", "42.0", "42.0"] },
+      { parameter: "Length", nominal: "28.0", samples: ["28.0", "28.0", "28.0", "28.0", "28.0"] },
+      { parameter: "Length", nominal: "14.0", samples: ["14.0", "14.0", "14.0", "14.0", "14.0"] },
+      { parameter: "Bending Height", nominal: "21.0", samples: ["21.1", "21.1", "21.1", "21.1", "21.1"] },
+      { parameter: "Bending Height", nominal: "2.5", samples: ["2.6", "2.6", "2.6", "2.6", "2.6"] },
+      { parameter: "Width", nominal: "16.5", samples: ["16.5", "16.4", "16.5", "16.5", "16.4"] },
+      { parameter: "Radius", nominal: "20", samples: ["20", "20", "20", "20", "20"] },
+      { parameter: "Punching", nominal: "2.75", samples: ["2.75", "2.75", "2.75", "2.75", "2.75"] },
+      { parameter: "Punching Diameter", nominal: "4.1", samples: ["4.1", "4.1", "4.1", "4.1", "4.1"] },
+      { parameter: "Thickness", nominal: "0.5", samples: ["0.5", "0.5", "0.5", "0.5", "0.5"] },
+      { parameter: "Material", nominal: "GI", samples: ["GI", "GI", "GI", "GI", "GI"] }
+    ]
+  },
+  "104.296-00": {
+    sampleSize: 5,
+    specs: [
+      { parameter: "Length", nominal: "42.0", samples: ["42.0", "42.0", "42.0", "42.0", "42.0"] },
+      { parameter: "Length", nominal: "28.0", samples: ["28.0", "28.0", "28.0", "28.0", "28.0"] },
+      { parameter: "Length", nominal: "14.0", samples: ["14.0", "14.0", "14.0", "14.0", "14.0"] },
+      { parameter: "Bending Height", nominal: "21.0", samples: ["21.1", "21.1", "21.1", "21.1", "21.1"] },
+      { parameter: "Bending Height", nominal: "2.5", samples: ["2.6", "2.6", "2.6", "2.6", "2.6"] },
+      { parameter: "Width", nominal: "16.5", samples: ["16.5", "16.4", "16.5", "16.5", "16.4"] },
+      { parameter: "Radius", nominal: "20", samples: ["20", "20", "20", "20", "20"] },
+      { parameter: "Punching", nominal: "2.75", samples: ["2.75", "2.75", "2.75", "2.75", "2.75"] },
+      { parameter: "Punching Diameter", nominal: "4.1", samples: ["4.1", "4.1", "4.1", "4.1", "4.1"] },
+      { parameter: "Thickness", nominal: "0.5", samples: ["0.5", "0.5", "0.5", "0.5", "0.5"] },
+      { parameter: "Material", nominal: "GI", samples: ["GI", "GI", "GI", "GI", "GI"] }
+    ]
+  },
+  "329.408-00": {
+    sampleSize: 5,
+    specs: [
+      { parameter: "Bending Length", nominal: "26.0", samples: ["26.0", "26.1", "26.0", "25.9", "26.0"] },
+      { parameter: "Bending Length", nominal: "15.0", samples: ["15.1", "15.0", "15.0", "15.0", "15.1"] },
+      { parameter: "Punching Diameter", nominal: "20.0", samples: ["19.9", "20.0", "20.0", "19.9", "20.0"] },
+      { parameter: "Punching Diameter", nominal: "3.0", samples: ["3.0", "3.0", "3.1", "3.0", "3.1"] },
+      { parameter: "Width", nominal: "25.0", samples: ["25.1", "25.0", "25.0", "25.1", "25.0"] },
+      { parameter: "Thickness", nominal: "0.1", samples: ["0.1", "0.1", "0.1", "0.1", "0.1"] },
+      { parameter: "Material", nominal: "CRCA", samples: ["CRCA", "CRCA", "CRCA", "CRCA", "CRCA"] }
+    ]
+  },
+  "069.609-00": {
+    sampleSize: 5,
+    specs: [
+      { parameter: "Outer Diameter", nominal: "6.0", samples: ["6.0", "5.9", "6.0", "5.9", "6.0"] },
+      { parameter: "Inner Diameter", nominal: "3.0 x 4.0", samples: ["2.9 x 4.0", "3.0 x 4.0", "3.0 x 4.1", "3.0 x 4.0", "3.0 x 4.0"] },
+      { parameter: "Thickness", nominal: "0.3", samples: ["0.3", "0.3", "0.3", "0.3", "0.3"] },
+      { parameter: "Material", nominal: "Brass", samples: ["Brass", "Brass", "Brass", "Brass", "Brass"] }
+    ]
+  },
+  "329.458-00": {
+    sampleSize: 5,
+    specs: [
+      { parameter: "Leg Length", nominal: "5.6", samples: ["5.5", "5.6", "5.5", "5.6", "5.5"] },
+      { parameter: "Leg Width", nominal: "4.0", samples: ["4.1", "3.9", "4.1", "4.0", "4.0"] },
+      { parameter: "Hole Diameter", nominal: "3.5", samples: ["3.5", "3.5", "3.5", "3.5", "3.5"] },
+      { parameter: "Thickness", nominal: "0.4", samples: ["0.35", "0.4", "0.4", "0.4", "0.35"] },
+      { parameter: "Material", nominal: "Brass", samples: ["Brass", "Brass", "Brass", "Brass", "Brass"] }
+    ]
+  },
+  "329.406-40": {
+    sampleSize: 5,
+    specs: [
+      { parameter: "Width", nominal: "10.0", samples: ["10.1", "10.0", "10.1", "10.0", "10.1"] },
+      { parameter: "Length", nominal: "18.4", samples: ["18.5", "18.4", "18.6", "18.4", "18.5"] },
+      { parameter: "Hole Diameter", nominal: "3.1", samples: ["3.0", "3.2", "3.1", "3.0", "3.1"] },
+      { parameter: "Thickness", nominal: "0.4", samples: ["0.4", "0.4", "0.4", "0.4", "0.4"] },
+      { parameter: "Material", nominal: "Spring Steel", samples: ["Spring Steel", "Spring Steel", "Spring Steel", "Spring Steel", "Spring Steel"] }
+    ]
+  },
+  "329.401-00": {
+    sampleSize: 5,
+    specs: [
+      { parameter: "Height", nominal: "45.0", samples: ["45.1", "45.1", "45.2", "45.1", "45.2"] },
+      { parameter: "Total Diameter", nominal: "22.5", samples: ["22.6", "22.6", "22.5", "22.6", "22.5"] },
+      { parameter: "Diameter Between Legs", nominal: "19.0", samples: ["19.1", "19.0", "18.9", "19.0", "19.0"] },
+      { parameter: "Outer L-Width", nominal: "22.5", samples: ["22.5", "22.5", "22.5", "22.5", "22.5"] },
+      { parameter: "Inner Height", nominal: "34.0", samples: ["34.0", "34.0", "34.1", "34.0", "34.1"] },
+      { parameter: "Thickness", nominal: "0.75", samples: ["0.7", "0.7", "0.7", "0.7", "0.7"] },
+      { parameter: "Material", nominal: "CRCA", samples: ["CRCA", "CRCA", "CRCA", "CRCA", "CRCA"] }
+    ]
+  },
+  "329.412-00": {
+    sampleSize: 5,
+    specs: [
+      { parameter: "Diameter", nominal: "5.5", samples: ["5.4", "5.5", "5.6", "5.5", "5.4"] },
+      { parameter: "Punching", nominal: "3.2", samples: ["3.3", "3.2", "3.1", "3.3", "3.2"] },
+      { parameter: "Width", nominal: "3.5", samples: ["3.4", "3.5", "3.6", "3.5", "3.4"] },
+      { parameter: "Thickness", nominal: "0.50", samples: ["0.45", "0.5", "0.45", "0.5", "0.45"] },
+      { parameter: "Radius", nominal: "0.7", samples: ["0.7", "0.7", "0.7", "0.7", "0.7"] },
+      { parameter: "Material", nominal: "Brass", samples: ["Brass", "Brass", "Brass", "Brass", "Brass"] }
+    ]
+  }
+};
+
+// ---------------------------------------------------------------------
+// Inspection specifications editor -- per-part dimensional/QC data used
+// to build the Inspection Report PDF. Saving is gated behind a 6-digit
+// code emailed to the signed-in master account, the same pattern as the
+// rate-card editor on billing.html (requestInspectionSpecCode /
+// verifyInspectionSpecCode Cloud Functions; firestore.rules refuses the
+// write to a part's inspection subdoc unless that verification went
+// through, so the check can't be skipped from devtools either).
+// ---------------------------------------------------------------------
+var specsBuyersById = {};
+var specsPartsByBuyer = {};
+var specsBuyersLoaded = false;
+
+var specsBtn = document.getElementById("insp-specs-btn");
+var specsPanel = document.getElementById("insp-specs-panel");
+var specsBuyerNameEl = document.getElementById("insp-specs-buyer-name");
+var specsBuyerSelect = document.getElementById("insp-specs-buyer-select");
+var specsPartSelect = document.getElementById("insp-specs-part-select");
+var specsEditor = document.getElementById("insp-specs-editor");
+var specsSampleSizeInput = document.getElementById("insp-specs-sample-size");
+var specsBody = document.getElementById("insp-specs-body");
+var specsStatus = document.getElementById("insp-specs-status");
+var specsActions = document.getElementById("insp-specs-actions");
+
+function loadSpecsBuyers() {
+  if (specsBuyersLoaded) return Promise.resolve();
+  return getDocs(collection(db, "buyers")).then(function (snap) {
+    specsBuyerSelect.innerHTML = "";
+    snap.forEach(function (d) {
+      specsBuyersById[d.id] = d.data();
+      var opt = document.createElement("option");
+      opt.value = d.id;
+      opt.textContent = d.data().name;
+      specsBuyerSelect.appendChild(opt);
+    });
+    specsBuyersLoaded = true;
+  });
+}
+
+function loadPartsForSpecsBuyer(buyerId) {
+  if (!buyerId) return Promise.resolve();
+  return getDocs(collection(db, "buyers", buyerId, "parts")).then(function (snap) {
+    var map = {};
+    snap.forEach(function (d) { map[d.id] = d.data(); });
+    specsPartsByBuyer[buyerId] = map;
+
+    var partNos = Object.keys(map).sort();
+    specsPartSelect.innerHTML = '<option value="">Select part&hellip;</option>';
+    partNos.forEach(function (partNo) {
+      var opt = document.createElement("option");
+      opt.value = partNo;
+      opt.textContent = partNo + " — " + map[partNo].description;
+      specsPartSelect.appendChild(opt);
+    });
+    specsEditor.hidden = true;
+  });
+}
+
+specsBuyerSelect.addEventListener("change", function () {
+  specsBuyerNameEl.textContent = (specsBuyersById[specsBuyerSelect.value] || {}).name || "";
+  loadPartsForSpecsBuyer(specsBuyerSelect.value);
+});
+
+function addSpecRow(data) {
+  data = data || {};
+  var samples = data.samples || [];
+  var tr = document.createElement("tr");
+  tr.className = "billing-item-row";
+  tr.innerHTML =
+    '<td><input type="text" class="spec-param" placeholder="e.g. Width" /></td>' +
+    '<td><input type="text" class="spec-nominal" placeholder="Specification" /></td>' +
+    '<td><input type="text" class="spec-sample" /></td>' +
+    '<td><input type="text" class="spec-sample" /></td>' +
+    '<td><input type="text" class="spec-sample" /></td>' +
+    '<td><input type="text" class="spec-sample" /></td>' +
+    '<td><input type="text" class="spec-sample" /></td>' +
+    '<td><input type="text" class="spec-remarks" /></td>' +
+    '<td><button type="button" class="billing-remove-row" aria-label="Remove parameter">&times;</button></td>';
+  tr.querySelector(".spec-param").value = data.parameter || "";
+  tr.querySelector(".spec-nominal").value = data.nominal || "";
+  Array.prototype.forEach.call(tr.querySelectorAll(".spec-sample"), function (input, i) {
+    input.value = samples[i] || "";
+  });
+  tr.querySelector(".spec-remarks").value = data.remarks || "";
+  tr.querySelector(".billing-remove-row").addEventListener("click", function () { tr.remove(); });
+  specsBody.appendChild(tr);
+}
+
+function renderSpecs(spec) {
+  specsBody.innerHTML = "";
+  specsSampleSizeInput.value = (spec && spec.sampleSize) || 5;
+  if (spec && spec.specs && spec.specs.length) {
+    spec.specs.forEach(function (s) { addSpecRow(s); });
+  } else {
+    addSpecRow({});
+  }
+}
+
+function collectSpecs() {
+  var sampleSize = Math.max(1, Math.min(5, parseInt(specsSampleSizeInput.value, 10) || 5));
+  var specs = [];
+  Array.prototype.forEach.call(specsBody.children, function (tr) {
+    var parameter = tr.querySelector(".spec-param").value.trim();
+    var nominal = tr.querySelector(".spec-nominal").value.trim();
+    var samples = Array.prototype.map.call(tr.querySelectorAll(".spec-sample"), function (input) { return input.value.trim(); });
+    var remarks = tr.querySelector(".spec-remarks").value.trim();
+    if (!parameter && !nominal && !remarks && !samples.some(function (s) { return s; })) return;
+    specs.push({ parameter: parameter, nominal: nominal, samples: samples, remarks: remarks });
+  });
+  return { sampleSize: sampleSize, specs: specs };
+}
+
+function loadSpecsForSelectedPart() {
+  var buyerId = specsBuyerSelect.value;
+  var partNo = specsPartSelect.value;
+  if (!partNo) { specsEditor.hidden = true; return; }
+  specsEditor.hidden = false;
+  hideSpecsVerifyStep();
+  specsStatus.textContent = "Loading…";
+  specsStatus.classList.add("is-visible");
+  loadInspectionSpec(buyerId, partNo)
+    .then(function (spec) {
+      renderSpecs(spec || INSPECTION_SPEC_SEED[partNo] || null);
+      specsStatus.textContent = "";
+      specsStatus.classList.remove("is-visible");
+    })
+    .catch(function (err) {
+      specsStatus.textContent = "Couldn't load specifications for this part.";
+      console.error(err);
+    });
+}
+
+specsPartSelect.addEventListener("change", loadSpecsForSelectedPart);
+
+function openSpecsPanel() {
+  specsStatus.textContent = "";
+  specsStatus.classList.remove("is-visible");
+  specsEditor.hidden = true;
+  specsPanel.hidden = false;
+  loadSpecsBuyers().then(function () {
+    specsBuyerNameEl.textContent = (specsBuyersById[specsBuyerSelect.value] || {}).name || "";
+    return loadPartsForSpecsBuyer(specsBuyerSelect.value);
+  });
+}
+
+function closeSpecsPanel() {
+  specsPanel.hidden = true;
+}
+
+specsBtn.addEventListener("click", openSpecsPanel);
+document.getElementById("insp-specs-close").addEventListener("click", closeSpecsPanel);
+document.getElementById("insp-specs-cancel").addEventListener("click", closeSpecsPanel);
+document.getElementById("insp-specs-add-row").addEventListener("click", function () { addSpecRow({}); });
+
+// Preview -- builds the exact same PDF Save would attach to an invoice,
+// straight from whatever's currently in the editor (no save, and no
+// verification code, required first). Written to a fixed path so previews
+// never accumulate, and the tab opens synchronously so the async upload
+// can't get it blocked as a popup.
+var INSPECTION_PREVIEW_PDF_PATH = "inspectionReports/preview/preview.pdf";
+
+document.getElementById("insp-specs-preview-btn").addEventListener("click", function () {
+  var buyerId = specsBuyerSelect.value;
+  var buyer = specsBuyersById[buyerId];
+  var partNo = specsPartSelect.value;
+  if (!partNo) {
+    specsStatus.textContent = "Select a part first.";
+    specsStatus.classList.add("is-visible");
+    return;
+  }
+  var payload = collectSpecs();
+  if (!payload.specs.length) {
+    specsStatus.textContent = "Add at least one parameter before previewing.";
+    specsStatus.classList.add("is-visible");
+    return;
+  }
+
+  var part = (specsPartsByBuyer[buyerId] || {})[partNo] || {};
+  var dateStr = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" });
+
+  var previewTab = window.open("", "_blank");
+  var previewBtn = document.getElementById("insp-specs-preview-btn");
+  previewBtn.disabled = true;
+  previewBtn.textContent = "Preparing…";
+
+  var fileRef = storageRef(storage, INSPECTION_PREVIEW_PDF_PATH);
+
+  INVOICE_PDF_ASSETS_PROMISE
+    .then(function () {
+      var pdf = buildInspectionReportPdf({
+        invoiceNo: "PREVIEW",
+        dateStr: dateStr,
+        buyer: buyer,
+        itemCode: partNo,
+        itemName: part.description || "",
+        sampleSize: payload.sampleSize,
+        qty: "—",
+        specs: payload.specs
+      });
+      return pdf.output("blob");
+    })
+    .then(function (pdfBlob) {
+      return uploadBytes(fileRef, pdfBlob, { contentType: "application/pdf" });
+    })
+    .then(function () { return getDownloadURL(fileRef); })
+    .then(function (pdfUrl) {
+      if (previewTab) { previewTab.location.href = pdfUrl; } else { window.open(pdfUrl, "_blank"); }
+      specsStatus.textContent = "Preview opened in a new tab — nothing has been saved yet.";
+      specsStatus.classList.add("is-visible");
+    })
+    .catch(function (err) {
+      if (previewTab) previewTab.close();
+      specsStatus.textContent = "Couldn't build the preview — please try again.";
+      specsStatus.classList.add("is-visible");
+      console.error(err);
+    })
+    .finally(function () {
+      previewBtn.disabled = false;
+      previewBtn.textContent = "Preview";
+    });
+});
+
+// Save -- gated behind a 6-digit code emailed to the signed-in master
+// account (requestInspectionSpecCode / verifyInspectionSpecCode Cloud
+// Functions); see the section comment above.
+var specsVerify = document.getElementById("insp-specs-verify");
+var specsVerifyCopy = document.getElementById("insp-specs-verify-copy");
+var specsCodeInput = document.getElementById("insp-specs-code-input");
+var specsVerifyBtn = document.getElementById("insp-specs-verify-btn");
+var specsResendBtn = document.getElementById("insp-specs-resend");
+var pendingSpecsSave = null; // { buyerId, partNo, payload } captured at validation time
+
+function hideSpecsVerifyStep() {
+  specsVerify.hidden = true;
+  specsActions.hidden = false;
+  specsCodeInput.value = "";
+  pendingSpecsSave = null;
+}
+
+function sendSpecsCode() {
+  specsVerifyCopy.textContent = "Sending a verification code to your email…";
+  specsCodeInput.value = "";
+  specsCodeInput.disabled = true;
+  specsVerifyBtn.disabled = true;
+  specsResendBtn.disabled = true;
+  requestInspectionSpecCodeFn().then(function () {
+    specsVerifyCopy.textContent = "We emailed a 6-digit code to your account's email. Enter it below to confirm this change.";
+    specsCodeInput.disabled = false;
+    specsVerifyBtn.disabled = false;
+    specsResendBtn.disabled = false;
+    specsCodeInput.focus();
+  }).catch(function (err) {
+    specsVerifyCopy.textContent = "Couldn't send a verification code just now — please try again.";
+    specsResendBtn.disabled = false;
+    console.error(err);
+  });
+}
+
+specsResendBtn.addEventListener("click", sendSpecsCode);
+document.getElementById("insp-specs-back").addEventListener("click", hideSpecsVerifyStep);
+
+specsCodeInput.addEventListener("input", function () {
+  specsCodeInput.value = specsCodeInput.value.replace(/\D/g, "").slice(0, 6);
+});
+
+document.getElementById("insp-specs-save").addEventListener("click", function () {
+  var buyerId = specsBuyerSelect.value;
+  var partNo = specsPartSelect.value;
+  if (!partNo) return;
+  var payload = collectSpecs();
+  if (!payload.specs.length) {
+    specsStatus.textContent = "Add at least one parameter before saving.";
+    specsStatus.classList.add("is-visible");
+    return;
+  }
+
+  specsStatus.textContent = "";
+  specsStatus.classList.remove("is-visible");
+  pendingSpecsSave = { buyerId: buyerId, partNo: partNo, payload: payload };
+  specsActions.hidden = true;
+  specsVerify.hidden = false;
+  sendSpecsCode();
+});
+
+specsVerifyBtn.addEventListener("click", function () {
+  if (!pendingSpecsSave) return;
+  var code = specsCodeInput.value.trim();
+  if (!/^\d{6}$/.test(code)) {
+    specsVerifyCopy.textContent = "Enter the 6-digit code from the email.";
+    return;
+  }
+
+  var buyerId = pendingSpecsSave.buyerId;
+  var partNo = pendingSpecsSave.partNo;
+  var payload = pendingSpecsSave.payload;
+
+  specsVerifyBtn.disabled = true;
+  specsResendBtn.disabled = true;
+  specsVerifyCopy.textContent = "Verifying…";
+
+  verifyInspectionSpecCodeFn({ code: code }).then(function () {
+    specsVerifyCopy.textContent = "Verified — saving…";
+    return saveInspectionSpec(buyerId, partNo, payload);
+  }).then(function () {
+    hideSpecsVerifyStep();
+    specsStatus.textContent = "Saved.";
+    specsStatus.classList.add("is-visible");
+  }).catch(function (err) {
+    var errCode = err && err.code;
+    if (errCode === "functions/deadline-exceeded") {
+      specsVerifyCopy.textContent = "That code expired — request a new one.";
+    } else if (errCode === "functions/resource-exhausted") {
+      specsVerifyCopy.textContent = "Too many wrong attempts — request a new code.";
+    } else if (errCode === "functions/permission-denied") {
+      specsVerifyCopy.textContent = "That code isn't right. Try again or resend.";
+    } else {
+      specsVerifyCopy.textContent = "Couldn't save the specification just now — please try again.";
+      console.error(err);
+    }
+  }).finally(function () {
+    specsVerifyBtn.disabled = false;
+    specsResendBtn.disabled = false;
+  });
+});
+
+// ---------------------------------------------------------------------
+// Auth + role guard
+// ---------------------------------------------------------------------
+onAuthStateChanged(auth, function (user) {
+  if (!user) { window.location.replace("login.html"); return; }
+  if (!user.emailVerified) {
+    signOut(auth).then(function () { window.location.replace("login.html?unverified=1"); });
+    return;
+  }
+
+  getDoc(doc(db, "profiles", user.uid)).then(function (snap) {
+    var data = snap.exists() ? snap.data() : {};
+    if (data.role !== "master") { window.location.replace("welcome.html"); return; }
+    if (data.email !== user.email) {
+      setDoc(doc(db, "profiles", user.uid), { email: user.email }, { merge: true }).catch(function () {});
+    }
+
+    document.getElementById("insp-loading").hidden = true;
+    document.getElementById("insp-wrap").hidden = false;
+    loadInvoices();
+  }).catch(function () {
+    window.location.replace("welcome.html");
+  });
+});
+</script>
+<script src="js/bot-widget.js?v=2" defer></script>
+</body>
+</html>

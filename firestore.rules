@@ -20,6 +20,18 @@ service cloud.firestore {
         && request.time < get(/databases/$(database)/documents/rateCardVerify/$(request.auth.uid)).data.verifiedUntil;
     }
 
+    // Same emailed-code gate as rateCardVerified() above, but for the
+    // inspection-spec editor (inspection.html) -- requestInspectionSpecCode
+    // / verifyInspectionSpecCode Cloud Functions, backed by its own
+    // inspectionSpecVerify collection so the two verified windows don't
+    // share state.
+    function inspectionSpecVerified() {
+      return isMaster()
+        && exists(/databases/$(database)/documents/inspectionSpecVerify/$(request.auth.uid))
+        && get(/databases/$(database)/documents/inspectionSpecVerify/$(request.auth.uid)).data.verifiedUntil != null
+        && request.time < get(/databases/$(database)/documents/inspectionSpecVerify/$(request.auth.uid)).data.verifiedUntil;
+    }
+
     match /profiles/{uid} {
       allow read: if request.auth != null
                   && (request.auth.uid == uid || isMaster());
@@ -43,12 +55,30 @@ service cloud.firestore {
       match /parts/{partNo} {
         allow read: if isMaster();
         allow write: if isMaster() && rateCardVerified();
+
+        // Per-part inspection/QC specification, used to generate the
+        // Inspection Report PDF attached alongside an invoice email. Kept
+        // separate from the parts/{partNo} doc itself since it's a
+        // different price-vs-QC concern, but edited through the same kind
+        // of emailed-code gate -- see inspectionSpecVerified() above and
+        // inspection.html.
+        match /inspection/{docId} {
+          allow read: if isMaster();
+          allow write: if isMaster() && inspectionSpecVerified();
+        }
       }
     }
 
     // Written only by requestRateCardCode / verifyRateCardCode (Cloud
     // Functions, Admin SDK) -- never by a client, in either direction.
     match /rateCardVerify/{uid} {
+      allow read, write: if false;
+    }
+
+    // Written only by requestInspectionSpecCode / verifyInspectionSpecCode
+    // (Cloud Functions, Admin SDK) -- never by a client, in either
+    // direction. See inspectionSpecVerified() above.
+    match /inspectionSpecVerify/{uid} {
       allow read, write: if false;
     }
 

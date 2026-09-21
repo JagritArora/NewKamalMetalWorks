@@ -2131,6 +2131,94 @@ button.login-back {
   font-size: 1rem;
   cursor: pointer;
 }
+
+/* Inspection Report generator -- invoice-picker dropdown, capped to five
+   visible rows with the rest reachable by scrolling inside the panel. */
+.insp-select { position: relative; }
+.insp-select-btn {
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 11px 14px;
+  font-family: inherit;
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: var(--ink);
+  background: var(--surface-sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  text-align: left;
+}
+.insp-select-btn:hover, .insp-select.is-open .insp-select-btn { border-color: var(--accent); }
+.insp-select-btn-placeholder { color: var(--ink-muted); font-weight: 400; }
+.insp-select-chevron { width: 16px; height: 16px; flex: none; color: var(--ink-muted); transition: transform .18s var(--ease); }
+.insp-select.is-open .insp-select-chevron { transform: rotate(180deg); }
+.insp-select-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  max-height: 300px; /* ~5 rows; the rest scrolls */
+  overflow-y: auto;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-6px);
+  transition: opacity .18s var(--ease), transform .18s var(--ease), visibility .18s;
+}
+.insp-select.is-open .insp-select-panel { opacity: 1; visibility: visible; transform: translateY(0); }
+.insp-select-option {
+  display: block;
+  width: 100%;
+  padding: 9px 14px;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+}
+.insp-select-option:last-child { border-bottom: none; }
+.insp-select-option:hover, .insp-select-option.is-active { background: var(--surface-sunken); }
+.insp-select-option-no { display: block; font-size: 0.9rem; font-weight: 600; color: var(--ink); }
+.insp-select-option-meta { display: block; margin-top: 2px; font-size: 0.78rem; color: var(--ink-muted); }
+.insp-select-empty { padding: 14px; font-size: 0.85rem; color: var(--ink-muted); }
+
+.insp-breakdown { margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--line); }
+.insp-breakdown-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.insp-breakdown-title { font-family: "Space Grotesk", sans-serif; font-size: 1.05rem; font-weight: 600; color: var(--ink); }
+.insp-breakdown-meta { margin-top: 4px; font-size: 0.86rem; color: var(--ink-muted); }
+.insp-view-btn {
+  display: inline-flex;
+  align-items: center;
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--surface-sunken);
+  border: 1px solid var(--line);
+  border-radius: 980px;
+  padding: 7px 16px;
+  cursor: pointer;
+  text-decoration: none;
+  flex: none;
+}
+.insp-view-btn:hover { border-color: var(--accent); color: var(--accent); }
+.insp-view-btn[aria-disabled="true"] { opacity: 0.5; pointer-events: none; }
 .billing-remove-row:hover { color: var(--danger); background: var(--surface-sunken); }
 .billing-add-row { margin-top: 12px; padding: 8px 2px; }
 
