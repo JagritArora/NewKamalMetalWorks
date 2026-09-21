@@ -22,10 +22,9 @@
 </nav>
 
 <main class="login-shell">
-  <div class="login-stack" id="profile-stack">
   <div class="login-card login-enter" id="profile-card" hidden>
     <span class="login-kicker">Client Access</span>
-    <h1 class="login-heading">Your Profile</h1>
+    <h1 class="login-heading" id="profile-heading">Your Profile</h1>
     <p class="login-sub" id="profile-email-line"></p>
 
     <div class="login-empty" id="profile-empty" hidden>
@@ -50,51 +49,55 @@
 
       <p class="login-status" id="profile-status" role="status" aria-live="polite"></p>
     </form>
-  </div>
 
-  <div class="login-card login-enter" id="password-card" hidden>
-    <h2 class="login-heading" style="font-size: 1.25rem;">Reset Password</h2>
-    <p class="login-sub">We'll email a 6-digit code to your account to confirm a new password — same as "Forgot password?" on the sign-in page.</p>
+    <p class="login-footnote" id="profile-footnote">
+      <button type="button" class="login-footnote-link" id="profile-reset-link">Reset password</button>
+    </p>
 
-    <div id="password-request-actions">
-      <button type="button" class="btn btn-primary login-submit" id="password-request-btn">Email me a reset code</button>
+    <div id="password-view" hidden>
+      <p class="login-sub">We'll email a 6-digit code to your account to confirm a new password.</p>
+
+      <div id="password-request-actions">
+        <button type="button" class="btn btn-primary login-submit" id="password-request-btn">Email me a reset code</button>
+      </div>
+      <p class="login-status" id="password-request-status" role="status" aria-live="polite"></p>
+
+      <form class="login-form" id="password-form" novalidate hidden>
+        <div class="login-field">
+          <label for="password-code-input">Verification code</label>
+          <input type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" id="password-code-input" placeholder="6-digit code" />
+        </div>
+
+        <div class="login-field">
+          <label for="password-new">New password</label>
+          <div class="login-password-wrap">
+            <input type="password" id="password-new" autocomplete="new-password" minlength="6" required />
+            <button type="button" class="login-password-toggle" data-toggle-for="password-new" aria-label="Show password">
+              <svg class="login-eye-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="login-field" id="password-confirm-field">
+          <label for="password-confirm">Confirm new password</label>
+          <div class="login-password-wrap">
+            <input type="password" id="password-confirm" autocomplete="new-password" minlength="6" required />
+            <button type="button" class="login-password-toggle" data-toggle-for="password-confirm" aria-label="Show password">
+              <svg class="login-eye-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+          <p class="login-field-error" id="password-confirm-error" hidden>Passwords don't match.</p>
+        </div>
+
+        <button type="submit" class="btn btn-primary login-submit" id="password-save-btn">Reset password</button>
+
+        <p class="login-status" id="password-status" role="status" aria-live="polite"></p>
+
+        <button type="button" class="login-forgot-link" id="password-resend-link">Resend code</button>
+      </form>
+
+      <button type="button" class="login-forgot-link" id="password-back-link">&larr; Back to profile</button>
     </div>
-    <p class="login-status" id="password-request-status" role="status" aria-live="polite"></p>
-
-    <form class="login-form" id="password-form" novalidate hidden>
-      <div class="login-field">
-        <label for="password-code-input">Verification code</label>
-        <input type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" id="password-code-input" placeholder="6-digit code" />
-      </div>
-
-      <div class="login-field">
-        <label for="password-new">New password</label>
-        <div class="login-password-wrap">
-          <input type="password" id="password-new" autocomplete="new-password" minlength="6" required />
-          <button type="button" class="login-password-toggle" data-toggle-for="password-new" aria-label="Show password">
-            <svg class="login-eye-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-          </button>
-        </div>
-      </div>
-
-      <div class="login-field" id="password-confirm-field">
-        <label for="password-confirm">Confirm new password</label>
-        <div class="login-password-wrap">
-          <input type="password" id="password-confirm" autocomplete="new-password" minlength="6" required />
-          <button type="button" class="login-password-toggle" data-toggle-for="password-confirm" aria-label="Show password">
-            <svg class="login-eye-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-          </button>
-        </div>
-        <p class="login-field-error" id="password-confirm-error" hidden>Passwords don't match.</p>
-      </div>
-
-      <button type="submit" class="btn btn-primary login-submit" id="password-save-btn">Reset password</button>
-
-      <p class="login-status" id="password-status" role="status" aria-live="polite"></p>
-
-      <button type="button" class="login-forgot-link" id="password-resend-link">Resend code</button>
-    </form>
-  </div>
   </div>
 
   <div class="login-card login-enter login-loading-card" id="profile-loading">
@@ -185,7 +188,6 @@ document.querySelectorAll(".login-password-toggle").forEach(function (btn) {
 });
 
 var profileCard = document.getElementById("profile-card");
-var passwordCard = document.getElementById("password-card");
 var loadingCard = document.getElementById("profile-loading");
 var emailLine = document.getElementById("profile-email-line");
 var emptyNote = document.getElementById("profile-empty");
@@ -272,6 +274,35 @@ var passwordConfirmError = document.getElementById("password-confirm-error");
 var passwordStatus = document.getElementById("password-status");
 var passwordSaveBtn = document.getElementById("password-save-btn");
 var passwordResendLink = document.getElementById("password-resend-link");
+var profileHeading = document.getElementById("profile-heading");
+var profileFootnote = document.getElementById("profile-footnote");
+var profileResetLink = document.getElementById("profile-reset-link");
+var passwordView = document.getElementById("password-view");
+var passwordBackLink = document.getElementById("password-back-link");
+
+// Swaps the same card's content between the profile form and the reset
+// flow -- same single-card, swapped-content pattern login.html uses
+// between its sign-in/sign-up/reset views, rather than a second card.
+function showProfileView() {
+  profileHeading.textContent = "Your Profile";
+  form.hidden = false;
+  profileFootnote.hidden = false;
+  passwordView.hidden = true;
+}
+
+function showPasswordView() {
+  profileHeading.textContent = "Reset Password";
+  form.hidden = true;
+  emptyNote.hidden = true;
+  profileFootnote.hidden = true;
+  passwordView.hidden = false;
+  passwordForm.hidden = true;
+  passwordRequestActions.hidden = false;
+  passwordRequestStatus.classList.remove("is-visible", "is-error");
+}
+
+profileResetLink.addEventListener("click", showPasswordView);
+passwordBackLink.addEventListener("click", showProfileView);
 
 function validatePasswordConfirm() {
   var value = passwordConfirmInput.value;
@@ -392,7 +423,6 @@ onAuthStateChanged(auth, function (user) {
     emptyNote.hidden = false;
     loadingCard.hidden = true;
     profileCard.hidden = false;
-    passwordCard.hidden = false;
   }, 8000);
 
   getDoc(doc(db, "profiles", user.uid)).then(function (snap) {
@@ -422,14 +452,12 @@ onAuthStateChanged(auth, function (user) {
     }
     loadingCard.hidden = true;
     profileCard.hidden = false;
-    passwordCard.hidden = false;
   }).catch(function () {
     clearTimeout(timeoutId);
     if (timedOut) return;
     showStatus("Couldn't load your profile just now — please refresh.");
     loadingCard.hidden = true;
     profileCard.hidden = false;
-    passwordCard.hidden = false;
   });
 });
 

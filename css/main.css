@@ -2472,15 +2472,6 @@ button.login-back {
   padding: 64px 24px;
 }
 
-.login-stack {
-  width: 100%;
-  max-width: 420px;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 24px;
-}
-
 .login-card {
   width: 100%;
   max-width: 420px;
@@ -2687,6 +2678,16 @@ button.login-back {
 }
 .login-footnote a { color: var(--accent); font-weight: 500; }
 .login-footnote a:hover { text-decoration: underline; }
+.login-footnote-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--accent);
+  font-weight: 500;
+  cursor: pointer;
+}
+.login-footnote-link:hover { text-decoration: underline; }
 
 .login-footer {
   padding: 20px 24px 28px;
