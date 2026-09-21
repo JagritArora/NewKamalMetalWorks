@@ -206,6 +206,13 @@ function reveal(name, role) {
   document.getElementById("welcome-quick-actions").hidden = role !== "master";
   loadingCard.hidden = true;
   welcomeCard.hidden = false;
+
+  // Pin the carousel back to its resting (left-most) scroll position on
+  // every load -- a browser can otherwise restore whatever scroll/focus
+  // state the track last had (e.g. back-forward navigation), which skips
+  // the left inset and lands mid-carousel instead.
+  var track = document.getElementById("qa-track");
+  if (track) track.scrollLeft = 0;
 }
 
 onAuthStateChanged(auth, function (user) {
@@ -277,6 +284,15 @@ document.getElementById("qa-prev").addEventListener("click", function () {
 });
 document.getElementById("qa-next").addEventListener("click", function () {
   qaTrack.scrollBy({ left: qaStep(), behavior: "smooth" });
+});
+
+// Chrome/Safari restore a scrollable element's own scroll position (and
+// whatever card was last focused) on a back-forward-cache restore --
+// "pageshow" fires in that case even though none of the module script
+// above re-runs, so this is the one place that reliably catches it and
+// pins the carousel back to its left-most resting position either way.
+window.addEventListener("pageshow", function () {
+  qaTrack.scrollLeft = 0;
 });
 
 document.getElementById("year").textContent = new Date().getFullYear();
