@@ -2543,6 +2543,11 @@ button.login-back {
 
 .login-form { margin-top: 30px; display: flex; flex-direction: column; gap: 18px; }
 .login-form[hidden] { display: none; }
+
+.login-subview { margin-top: 30px; display: flex; flex-direction: column; gap: 18px; }
+.login-subview[hidden] { display: none; }
+.login-subview .login-form { margin-top: 0; }
+#password-request-actions { margin: 10px 0; }
 .login-field { display: flex; flex-direction: column; gap: 8px; }
 .login-field label {
   font-size: 0.82rem;
