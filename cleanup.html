@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Invoice Cleanup | New Kamal Metal Works</title>
+<meta name="description" content="Permanently delete a test invoice and every trace of it, for New Kamal Metal Works." />
+<meta name="robots" content="noindex" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/main.css?v=55" />
+</head>
+<body class="login-page">
+
+<nav class="site-nav">
+  <a href="index.html#hero" class="brand">New Kamal <span>Metal Works</span></a>
+  <a href="welcome.html" class="nav-icon-btn" aria-label="Back to Welcome">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1H9.5a1 1 0 0 0 1-1v-4a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v4a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-9"/></svg>
+  </a>
+</nav>
+
+<main class="login-shell billing-shell">
+  <div class="billing-wrap" id="cleanup-wrap" hidden>
+    <a href="welcome.html" class="billing-back-link" style="color: var(--ink);">Back to <span style="color: var(--accent);">Dashboard</span></a>
+    <h1 class="welcome-heading" style="font-size: clamp(1.8rem, 4vw, 2.3rem);">Invoice Cleanup.</h1>
+    <p class="welcome-sub">Permanently remove every trace of a test invoice — Firestore records, PDFs, and the invoice counter. Master only, double code-verified.</p>
+
+    <!-- ================= Gate 1: open the tool ================= -->
+    <section class="billing-card" id="cleanup-unlock-card">
+      <h2 class="billing-card-title billing-card-title--accent">Unlock this tool</h2>
+      <p class="billing-ratecard-hint">This tool permanently deletes records. Confirm it's you — we'll email a 6-digit code to your account before showing anything.</p>
+
+      <div class="billing-ratecard-actions" id="cleanup-unlock-actions">
+        <button type="button" class="btn btn-primary" id="cleanup-unlock-send">Email me a code</button>
+      </div>
+
+      <div class="billing-ratecard-verify" id="cleanup-unlock-verify" hidden>
+        <p class="billing-ratecard-verify-copy" id="cleanup-unlock-verify-copy">Sending a verification code to your email&hellip;</p>
+        <div class="billing-ratecard-verify-row">
+          <input type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" class="billing-ratecard-code-input" id="cleanup-unlock-code-input" placeholder="6-digit code" />
+          <button type="button" class="btn btn-primary" id="cleanup-unlock-verify-btn" disabled>Unlock</button>
+        </div>
+        <div class="billing-ratecard-verify-links">
+          <button type="button" class="billing-ratecard-link-btn" id="cleanup-unlock-resend" disabled>Resend code</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= Scan + delete (shown once unlocked) ================= -->
+    <section class="billing-card" id="cleanup-tool-card" hidden>
+      <h2 class="billing-card-title billing-card-title--accent">Scan an invoice</h2>
+      <p class="billing-ratecard-hint">Read-only — nothing is deleted until you confirm below.</p>
+
+      <div class="billing-grid" style="max-width: 320px;">
+        <div class="login-field">
+          <label for="cleanup-invoiceno">Invoice No.</label>
+          <input type="text" id="cleanup-invoiceno" placeholder="2026-27/342" />
+        </div>
+      </div>
+
+      <div class="billing-ratecard-actions">
+        <button type="button" class="btn btn-primary" id="cleanup-scan-btn">Scan</button>
+      </div>
+      <p class="login-status" id="cleanup-scan-status" role="status" aria-live="polite"></p>
+
+      <div id="cleanup-report" hidden>
+        <div class="billing-ratecard-body-wrap">
+          <table class="billing-items-table billing-ratecard-table" id="cleanup-report-table">
+            <tbody id="cleanup-report-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= Gate 2: delete (password + 2nd code) ================= -->
+    <section class="billing-card" id="cleanup-delete-card" hidden>
+      <h2 class="billing-card-title" style="color: var(--danger);">Delete this invoice</h2>
+      <p class="billing-ratecard-hint">This cannot be undone. Re-enter your password, then confirm the second code we email you.</p>
+
+      <div class="billing-grid" style="max-width: 320px;">
+        <div class="login-field">
+          <label for="cleanup-password">Password</label>
+          <input type="password" id="cleanup-password" autocomplete="current-password" />
+        </div>
+      </div>
+
+      <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; color: var(--ink); margin: 14px 0;" id="cleanup-rollback-row" hidden>
+        <input type="checkbox" id="cleanup-rollback-check" checked style="width:auto;" />
+        <span id="cleanup-rollback-label"></span>
+      </label>
+
+      <div class="billing-ratecard-actions" id="cleanup-delete-actions">
+        <button type="button" class="btn btn-danger" id="cleanup-password-btn">Confirm password &amp; email delete code</button>
+      </div>
+      <p class="login-status" id="cleanup-delete-status" role="status" aria-live="polite"></p>
+
+      <div class="billing-ratecard-verify" id="cleanup-delete-verify" hidden>
+        <p class="billing-ratecard-verify-copy" id="cleanup-delete-verify-copy">Sending a verification code to your email&hellip;</p>
+        <div class="billing-ratecard-verify-row">
+          <input type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" class="billing-ratecard-code-input" id="cleanup-delete-code-input" placeholder="6-digit code" />
+          <button type="button" class="btn btn-danger" id="cleanup-delete-verify-btn" disabled>Verify &amp; delete permanently</button>
+        </div>
+        <div class="billing-ratecard-verify-links">
+          <button type="button" class="billing-ratecard-link-btn" id="cleanup-delete-resend" disabled>Resend code</button>
+          <button type="button" class="billing-ratecard-link-btn" id="cleanup-delete-back">&lsaquo; Cancel</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="login-card login-enter login-loading-card" id="cleanup-loading">
+    <div class="login-spinner" aria-hidden="true"><span></span><span></span><span></span></div>
+    <p class="login-sub">Loading&hellip;</p>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <div class="footer-top">
+      <a href="index.html#hero" class="footer-brand">New Kamal <span>Metal Works</span></a>
+      <ul class="footer-links">
+        <li><a href="index.html#operations">Operations</a></li>
+        <li><a href="index.html#capabilities">Capabilities</a></li>
+        <li><a href="index.html#materials">Materials</a></li>
+        <li><a href="index.html#tooling">Tooling</a></li>
+        <li><a href="index.html#quality">Quality</a></li>
+        <li><a href="index.html#about">About</a></li>
+        <li><a href="index.html#contact">Contact</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-bottom">
+      <p class="footer-legal">&copy; <span id="year"></span> New Kamal Metal Works, Faridabad. All rights reserved.</p>
+      <p class="footer-meta">ISO 9001:2015 certified &middot; GSTIN 06AGQPA5950R1ZR</p>
+      <div class="footer-credit">
+        <p class="footer-credit-name">Designed by <span class="footer-credit-highlight">Jagrit Arora</span></p>
+        <p class="footer-credit-links">
+          <a href="mailto:jagrit.arora007@icloud.com">jagrit.arora007@icloud.com</a>
+          <span class="footer-credit-dot" aria-hidden="true">&middot;</span>
+          <a href="tel:+919599030400">+91 95990 30400</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import {
+  getAuth,
+  onAuthStateChanged,
+  signOut,
+  EmailAuthProvider,
+  reauthenticateWithCredential
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-functions.js";
+import { initializeFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+var firebaseConfig = {
+  apiKey: "AIzaSyDkEyDAOah5XzAOVjUux9SLhH60To2oTKs",
+  authDomain: "new-kamal-metal-works.firebaseapp.com",
+  projectId: "new-kamal-metal-works",
+  storageBucket: "new-kamal-metal-works.firebasestorage.app",
+  messagingSenderId: "595817400572",
+  appId: "1:595817400572:web:8617eb7419e5049524af79"
+};
+
+var app = initializeApp(firebaseConfig);
+var auth = getAuth(app);
+var db = initializeFirestore(app, { experimentalForceLongPolling: true });
+var functions = getFunctions(app, "asia-south1");
+
+var requestOpenCodeFn = httpsCallable(functions, "requestInvoiceCleanupOpenCode");
+var verifyOpenCodeFn = httpsCallable(functions, "verifyInvoiceCleanupOpenCode");
+var requestDeleteCodeFn = httpsCallable(functions, "requestInvoiceCleanupDeleteCode");
+var verifyDeleteCodeFn = httpsCallable(functions, "verifyInvoiceCleanupDeleteCode");
+var scanInvoiceCleanupFn = httpsCallable(functions, "scanInvoiceCleanup");
+var deleteInvoiceCleanupFn = httpsCallable(functions, "deleteInvoiceCleanup");
+
+document.getElementById("year").textContent = new Date().getFullYear();
+
+function formatCurrency(n) {
+  return "₹" + (n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function setStatus(id, message, isError) {
+  var el = document.getElementById(id);
+  el.textContent = message;
+  el.classList.toggle("is-error", !!isError);
+  el.classList.toggle("is-visible", !!message);
+}
+
+// ---------------------------------------------------------------------
+// Gate 1 -- opening the tool at all requires a code emailed to the
+// signed-in master account. Nothing below this point renders (and the
+// server refuses scanInvoiceCleanup/deleteInvoiceCleanup) until this
+// verifies -- see requireGateVerified("invoiceCleanupOpenVerify", ...) in
+// functions/index.js.
+// ---------------------------------------------------------------------
+var unlockActions = document.getElementById("cleanup-unlock-actions");
+var unlockVerify = document.getElementById("cleanup-unlock-verify");
+var unlockVerifyCopy = document.getElementById("cleanup-unlock-verify-copy");
+var unlockCodeInput = document.getElementById("cleanup-unlock-code-input");
+var unlockVerifyBtn = document.getElementById("cleanup-unlock-verify-btn");
+var unlockResendBtn = document.getElementById("cleanup-unlock-resend");
+
+function sendUnlockCode() {
+  unlockVerifyCopy.textContent = "Sending a verification code to your email…";
+  unlockCodeInput.value = "";
+  unlockCodeInput.disabled = true;
+  unlockVerifyBtn.disabled = true;
+  unlockResendBtn.disabled = true;
+  requestOpenCodeFn().then(function () {
+    unlockVerifyCopy.textContent = "We emailed a 6-digit code to your account's email. Enter it below to open this tool.";
+    unlockCodeInput.disabled = false;
+    unlockVerifyBtn.disabled = false;
+    unlockResendBtn.disabled = false;
+    unlockCodeInput.focus();
+  }).catch(function (err) {
+    unlockVerifyCopy.textContent = "Couldn't send a verification code just now — please try again.";
+    unlockResendBtn.disabled = false;
+    console.error(err);
+  });
+}
+
+document.getElementById("cleanup-unlock-send").addEventListener("click", function () {
+  unlockActions.hidden = true;
+  unlockVerify.hidden = false;
+  sendUnlockCode();
+});
+unlockResendBtn.addEventListener("click", sendUnlockCode);
+unlockCodeInput.addEventListener("input", function () {
+  unlockCodeInput.value = unlockCodeInput.value.replace(/\D/g, "").slice(0, 6);
+});
+
+unlockVerifyBtn.addEventListener("click", function () {
+  var code = unlockCodeInput.value.trim();
+  if (!/^\d{6}$/.test(code)) {
+    unlockVerifyCopy.textContent = "Enter the 6-digit code from the email.";
+    return;
+  }
+  unlockVerifyBtn.disabled = true;
+  unlockResendBtn.disabled = true;
+  unlockVerifyCopy.textContent = "Verifying…";
+
+  verifyOpenCodeFn({ code: code }).then(function () {
+    document.getElementById("cleanup-unlock-card").hidden = true;
+    document.getElementById("cleanup-tool-card").hidden = false;
+  }).catch(function (err) {
+    unlockVerifyCopy.textContent = err && err.message ? err.message : "That code isn't right — please try again.";
+    unlockVerifyBtn.disabled = false;
+    unlockResendBtn.disabled = false;
+    console.error(err);
+  });
+});
+
+// ---------------------------------------------------------------------
+// Scan -- read-only. buildCleanupReport() runs server-side via the Admin
+// SDK, so unlike a client-only version of this tool it can also see the
+// /mail queue doc (Firestore rules only ever let a client create there).
+// ---------------------------------------------------------------------
+var lastReport = null;
+
+function renderReport(report) {
+  var body = document.getElementById("cleanup-report-body");
+  body.innerHTML = "";
+  var rows = [];
+
+  if (!report.invoices.length) {
+    rows.push(["No invoice found with that number.", ""]);
+  }
+  report.invoices.forEach(function (inv) {
+    rows.push(["Invoice", "invoices/" + inv.id + " — " + inv.invoiceNo + ", " + inv.buyerName + ", net " + formatCurrency(inv.net) + ", status " + inv.status]);
+    rows.push(["Emailed to", inv.emailedTo.length ? inv.emailedTo.join(", ") : "(never sent)"]);
+  });
+  report.paymentIds.forEach(function (id) { rows.push(["Payment", "payments/" + id]); });
+  report.supplyIds.forEach(function (id) { rows.push(["Supply item", "supply/" + id]); });
+  report.mailIds.forEach(function (id) { rows.push(["Queued mail", "mail/" + id]); });
+  report.storagePaths.forEach(function (p) { rows.push(["Storage file", p]); });
+  if (report.counterNote) rows.push(["Counter", report.counterNote]);
+
+  rows.forEach(function (r) {
+    var tr = document.createElement("tr");
+    tr.innerHTML = "<td style=\"white-space:nowrap; color: var(--ink-muted);\">" + r[0] + "</td><td style=\"word-break: break-all;\">" + r[1] + "</td>";
+    body.appendChild(tr);
+  });
+
+  document.getElementById("cleanup-report").hidden = false;
+}
+
+document.getElementById("cleanup-scan-btn").addEventListener("click", function () {
+  var invoiceNo = document.getElementById("cleanup-invoiceno").value.trim();
+  var btn = this;
+  lastReport = null;
+  document.getElementById("cleanup-delete-card").hidden = true;
+  document.getElementById("cleanup-report").hidden = true;
+
+  if (!invoiceNo) { setStatus("cleanup-scan-status", "Enter an invoice number.", true); return; }
+
+  btn.disabled = true;
+  setStatus("cleanup-scan-status", "Scanning…");
+
+  scanInvoiceCleanupFn({ invoiceNo: invoiceNo }).then(function (result) {
+    var report = result.data;
+    lastReport = report;
+    renderReport(report);
+    if (!report.invoices.length) {
+      setStatus("cleanup-scan-status", "Nothing found for \"" + invoiceNo + "\".");
+      return;
+    }
+    setStatus("cleanup-scan-status", "Scan complete.");
+
+    var rollbackRow = document.getElementById("cleanup-rollback-row");
+    if (report.rollbackSeq != null) {
+      document.getElementById("cleanup-rollback-label").textContent =
+        "Also roll back the invoice counter to " + report.rollbackSeq + " (it's currently pointing at this invoice's number)";
+      rollbackRow.hidden = false;
+    } else {
+      rollbackRow.hidden = true;
+    }
+
+    document.getElementById("cleanup-delete-card").hidden = false;
+    resetDeleteStep();
+  }).catch(function (err) {
+    setStatus("cleanup-scan-status", err && err.message ? err.message : "Couldn't scan — please try again.", true);
+    console.error(err);
+  }).finally(function () {
+    btn.disabled = false;
+  });
+});
+
+// ---------------------------------------------------------------------
+// Gate 2 -- deleting requires re-entering the account password (checked
+// for real against Firebase Auth via reauthenticateWithCredential, not
+// just a client-side confirm box), then a second emailed code. Both the
+// code's validity and the master-role check happen server-side in
+// deleteInvoiceCleanup -- see functions/index.js.
+// ---------------------------------------------------------------------
+function resetDeleteStep() {
+  document.getElementById("cleanup-password").value = "";
+  document.getElementById("cleanup-delete-actions").hidden = false;
+  document.getElementById("cleanup-delete-verify").hidden = true;
+  setStatus("cleanup-delete-status", "");
+}
+
+document.getElementById("cleanup-password-btn").addEventListener("click", function () {
+  if (!lastReport || !lastReport.invoices.length) return;
+  var password = document.getElementById("cleanup-password").value;
+  if (!password) { setStatus("cleanup-delete-status", "Enter your password.", true); return; }
+
+  var btn = this;
+  btn.disabled = true;
+  setStatus("cleanup-delete-status", "Checking password…");
+
+  var credential = EmailAuthProvider.credential(auth.currentUser.email, password);
+  reauthenticateWithCredential(auth.currentUser, credential)
+    .then(function () {
+      document.getElementById("cleanup-delete-actions").hidden = true;
+      document.getElementById("cleanup-delete-verify").hidden = false;
+      sendDeleteCode();
+    })
+    .catch(function (err) {
+      setStatus("cleanup-delete-status", "That password isn't right.", true);
+      console.error(err);
+    })
+    .finally(function () { btn.disabled = false; });
+});
+
+var deleteVerifyCopy = document.getElementById("cleanup-delete-verify-copy");
+var deleteCodeInput = document.getElementById("cleanup-delete-code-input");
+var deleteVerifyBtn = document.getElementById("cleanup-delete-verify-btn");
+var deleteResendBtn = document.getElementById("cleanup-delete-resend");
+
+function sendDeleteCode() {
+  deleteVerifyCopy.textContent = "Sending a verification code to your email…";
+  deleteCodeInput.value = "";
+  deleteCodeInput.disabled = true;
+  deleteVerifyBtn.disabled = true;
+  deleteResendBtn.disabled = true;
+  requestDeleteCodeFn().then(function () {
+    deleteVerifyCopy.textContent = "We emailed a second 6-digit code to your account's email. Enter it below to permanently delete.";
+    deleteCodeInput.disabled = false;
+    deleteVerifyBtn.disabled = false;
+    deleteResendBtn.disabled = false;
+    deleteCodeInput.focus();
+  }).catch(function (err) {
+    deleteVerifyCopy.textContent = "Couldn't send a verification code just now — please try again.";
+    deleteResendBtn.disabled = false;
+    console.error(err);
+  });
+}
+
+deleteResendBtn.addEventListener("click", sendDeleteCode);
+document.getElementById("cleanup-delete-back").addEventListener("click", resetDeleteStep);
+deleteCodeInput.addEventListener("input", function () {
+  deleteCodeInput.value = deleteCodeInput.value.replace(/\D/g, "").slice(0, 6);
+});
+
+deleteVerifyBtn.addEventListener("click", function () {
+  if (!lastReport || !lastReport.invoices.length) return;
+  var code = deleteCodeInput.value.trim();
+  if (!/^\d{6}$/.test(code)) {
+    deleteVerifyCopy.textContent = "Enter the 6-digit code from the email.";
+    return;
+  }
+
+  deleteVerifyBtn.disabled = true;
+  deleteResendBtn.disabled = true;
+  deleteVerifyCopy.textContent = "Verifying…";
+
+  verifyDeleteCodeFn({ code: code }).then(function () {
+    deleteVerifyCopy.textContent = "Verified — deleting…";
+    var rollbackCounter = !document.getElementById("cleanup-rollback-row").hidden
+      && document.getElementById("cleanup-rollback-check").checked;
+
+    return deleteInvoiceCleanupFn({ invoiceNo: lastReport.invoiceNo, rollbackCounter: rollbackCounter });
+  }).then(function (result) {
+    var data = result.data;
+    document.getElementById("cleanup-delete-verify").hidden = true;
+    setStatus(
+      "cleanup-delete-status",
+      "Deleted invoice " + data.deleted.invoiceNo + " and everything tied to it." +
+        (data.rolledBack ? " Invoice counter rolled back." : "")
+    );
+    document.getElementById("cleanup-report").hidden = true;
+    document.getElementById("cleanup-invoiceno").value = "";
+    lastReport = null;
+  }).catch(function (err) {
+    deleteVerifyCopy.textContent = err && err.message ? err.message : "That code isn't right — please try again.";
+    deleteVerifyBtn.disabled = false;
+    deleteResendBtn.disabled = false;
+    console.error(err);
+  });
+});
+
+// ---------------------------------------------------------------------
+// Auth + role guard -- master only, same pattern as billing.html etc.
+// ---------------------------------------------------------------------
+onAuthStateChanged(auth, function (user) {
+  if (!user) { window.location.replace("login.html"); return; }
+  if (!user.emailVerified) {
+    signOut(auth).then(function () { window.location.replace("login.html?unverified=1"); });
+    return;
+  }
+
+  getDoc(doc(db, "profiles", user.uid)).then(function (snap) {
+    var data = snap.exists() ? snap.data() : {};
+    if (data.role !== "master") { window.location.replace("welcome.html"); return; }
+    if (data.email !== user.email) {
+      setDoc(doc(db, "profiles", user.uid), { email: user.email }, { merge: true }).catch(function () {});
+    }
+
+    document.getElementById("cleanup-loading").hidden = true;
+    document.getElementById("cleanup-wrap").hidden = false;
+  }).catch(function () {
+    window.location.replace("welcome.html");
+  });
+});
+</script>
+<script src="js/bot-widget.js?v=2" defer></script>
+</body>
+</html>

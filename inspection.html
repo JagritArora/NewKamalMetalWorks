@@ -50,8 +50,12 @@
             <h3 class="insp-breakdown-title" id="insp-breakdown-invoiceno"></h3>
             <p class="insp-breakdown-meta" id="insp-breakdown-meta"></p>
           </div>
-          <a class="insp-view-btn" id="insp-view-btn" href="#" target="_blank" rel="noopener">View Invoice</a>
+          <div class="insp-breakdown-actions">
+            <button type="button" class="insp-view-btn" id="insp-generate-report-btn">Generate Inspection Report</button>
+            <a class="insp-view-btn" id="insp-view-btn" href="#" target="_blank" rel="noopener">View Invoice</a>
+          </div>
         </div>
+        <p class="login-status" id="insp-generate-report-status" role="status" aria-live="polite"></p>
         <div class="billing-items-wrap">
           <table class="billing-items-table" id="insp-items-table">
             <thead>
@@ -323,15 +327,8 @@ var INSP_DECLARATION_LINES = [
   { num: "",   text: "material specifications outlined in the engineering drawings." }
 ];
 
-function buildInspectionReportPdf(data) {
-  var pdf = new window.jspdf.jsPDF({ unit: "pt", format: "a4" });
+function drawInspectionReportPage(pdf, data) {
   var haveInvoiceFont = INVOICE_FONT_REGULAR_B64 && INVOICE_FONT_BOLD_B64;
-  if (haveInvoiceFont) {
-    pdf.addFileToVFS("InvoiceFont-Regular.ttf", INVOICE_FONT_REGULAR_B64);
-    pdf.addFont("InvoiceFont-Regular.ttf", "InvoiceFont", "normal");
-    pdf.addFileToVFS("InvoiceFont-Bold.ttf", INVOICE_FONT_BOLD_B64);
-    pdf.addFont("InvoiceFont-Bold.ttf", "InvoiceFont", "bold");
-  }
   var FONT = haveInvoiceFont ? "InvoiceFont" : "helvetica";
   function setF(weight, size) { pdf.setFont(FONT, weight); pdf.setFontSize(size); }
   function fill(rgb) { pdf.setFillColor(rgb[0], rgb[1], rgb[2]); }
@@ -434,7 +431,7 @@ function buildInspectionReportPdf(data) {
   var metaPairs = [
     ["Invoice No.", data.invoiceNo, "Date", data.dateStr],
     ["Item Code", data.itemCode, "Item Name", data.itemName],
-    ["Sample Size", String(sampleCount), "Invoice Qty.", data.qty != null ? String(data.qty) : ""]
+    ["Sample Size", String(sampleCount), "Invoice Qty.", data.qty != null ? Number(data.qty).toLocaleString("en-IN") : ""]
   ];
   metaPairs.forEach(function (pair, i) {
     var labelTop = INSP_HB[i * 2], valueTop = INSP_HB[i * 2 + 1];
@@ -502,8 +499,29 @@ function buildInspectionReportPdf(data) {
   setF("bold", 8.84);
   pdf.text("Authorise Signatory", 581.0, invCapBaseline(736.0, 8.84), { align: "right" });
   pdf.text("New Kamal Metal Works", 581.0, invCapBaseline(746.9, 8.84), { align: "right" });
+}
 
+// Builds one PDF with one page per entry in dataList -- used so an
+// invoice with several parts produces a single multi-page Inspection
+// Report instead of one PDF per part.
+function buildInspectionReportPdfMulti(dataList) {
+  var pdf = new window.jspdf.jsPDF({ unit: "pt", format: "a4" });
+  var haveInvoiceFont = INVOICE_FONT_REGULAR_B64 && INVOICE_FONT_BOLD_B64;
+  if (haveInvoiceFont) {
+    pdf.addFileToVFS("InvoiceFont-Regular.ttf", INVOICE_FONT_REGULAR_B64);
+    pdf.addFont("InvoiceFont-Regular.ttf", "InvoiceFont", "normal");
+    pdf.addFileToVFS("InvoiceFont-Bold.ttf", INVOICE_FONT_BOLD_B64);
+    pdf.addFont("InvoiceFont-Bold.ttf", "InvoiceFont", "bold");
+  }
+  dataList.forEach(function (data, i) {
+    if (i > 0) pdf.addPage();
+    drawInspectionReportPage(pdf, data);
+  });
   return pdf;
+}
+
+function buildInspectionReportPdf(data) {
+  return buildInspectionReportPdfMulti([data]);
 }
 
 function inspectionSpecRef(buyerId, partNo) {
@@ -524,6 +542,44 @@ function saveInspectionSpec(buyerId, partNo, data) {
   });
 }
 
+// Builds the combined, multi-page Inspection Report jsPDF document for an
+// invoice (one page per distinct part that has a saved specification), or
+// resolves to null if no part on the invoice has one yet. Kept in sync
+// with the identical helper in billing.html/invoices.html.
+function buildInvoiceInspectionReportPdf(inv) {
+  var seen = {};
+  var parts = [];
+  (inv.items || []).forEach(function (it) {
+    if (it.partNo && !seen[it.partNo]) { seen[it.partNo] = true; parts.push(it); }
+  });
+  if (!parts.length) return Promise.resolve(null);
+
+  var dateObj = new Date(inv.date + "T00:00:00");
+  var dateStr = dateObj.toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" });
+
+  return INVOICE_PDF_ASSETS_PROMISE.then(function () {
+    return Promise.all(parts.map(function (it) {
+      return loadInspectionSpec(inv.buyerId, it.partNo).then(function (spec) {
+        if (!spec || !spec.specs || !spec.specs.length) return null;
+        return {
+          invoiceNo: inv.invoiceNo,
+          dateStr: dateStr,
+          buyer: inv.buyer,
+          itemCode: it.partNo,
+          itemName: it.description,
+          sampleSize: spec.sampleSize,
+          qty: it.qty,
+          specs: spec.specs
+        };
+      });
+    })).then(function (pages) {
+      pages = pages.filter(Boolean);
+      if (!pages.length) return null;
+      return buildInspectionReportPdfMulti(pages);
+    });
+  });
+}
+
 function showStatus(message, isError) {
   var el = document.getElementById("insp-status");
   el.textContent = message;
@@ -539,6 +595,7 @@ function showStatus(message, isError) {
 // ---------------------------------------------------------------------
 var allInvoices = [];
 var selectedInvoiceId = null;
+var currentInv = null;
 
 var selectEl = document.getElementById("insp-select");
 var selectBtn = document.getElementById("insp-select-btn");
@@ -599,6 +656,11 @@ function selectInvoice(invoiceId) {
 }
 
 function renderBreakdown(inv) {
+  currentInv = inv;
+  var reportStatusEl = document.getElementById("insp-generate-report-status");
+  reportStatusEl.textContent = "";
+  reportStatusEl.classList.remove("is-visible", "is-error");
+
   document.getElementById("insp-breakdown-invoiceno").textContent = "Invoice " + inv.invoiceNo;
   document.getElementById("insp-breakdown-meta").textContent =
     (inv.buyer ? inv.buyer.name : "") + " · " + formatDate(inv.date) + " · Net " + formatCurrency(inv.net);
@@ -952,6 +1014,53 @@ function openSpecsPanel() {
 function closeSpecsPanel() {
   specsPanel.hidden = true;
 }
+
+// "Generate Inspection Report" -- builds the combined multi-page PDF for
+// the currently selected invoice on demand (never automatically, so a
+// report isn't produced/uploaded until someone actually asks for it),
+// uploads it to the same Storage path the mail dispatch attachment uses,
+// and opens it in a new tab.
+document.getElementById("insp-generate-report-btn").addEventListener("click", function () {
+  if (!currentInv) return;
+  var btn = this;
+  var statusEl = document.getElementById("insp-generate-report-status");
+  statusEl.classList.remove("is-error");
+  statusEl.textContent = "";
+
+  var reportTab = window.open("", "_blank");
+  btn.disabled = true;
+  btn.textContent = "Generating…";
+
+  buildInvoiceInspectionReportPdf(currentInv)
+    .then(function (pdf) {
+      if (!pdf) {
+        if (reportTab) reportTab.close();
+        statusEl.textContent = "No inspection specifications saved for any part on this invoice yet.";
+        statusEl.classList.add("is-error", "is-visible");
+        return;
+      }
+      var safeInvoiceNo = currentInv.invoiceNo.replace(/[^\w.-]+/g, "_");
+      var path = "inspectionReports/" + currentInv.buyerId + "/" + safeInvoiceNo + ".pdf";
+      var fileRef = storageRef(storage, path);
+      return uploadBytes(fileRef, pdf.output("blob"), { contentType: "application/pdf" })
+        .then(function () { return getDownloadURL(fileRef); })
+        .then(function (url) {
+          if (reportTab) { reportTab.location.href = url; } else { window.open(url, "_blank"); }
+          statusEl.textContent = "Inspection Report generated.";
+          statusEl.classList.add("is-visible");
+        });
+    })
+    .catch(function (err) {
+      if (reportTab) reportTab.close();
+      statusEl.textContent = "Couldn't generate the inspection report — please try again.";
+      statusEl.classList.add("is-error", "is-visible");
+      console.error(err);
+    })
+    .finally(function () {
+      btn.disabled = false;
+      btn.textContent = "Generate Inspection Report";
+    });
+});
 
 specsBtn.addEventListener("click", openSpecsPanel);
 document.getElementById("insp-specs-close").addEventListener("click", closeSpecsPanel);

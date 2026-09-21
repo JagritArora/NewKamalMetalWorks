@@ -82,6 +82,18 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Written only by the invoice-cleanup tool's Cloud Functions (Admin
+    // SDK) -- never by a client. scanInvoiceCleanup/deleteInvoiceCleanup
+    // check these server-side themselves (see functions/index.js); nothing
+    // here needs to reference them from firestore.rules since that tool
+    // never writes to Firestore directly from the browser.
+    match /invoiceCleanupOpenVerify/{uid} {
+      allow read, write: if false;
+    }
+    match /invoiceCleanupDeleteVerify/{uid} {
+      allow read, write: if false;
+    }
+
     match /invoices/{invoiceId} {
       allow read, write: if isMaster();
     }

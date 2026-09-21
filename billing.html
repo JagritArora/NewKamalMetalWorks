@@ -1771,15 +1771,8 @@ var INSP_DECLARATION_LINES = [
   { num: "",   text: "material specifications outlined in the engineering drawings." }
 ];
 
-function buildInspectionReportPdf(data) {
-  var pdf = new window.jspdf.jsPDF({ unit: "pt", format: "a4" });
+function drawInspectionReportPage(pdf, data) {
   var haveInvoiceFont = INVOICE_FONT_REGULAR_B64 && INVOICE_FONT_BOLD_B64;
-  if (haveInvoiceFont) {
-    pdf.addFileToVFS("InvoiceFont-Regular.ttf", INVOICE_FONT_REGULAR_B64);
-    pdf.addFont("InvoiceFont-Regular.ttf", "InvoiceFont", "normal");
-    pdf.addFileToVFS("InvoiceFont-Bold.ttf", INVOICE_FONT_BOLD_B64);
-    pdf.addFont("InvoiceFont-Bold.ttf", "InvoiceFont", "bold");
-  }
   var FONT = haveInvoiceFont ? "InvoiceFont" : "helvetica";
   function setF(weight, size) { pdf.setFont(FONT, weight); pdf.setFontSize(size); }
   function fill(rgb) { pdf.setFillColor(rgb[0], rgb[1], rgb[2]); }
@@ -1950,8 +1943,29 @@ function buildInspectionReportPdf(data) {
   setF("bold", 8.84);
   pdf.text("Authorise Signatory", 581.0, invCapBaseline(736.0, 8.84), { align: "right" });
   pdf.text("New Kamal Metal Works", 581.0, invCapBaseline(746.9, 8.84), { align: "right" });
+}
 
+// Builds one PDF with one page per entry in dataList -- used so an
+// invoice with several parts produces a single multi-page Inspection
+// Report instead of one PDF per part.
+function buildInspectionReportPdfMulti(dataList) {
+  var pdf = new window.jspdf.jsPDF({ unit: "pt", format: "a4" });
+  var haveInvoiceFont = INVOICE_FONT_REGULAR_B64 && INVOICE_FONT_BOLD_B64;
+  if (haveInvoiceFont) {
+    pdf.addFileToVFS("InvoiceFont-Regular.ttf", INVOICE_FONT_REGULAR_B64);
+    pdf.addFont("InvoiceFont-Regular.ttf", "InvoiceFont", "normal");
+    pdf.addFileToVFS("InvoiceFont-Bold.ttf", INVOICE_FONT_BOLD_B64);
+    pdf.addFont("InvoiceFont-Bold.ttf", "InvoiceFont", "bold");
+  }
+  dataList.forEach(function (data, i) {
+    if (i > 0) pdf.addPage();
+    drawInspectionReportPage(pdf, data);
+  });
   return pdf;
+}
+
+function buildInspectionReportPdf(data) {
+  return buildInspectionReportPdfMulti([data]);
 }
 
 // ---------------------------------------------------------------------
@@ -2479,7 +2493,7 @@ function showSendMailModal(invoiceId, inv, masterEmails, savedEmails, btn) {
     showConfirmDialog(
       "Confirm send",
       "Invoice " + inv.invoiceNo + " amounting " + formatCurrency(inv.net || 0) + " will be shared with " + namesLine +
-        (includeInspection ? ", along with the Inspection Report for each item on it." : "."),
+        ", " + (includeInspection ? "with" : "without") + " the Inspection Report.",
       "Send"
     ).then(function (confirmed) {
       if (!confirmed) return;
@@ -2507,20 +2521,39 @@ function showSendMailModal(invoiceId, inv, masterEmails, savedEmails, btn) {
   });
 }
 
-// One Inspection Report PDF per distinct part on the invoice (skipping any
-// part with no specification saved yet), uploaded next to the invoice PDF
-// in Storage and returned as extra nodemailer-style { filename, path }
-// attachment entries. Built the same way the invoice PDF itself is --
-// client-side, gated on the same font/signature assets.
+// A single Inspection Report PDF for the invoice, one page per distinct
+// part (skipping any part with no specification saved yet), uploaded
+// next to the invoice PDF in Storage and returned as a single
+// nodemailer-style { filename, path } attachment entry (empty array if
+// no part has a spec). Kept in sync with the identical helper in
+// invoices.html's own send dialog and with buildInvoiceInspectionReportPdf().
 function buildInspectionReportAttachments(inv) {
+  return buildInvoiceInspectionReportPdf(inv).then(function (pdf) {
+    if (!pdf) return [];
+    var safeInvoiceNo = inv.invoiceNo.replace(/[^\w.-]+/g, "_");
+    var path = "inspectionReports/" + inv.buyerId + "/" + safeInvoiceNo + ".pdf";
+    var fileRef = storageRef(storage, path);
+    return uploadBytes(fileRef, pdf.output("blob"), { contentType: "application/pdf" })
+      .then(function () { return getDownloadURL(fileRef); })
+      .then(function (url) {
+        return [{ filename: "Inspection Report - Invoice " + inv.invoiceNo.replace(/\//g, "-") + ".pdf", path: url }];
+      });
+  });
+}
+
+// Builds the combined, multi-page Inspection Report jsPDF document for an
+// invoice (one page per distinct part that has a saved specification), or
+// resolves to null if no part on the invoice has one yet. Shared by the
+// send-mail attachment builder above and the standalone "Generate
+// Inspection Report" button on inspection.html.
+function buildInvoiceInspectionReportPdf(inv) {
   var seen = {};
   var parts = [];
   (inv.items || []).forEach(function (it) {
     if (it.partNo && !seen[it.partNo]) { seen[it.partNo] = true; parts.push(it); }
   });
-  if (!parts.length) return Promise.resolve([]);
+  if (!parts.length) return Promise.resolve(null);
 
-  var safeInvoiceNo = inv.invoiceNo.replace(/[^\w.-]+/g, "_");
   var dateObj = new Date(inv.date + "T00:00:00");
   var dateStr = dateObj.toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" });
 
@@ -2528,7 +2561,7 @@ function buildInspectionReportAttachments(inv) {
     return Promise.all(parts.map(function (it) {
       return loadInspectionSpec(inv.buyerId, it.partNo).then(function (spec) {
         if (!spec || !spec.specs || !spec.specs.length) return null;
-        var pdf = buildInspectionReportPdf({
+        return {
           invoiceNo: inv.invoiceNo,
           dateStr: dateStr,
           buyer: inv.buyer,
@@ -2537,15 +2570,13 @@ function buildInspectionReportAttachments(inv) {
           sampleSize: spec.sampleSize,
           qty: it.qty,
           specs: spec.specs
-        });
-        var safePart = it.partNo.replace(/[^\w.-]+/g, "_");
-        var path = "inspectionReports/" + inv.buyerId + "/" + safeInvoiceNo + "/" + safePart + ".pdf";
-        var fileRef = storageRef(storage, path);
-        return uploadBytes(fileRef, pdf.output("blob"), { contentType: "application/pdf" })
-          .then(function () { return getDownloadURL(fileRef); })
-          .then(function (url) { return { filename: "Inspection Report - " + it.partNo + ".pdf", path: url }; });
+        };
       });
-    })).then(function (results) { return results.filter(Boolean); });
+    })).then(function (pages) {
+      pages = pages.filter(Boolean);
+      if (!pages.length) return null;
+      return buildInspectionReportPdfMulti(pages);
+    });
   });
 }
 

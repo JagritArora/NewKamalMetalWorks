@@ -3,6 +3,7 @@ const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { defineSecret } = require("firebase-functions/params");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
+const { getStorage } = require("firebase-admin/storage");
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 
@@ -174,6 +175,184 @@ var inspectionSpecGate = makeCodeGate(
 );
 exports.requestInspectionSpecCode = inspectionSpecGate.request;
 exports.verifyInspectionSpecCode = inspectionSpecGate.verify;
+
+// The invoice-cleanup tool (welcome.html's "Danger Zone" tile / cleanup.html)
+// sits behind two independent code gates: one just to open the tool at all,
+// a second -- on top of re-entering the account password -- to actually
+// delete anything. Two separate collections so opening the tool doesn't
+// also leave a delete window open.
+var invoiceCleanupOpenGate = makeCodeGate(
+  "invoiceCleanupOpenVerify",
+  "Your invoice cleanup access code",
+  "<p>Use this code to open the invoice cleanup tool on the New Kamal Metal Works billing tool:</p>"
+);
+exports.requestInvoiceCleanupOpenCode = invoiceCleanupOpenGate.request;
+exports.verifyInvoiceCleanupOpenCode = invoiceCleanupOpenGate.verify;
+
+var invoiceCleanupDeleteGate = makeCodeGate(
+  "invoiceCleanupDeleteVerify",
+  "Your invoice deletion verification code",
+  "<p><strong>This confirms a permanent deletion.</strong> Use this code to finish deleting the invoice you selected on the New Kamal Metal Works billing tool:</p>"
+);
+exports.requestInvoiceCleanupDeleteCode = invoiceCleanupDeleteGate.request;
+exports.verifyInvoiceCleanupDeleteCode = invoiceCleanupDeleteGate.verify;
+
+async function requireGateVerified(collectionName, uid) {
+  var db = getFirestore();
+  var snap = await db.collection(collectionName).doc(uid).get();
+  var data = snap.exists ? snap.data() : null;
+  if (!data || !data.verifiedUntil) {
+    throw new HttpsError("failed-precondition", "Verification required.");
+  }
+  var until = data.verifiedUntil.toDate ? data.verifiedUntil.toDate() : new Date(data.verifiedUntil);
+  if (Date.now() >= until.getTime()) {
+    throw new HttpsError("failed-precondition", "That verification expired -- request a new code.");
+  }
+}
+
+// Everything tied to one invoice number, gathered read-only via the Admin
+// SDK -- so unlike the client-side version of this tool this can also see
+// the /mail queue doc (Firestore rules only let a client create there,
+// never read), which is the one thing the original client-only cleanup
+// tool couldn't verify. Shared by scanInvoiceCleanup (read-only) and
+// deleteInvoiceCleanup (re-derives this itself right before deleting,
+// rather than trusting whatever the client last scanned).
+async function buildCleanupReport(invoiceNo) {
+  var db = getFirestore();
+  var bucket = getStorage().bucket();
+
+  var invSnap = await db.collection("invoices").where("invoiceNo", "==", invoiceNo).get();
+  var invoices = [];
+  var supplyIds = [];
+  var paymentIds = [];
+  var storagePaths = [];
+  var counterNote = "";
+  var rollbackSeq = null;
+
+  for (var i = 0; i < invSnap.docs.length; i++) {
+    var invDoc = invSnap.docs[i];
+    var inv = invDoc.data();
+    var invoiceId = invDoc.id;
+    invoices.push({
+      id: invoiceId,
+      invoiceNo: inv.invoiceNo,
+      buyerId: inv.buyerId,
+      buyerName: inv.buyer ? inv.buyer.name : "",
+      date: inv.date,
+      net: inv.net,
+      status: inv.status,
+      emailedTo: inv.emailedTo || []
+    });
+
+    var paySnap = await db.collection("payments").doc(invoiceId).get();
+    if (paySnap.exists) paymentIds.push(invoiceId);
+
+    var supplySnap = await db.collection("supply").where("invoiceId", "==", invoiceId).get();
+    supplySnap.forEach(function (d) { supplyIds.push(d.id); });
+
+    var safeInvoiceNo = inv.invoiceNo.replace(/[^\w.-]+/g, "_");
+    var candidatePaths = [
+      "invoices/" + inv.buyerId + "/" + safeInvoiceNo + ".pdf",
+      "inspectionReports/" + inv.buyerId + "/" + safeInvoiceNo + ".pdf"
+    ];
+    for (var c = 0; c < candidatePaths.length; c++) {
+      var existsResult = await bucket.file(candidatePaths[c]).exists();
+      if (existsResult[0]) storagePaths.push(candidatePaths[c]);
+    }
+    // legacy per-part inspection reports, from before they were combined
+    // into one multi-page PDF
+    var legacyFiles = await bucket.getFiles({ prefix: "inspectionReports/" + inv.buyerId + "/" + safeInvoiceNo + "/" });
+    legacyFiles[0].forEach(function (f) { storagePaths.push(f.name); });
+
+    var seqMatch = inv.invoiceNo.match(/(\d+)\s*$/);
+    if (seqMatch) {
+      var counterSnap = await db.collection("counters").doc("global").get();
+      var lastSeq = counterSnap.exists ? (counterSnap.data().lastSeq || 0) : 0;
+      var thisSeq = parseInt(seqMatch[1], 10);
+      if (lastSeq === thisSeq) {
+        rollbackSeq = lastSeq - 1;
+        counterNote = "counters/global.lastSeq is currently " + lastSeq + ", matching this invoice's sequence -- can be rolled back to " + rollbackSeq + ".";
+      } else {
+        counterNote = "counters/global.lastSeq is " + lastSeq + " (this invoice's sequence is " + thisSeq + ") -- not the latest, so no counter change is needed.";
+      }
+    }
+  }
+
+  var mailIds = [];
+  var wantedSubject = "Invoice " + invoiceNo + " — New Kamal Metal Works";
+  var mailSnap = await db.collection("mail").where("message.subject", "==", wantedSubject).get();
+  mailSnap.forEach(function (d) { mailIds.push(d.id); });
+
+  return {
+    invoiceNo: invoiceNo,
+    invoices: invoices,
+    paymentIds: paymentIds,
+    supplyIds: supplyIds,
+    storagePaths: storagePaths,
+    mailIds: mailIds,
+    counterNote: counterNote,
+    rollbackSeq: rollbackSeq
+  };
+}
+
+exports.scanInvoiceCleanup = onCall({ region: "asia-south1" }, async function (request) {
+  var master = await requireMasterWithEmail(request);
+  await requireGateVerified("invoiceCleanupOpenVerify", master.uid);
+
+  var invoiceNo = ((request.data && request.data.invoiceNo) || "").trim();
+  if (!invoiceNo) throw new HttpsError("invalid-argument", "Enter an invoice number.");
+
+  return await buildCleanupReport(invoiceNo);
+});
+
+exports.deleteInvoiceCleanup = onCall({ region: "asia-south1" }, async function (request) {
+  var master = await requireMasterWithEmail(request);
+  await requireGateVerified("invoiceCleanupOpenVerify", master.uid);
+  await requireGateVerified("invoiceCleanupDeleteVerify", master.uid);
+
+  var invoiceNo = ((request.data && request.data.invoiceNo) || "").trim();
+  if (!invoiceNo) throw new HttpsError("invalid-argument", "Enter an invoice number.");
+  var rollbackCounter = !!(request.data && request.data.rollbackCounter);
+
+  var report = await buildCleanupReport(invoiceNo);
+  if (!report.invoices.length) {
+    throw new HttpsError("not-found", "No invoice found with that number -- nothing to delete.");
+  }
+
+  var db = getFirestore();
+  var bucket = getStorage().bucket();
+
+  var batch = db.batch();
+  report.invoices.forEach(function (inv) { batch.delete(db.collection("invoices").doc(inv.id)); });
+  report.paymentIds.forEach(function (id) { batch.delete(db.collection("payments").doc(id)); });
+  report.supplyIds.forEach(function (id) { batch.delete(db.collection("supply").doc(id)); });
+  report.mailIds.forEach(function (id) { batch.delete(db.collection("mail").doc(id)); });
+  await batch.commit();
+
+  for (var p = 0; p < report.storagePaths.length; p++) {
+    try { await bucket.file(report.storagePaths[p]).delete(); }
+    catch (err) { console.error("Couldn't delete storage file", report.storagePaths[p], err); }
+  }
+
+  var rolledBack = false;
+  if (rollbackCounter && report.rollbackSeq != null) {
+    var counterRef = db.collection("counters").doc("global");
+    await db.runTransaction(async function (tx) {
+      var snap = await tx.get(counterRef);
+      var lastSeq = snap.exists ? (snap.data().lastSeq || 0) : 0;
+      if (lastSeq === report.rollbackSeq + 1) {
+        tx.set(counterRef, { lastSeq: report.rollbackSeq }, { merge: true });
+        rolledBack = true;
+      }
+    });
+  }
+
+  // Burn the delete-verification window on use -- a replayed call can't
+  // delete a second invoice without a fresh password + emailed code.
+  await db.collection("invoiceCleanupDeleteVerify").doc(master.uid).set({ verifiedUntil: null }, { merge: true });
+
+  return { deleted: report, rolledBack: rolledBack };
+});
 
 // GenAI billing assistant -- a master-only chat bot (Google Gemini, free
 // tier) that can look up buyers/rate-cards/invoices and prepare a draft
