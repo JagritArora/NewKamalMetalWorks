@@ -6,4 +6,7 @@ ORG:New Kamal Metal Works
 TEL;TYPE=CELL,VOICE,PREF:+919818650504
 EMAIL;TYPE=INTERNET,PREF:contact@newkamalmetalworks.co.in
 URL:https://newkamalmetalworks.co.in
+ADR;TYPE=WORK,PREF:;;Plot No. 118\, Industrial Area-4\, Dabua Pali Road;Far
+ idabad;Haryana;121001;India
+URL;TYPE=MAPS:https://maps.app.goo.gl/XeKHRTpy2aPhVkEt7
 END:VCARD
