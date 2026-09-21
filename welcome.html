@@ -76,7 +76,7 @@
           <span class="qa-plus" aria-hidden="true">+</span>
           <span class="qa-kicker">Danger Zone</span>
           <span class="qa-title">Invoice Cleanup.</span>
-          <span class="qa-desc">Permanently delete a test invoice and every trace of it. Locked behind an emailed code just to open, then your password and a second emailed code to delete.</span>
+          <span class="qa-desc">Permanently delete a test invoice and every trace of it — Firestore records, PDFs, and the invoice counter.</span>
         </a>
       </div>
     </div>
@@ -263,11 +263,20 @@ onAuthStateChanged(auth, function (user) {
 });
 
 var qaTrack = document.getElementById("qa-track");
+// One card (plus the track's gap) per arrow click, rather than a
+// fraction of the whole visible width -- so a click always advances by
+// exactly one tile no matter how many fit on screen at once.
+function qaStep() {
+  var card = qaTrack.querySelector(".qa-card");
+  if (!card) return qaTrack.clientWidth;
+  var gap = parseFloat(getComputedStyle(qaTrack).columnGap) || 0;
+  return card.getBoundingClientRect().width + gap;
+}
 document.getElementById("qa-prev").addEventListener("click", function () {
-  qaTrack.scrollBy({ left: -qaTrack.clientWidth * 0.9, behavior: "smooth" });
+  qaTrack.scrollBy({ left: -qaStep(), behavior: "smooth" });
 });
 document.getElementById("qa-next").addEventListener("click", function () {
-  qaTrack.scrollBy({ left: qaTrack.clientWidth * 0.9, behavior: "smooth" });
+  qaTrack.scrollBy({ left: qaStep(), behavior: "smooth" });
 });
 
 document.getElementById("year").textContent = new Date().getFullYear();
