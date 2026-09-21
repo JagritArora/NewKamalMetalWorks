@@ -270,6 +270,90 @@ exports.verifySignupCode = onCall({ region: "asia-south1" }, async function (req
   return { ok: true };
 });
 
+// "Forgot password" -- also the same emailed 6-digit code pattern, but
+// callable with no auth at all (the whole point is the person can't sign
+// in), so it can't use requireAuthWithEmail() either. Keyed by looking the
+// account up by email through the Admin SDK rather than request.auth.uid,
+// and the "verify" step sets the new password directly via the Admin SDK
+// instead of Firebase's own hosted reset-link page, replacing
+// sendPasswordResetEmail()/confirmPasswordReset() on login.html entirely.
+exports.requestPasswordResetCode = onCall({ region: "asia-south1" }, async function (request) {
+  var email = ((request.data && request.data.email) || "").trim();
+  if (!email) throw new HttpsError("invalid-argument", "Enter your login ID.");
+
+  var auth = getAuth();
+  var user;
+  try {
+    user = await auth.getUserByEmail(email);
+  } catch (err) {
+    // Same response whether or not an account exists for this email, so
+    // this can't be used to check which emails are registered.
+    return { ok: true };
+  }
+
+  var db = getFirestore();
+  var code = ("" + crypto.randomInt(0, 1000000)).padStart(6, "0");
+
+  await db.collection("passwordResetVerify").doc(user.uid).set({
+    codeHash: hashVerifyCode(code, user.uid),
+    sentAt: new Date(),
+    attempts: 0
+  });
+
+  await db.collection("mail").add({
+    to: [email],
+    message: {
+      subject: "Your New Kamal Metal Works password reset code",
+      html:
+        "<p>Use this code to reset your password on the New Kamal Metal Works billing tool:</p>" +
+        "<p style=\"font-size:28px;font-weight:700;letter-spacing:4px;\">" + code + "</p>" +
+        "<p>This code expires in 10 minutes. If you didn't request this, you can ignore this email -- your password won't change.</p>"
+    }
+  });
+
+  return { ok: true };
+});
+
+exports.confirmPasswordReset = onCall({ region: "asia-south1" }, async function (request) {
+  var email = ((request.data && request.data.email) || "").trim();
+  var code = ((request.data && request.data.code) || "").trim();
+  var newPassword = (request.data && request.data.newPassword) || "";
+  if (!email) throw new HttpsError("invalid-argument", "Missing email.");
+  if (!/^\d{6}$/.test(code)) throw new HttpsError("invalid-argument", "Enter the 6-digit code.");
+  if (newPassword.length < 6) throw new HttpsError("invalid-argument", "Choose a password with at least 6 characters.");
+
+  var auth = getAuth();
+  var user;
+  try {
+    user = await auth.getUserByEmail(email);
+  } catch (err) {
+    throw new HttpsError("permission-denied", "That code isn't right.");
+  }
+
+  var db = getFirestore();
+  var ref = db.collection("passwordResetVerify").doc(user.uid);
+  var snap = await ref.get();
+  if (!snap.exists) throw new HttpsError("failed-precondition", "Request a code first.");
+  var data = snap.data();
+
+  var sentAt = data.sentAt && data.sentAt.toDate ? data.sentAt.toDate() : new Date(data.sentAt);
+  if (Date.now() - sentAt.getTime() > CODE_TTL_MS) {
+    throw new HttpsError("deadline-exceeded", "That code expired -- request a new one.");
+  }
+  if ((data.attempts || 0) >= CODE_MAX_ATTEMPTS) {
+    throw new HttpsError("resource-exhausted", "Too many attempts -- request a new code.");
+  }
+  if (hashVerifyCode(code, user.uid) !== data.codeHash) {
+    await ref.update({ attempts: (data.attempts || 0) + 1 });
+    throw new HttpsError("permission-denied", "That code isn't right.");
+  }
+
+  await auth.updateUser(user.uid, { password: newPassword });
+  await ref.delete();
+
+  return { ok: true };
+});
+
 async function requireGateVerified(collectionName, uid) {
   var db = getFirestore();
   var snap = await db.collection(collectionName).doc(uid).get();

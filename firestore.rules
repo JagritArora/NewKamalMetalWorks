@@ -102,6 +102,16 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Written only by requestPasswordResetCode / confirmPasswordReset
+    // (Cloud Functions, Admin SDK) -- never by a client. Deliberately
+    // callable by anyone signed out (that's the point of "forgot
+    // password"), so the safety net is entirely server-side: looked up by
+    // email through the Admin SDK, and confirmPasswordReset is the only
+    // thing that can set a new password this way. See login.html.
+    match /passwordResetVerify/{uid} {
+      allow read, write: if false;
+    }
+
     match /invoices/{invoiceId} {
       allow read, write: if isMaster();
     }

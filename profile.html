@@ -51,6 +51,47 @@
     </form>
   </div>
 
+  <div class="login-card login-enter" id="password-card" hidden>
+    <h2 class="login-heading" style="font-size: 1.25rem;">Change Password</h2>
+
+    <form class="login-form" id="password-form" novalidate>
+      <div class="login-field">
+        <label for="password-current">Current password</label>
+        <div class="login-password-wrap">
+          <input type="password" id="password-current" autocomplete="current-password" required />
+          <button type="button" class="login-password-toggle" data-toggle-for="password-current" aria-label="Show password">
+            <svg class="login-eye-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="login-field">
+        <label for="password-new">New password</label>
+        <div class="login-password-wrap">
+          <input type="password" id="password-new" autocomplete="new-password" minlength="6" required />
+          <button type="button" class="login-password-toggle" data-toggle-for="password-new" aria-label="Show password">
+            <svg class="login-eye-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="login-field" id="password-confirm-field">
+        <label for="password-confirm">Confirm new password</label>
+        <div class="login-password-wrap">
+          <input type="password" id="password-confirm" autocomplete="new-password" minlength="6" required />
+          <button type="button" class="login-password-toggle" data-toggle-for="password-confirm" aria-label="Show password">
+            <svg class="login-eye-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <p class="login-field-error" id="password-confirm-error" hidden>Passwords don't match.</p>
+      </div>
+
+      <button type="submit" class="btn btn-primary login-submit" id="password-save-btn">Change password</button>
+
+      <p class="login-status" id="password-status" role="status" aria-live="polite"></p>
+    </form>
+  </div>
+
   <div class="login-card login-enter login-loading-card" id="profile-loading">
     <div class="login-spinner" aria-hidden="true"><span></span><span></span><span></span></div>
     <p class="login-sub">Loading your profile&hellip;</p>
@@ -89,7 +130,14 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import {
+  getAuth,
+  onAuthStateChanged,
+  signOut,
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+  updatePassword
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {
   initializeFirestore,
   doc,
@@ -122,7 +170,20 @@ var db = initializeFirestore(app, {
   experimentalForceLongPolling: true
 });
 
+// Wire every show/hide password button generically, same as login.html.
+document.querySelectorAll(".login-password-toggle").forEach(function (btn) {
+  var input = document.getElementById(btn.getAttribute("data-toggle-for"));
+  if (!input) return;
+  btn.addEventListener("click", function () {
+    var isHidden = input.type === "password";
+    input.type = isHidden ? "text" : "password";
+    btn.setAttribute("aria-label", isHidden ? "Hide password" : "Show password");
+    btn.classList.toggle("is-visible", isHidden);
+  });
+});
+
 var profileCard = document.getElementById("profile-card");
+var passwordCard = document.getElementById("password-card");
 var loadingCard = document.getElementById("profile-loading");
 var emailLine = document.getElementById("profile-email-line");
 var emptyNote = document.getElementById("profile-empty");
@@ -191,6 +252,82 @@ form.addEventListener("submit", function (e) {
   });
 });
 
+// ---------------------------------------------------------------------
+// Change password -- re-checks the current password against Firebase
+// Auth (reauthenticateWithCredential) before updatePassword() will even
+// allow the change, same safeguard the invoice-cleanup tool's delete step
+// uses. No emailed code here -- unlike "forgot password" (login.html),
+// this is an already-signed-in account confirming itself.
+// ---------------------------------------------------------------------
+var passwordForm = document.getElementById("password-form");
+var passwordCurrentInput = document.getElementById("password-current");
+var passwordNewInput = document.getElementById("password-new");
+var passwordConfirmInput = document.getElementById("password-confirm");
+var passwordConfirmField = document.getElementById("password-confirm-field");
+var passwordConfirmError = document.getElementById("password-confirm-error");
+var passwordStatus = document.getElementById("password-status");
+var passwordSaveBtn = document.getElementById("password-save-btn");
+
+function validatePasswordConfirm() {
+  var value = passwordConfirmInput.value;
+  var ok = value !== "" && value === passwordNewInput.value;
+  passwordConfirmField.classList.toggle("has-error", !ok && value !== "");
+  passwordConfirmError.hidden = ok || value === "";
+  return ok;
+}
+passwordConfirmInput.addEventListener("blur", validatePasswordConfirm);
+passwordConfirmInput.addEventListener("input", function () {
+  if (passwordConfirmField.classList.contains("has-error")) validatePasswordConfirm();
+});
+
+function showPasswordStatus(message, isError) {
+  passwordStatus.textContent = message;
+  passwordStatus.classList.toggle("is-error", !!isError);
+  passwordStatus.classList.add("is-visible");
+}
+
+function friendlyPasswordError(err) {
+  var code = err && err.code;
+  if (code === "auth/wrong-password" || code === "auth/invalid-credential") return "Your current password isn't right.";
+  if (code === "auth/weak-password") return "Choose a new password with at least 6 characters.";
+  if (code === "auth/too-many-requests") return "Too many attempts. Please wait a moment and try again.";
+  if (code === "auth/network-request-failed") return "Network error — check your connection and try again.";
+  return "Something went wrong changing your password. Please try again.";
+}
+
+passwordForm.addEventListener("submit", function (e) {
+  e.preventDefault();
+  var confirmOk = validatePasswordConfirm();
+  if (!passwordForm.checkValidity()) {
+    passwordForm.reportValidity();
+    return;
+  }
+  if (!confirmOk) return;
+
+  var currentPassword = passwordCurrentInput.value;
+  var newPassword = passwordNewInput.value;
+
+  passwordSaveBtn.disabled = true;
+  passwordSaveBtn.textContent = "Changing…";
+  passwordStatus.classList.remove("is-visible", "is-error");
+
+  var credential = EmailAuthProvider.credential(auth.currentUser.email, currentPassword);
+  reauthenticateWithCredential(auth.currentUser, credential)
+    .then(function () { return updatePassword(auth.currentUser, newPassword); })
+    .then(function () {
+      passwordForm.reset();
+      showPasswordStatus("Password changed.");
+    })
+    .catch(function (err) {
+      showPasswordStatus(friendlyPasswordError(err), true);
+      console.error(err);
+    })
+    .finally(function () {
+      passwordSaveBtn.disabled = false;
+      passwordSaveBtn.textContent = "Change password";
+    });
+});
+
 onAuthStateChanged(auth, function (user) {
   if (!user) {
     window.location.replace("login.html");
@@ -222,6 +359,7 @@ onAuthStateChanged(auth, function (user) {
     emptyNote.hidden = false;
     loadingCard.hidden = true;
     profileCard.hidden = false;
+    passwordCard.hidden = false;
   }, 8000);
 
   getDoc(doc(db, "profiles", user.uid)).then(function (snap) {
@@ -251,12 +389,14 @@ onAuthStateChanged(auth, function (user) {
     }
     loadingCard.hidden = true;
     profileCard.hidden = false;
+    passwordCard.hidden = false;
   }).catch(function () {
     clearTimeout(timeoutId);
     if (timedOut) return;
     showStatus("Couldn't load your profile just now — please refresh.");
     loadingCard.hidden = true;
     profileCard.hidden = false;
+    passwordCard.hidden = false;
   });
 });
 

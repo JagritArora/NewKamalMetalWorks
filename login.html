@@ -64,11 +64,48 @@
         <input type="email" id="reset-email" name="loginId" autocomplete="email" placeholder="you@example.com" required />
       </div>
 
-      <button type="submit" class="btn btn-primary login-submit" id="reset-submit-btn">Send reset link</button>
+      <button type="submit" class="btn btn-primary login-submit" id="reset-submit-btn">Email me a reset code</button>
 
       <p class="login-status" id="reset-status" role="status" aria-live="polite"></p>
 
       <button type="button" class="login-forgot-link" id="back-to-signin-link">&larr; Back to sign in</button>
+    </form>
+
+    <form class="login-form" id="reset-confirm-form" novalidate hidden>
+      <p class="login-sub">We've emailed a 6-digit code to <strong id="reset-confirm-email"></strong>. Enter it below along with your new password.</p>
+
+      <div class="login-field">
+        <label for="reset-code-input">Verification code</label>
+        <input type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" id="reset-code-input" placeholder="6-digit code" />
+      </div>
+
+      <div class="login-field">
+        <label for="reset-new-password">New password</label>
+        <div class="login-password-wrap">
+          <input type="password" id="reset-new-password" autocomplete="new-password" minlength="6" required />
+          <button type="button" class="login-password-toggle" data-toggle-for="reset-new-password" aria-label="Show password">
+            <svg class="login-eye-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="login-field" id="reset-confirm-password-field">
+        <label for="reset-confirm-password">Confirm new password</label>
+        <div class="login-password-wrap">
+          <input type="password" id="reset-confirm-password" autocomplete="new-password" minlength="6" required />
+          <button type="button" class="login-password-toggle" data-toggle-for="reset-confirm-password" aria-label="Show password">
+            <svg class="login-eye-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <p class="login-field-error" id="reset-confirm-password-error" hidden>Passwords don't match.</p>
+      </div>
+
+      <button type="submit" class="btn btn-primary login-submit" id="reset-confirm-submit-btn">Reset password</button>
+
+      <p class="login-status" id="reset-confirm-status" role="status" aria-live="polite"></p>
+
+      <button type="button" class="login-forgot-link" id="reset-resend-link">Resend code</button>
+      <button type="button" class="login-forgot-link" id="reset-confirm-back-link">&larr; Back to sign in</button>
     </form>
 
     <form class="login-form" id="signup-form" novalidate hidden>
@@ -175,7 +212,6 @@ import {
   getAuth,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  sendPasswordResetEmail,
   onAuthStateChanged,
   signOut
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
@@ -202,6 +238,8 @@ var db = initializeFirestore(app, { experimentalForceLongPolling: true });
 var functions = getFunctions(app, "asia-south1");
 var requestSignupCodeFn = httpsCallable(functions, "requestSignupCode");
 var verifySignupCodeFn = httpsCallable(functions, "verifySignupCode");
+var requestPasswordResetCodeFn = httpsCallable(functions, "requestPasswordResetCode");
+var confirmPasswordResetFn = httpsCallable(functions, "confirmPasswordReset");
 
 // Wire every show/hide password button generically, since the sign-up
 // form now has two password fields alongside the original sign-in one.
@@ -390,32 +428,69 @@ signinForm.addEventListener("submit", function (e) {
   });
 });
 
-// ---- Forgot password ----
+// ---- Forgot password (emailed 6-digit code, via requestPasswordResetCode
+// / confirmPasswordReset -- see functions/index.js) ----
 var resetEmailInput = document.getElementById("reset-email");
 var resetStatus = document.getElementById("reset-status");
 var resetSubmitBtn = document.getElementById("reset-submit-btn");
 var forgotLink = document.getElementById("forgot-password-link");
 var backToSigninLink = document.getElementById("back-to-signin-link");
 
+var resetConfirmForm = document.getElementById("reset-confirm-form");
+var resetConfirmEmailEl = document.getElementById("reset-confirm-email");
+var resetCodeInput = document.getElementById("reset-code-input");
+var resetNewPasswordInput = document.getElementById("reset-new-password");
+var resetConfirmPasswordInput = document.getElementById("reset-confirm-password");
+var resetConfirmPasswordField = document.getElementById("reset-confirm-password-field");
+var resetConfirmPasswordError = document.getElementById("reset-confirm-password-error");
+var resetConfirmStatus = document.getElementById("reset-confirm-status");
+var resetConfirmSubmitBtn = document.getElementById("reset-confirm-submit-btn");
+var resetResendLink = document.getElementById("reset-resend-link");
+var resetConfirmBackLink = document.getElementById("reset-confirm-back-link");
+
+// Set once the code's been requested, so "Resend code" and the confirm
+// step both know which address this reset is for without a hidden field.
+var pendingResetEmail = null;
+
 function showResetView() {
   loginTabs.hidden = true;
   signinForm.hidden = true;
   signupForm.hidden = true;
+  verifyForm.hidden = true;
+  resetConfirmForm.hidden = true;
   resetForm.hidden = false;
   heading.textContent = "Reset Your Password";
-  sub.textContent = "Enter your login ID and we'll email you a link to set a new password.";
+  sub.textContent = "Enter your login ID and we'll email you a code to set a new password.";
   resetStatus.classList.remove("is-visible");
   resetEmailInput.value = document.getElementById("login-id").value.trim();
+}
+
+function showResetConfirmView(email) {
+  loginTabs.hidden = true;
+  signinForm.hidden = true;
+  signupForm.hidden = true;
+  verifyForm.hidden = true;
+  resetForm.hidden = true;
+  resetConfirmForm.hidden = false;
+  heading.textContent = "Reset Your Password";
+  sub.textContent = "";
+  resetConfirmEmailEl.textContent = email;
+  resetCodeInput.value = "";
+  resetNewPasswordInput.value = "";
+  resetConfirmPasswordInput.value = "";
+  resetConfirmStatus.classList.remove("is-visible");
 }
 
 function showSigninView() {
   loginTabs.hidden = false;
   resetForm.hidden = true;
+  resetConfirmForm.hidden = true;
   activateTab("signin");
 }
 
 forgotLink.addEventListener("click", showResetView);
 backToSigninLink.addEventListener("click", showSigninView);
+resetConfirmBackLink.addEventListener("click", showSigninView);
 
 resetForm.addEventListener("submit", function (e) {
   e.preventDefault();
@@ -429,26 +504,91 @@ resetForm.addEventListener("submit", function (e) {
   resetSubmitBtn.textContent = "Sending…";
   resetStatus.classList.remove("is-visible");
 
-  // Same confirmation message whether or not the account exists, so this
-  // form can't be used to check which emails are registered.
-  var CONFIRMATION = "If an account exists for that email, we've sent a link to reset your password.";
-
-  sendPasswordResetEmail(auth, email).then(function () {
-    showStatus(resetStatus, CONFIRMATION);
+  requestPasswordResetCodeFn({ email: email }).then(function () {
+    pendingResetEmail = email;
+    showResetConfirmView(email);
+    // Same message whether or not an account exists for this email --
+    // functions/index.js only ever sends mail when one does -- so this
+    // step can't be used to check which emails are registered.
+    showStatus(resetConfirmStatus, "If an account exists for that email, we've emailed a 6-digit code.");
   }).catch(function (err) {
-    var code = err && err.code;
-    if (code === "auth/user-not-found") {
-      showStatus(resetStatus, CONFIRMATION);
-    } else if (code === "auth/invalid-email") {
-      showStatus(resetStatus, "That doesn't look like a valid email address.");
-    } else if (code === "auth/too-many-requests") {
-      showStatus(resetStatus, "Too many attempts. Please wait a moment and try again.");
-    } else {
-      showStatus(resetStatus, "Something went wrong. Please try again.");
-    }
+    showStatus(resetStatus, err && err.message ? err.message : "Something went wrong. Please try again.");
+    console.error(err);
   }).finally(function () {
     resetSubmitBtn.disabled = false;
-    resetSubmitBtn.textContent = "Send reset link";
+    resetSubmitBtn.textContent = "Email me a reset code";
+  });
+});
+
+function sendResetCode() {
+  resetConfirmSubmitBtn.disabled = true;
+  resetResendLink.disabled = true;
+  return requestPasswordResetCodeFn({ email: pendingResetEmail }).then(function () {
+    showStatus(resetConfirmStatus, "We emailed a fresh 6-digit code — enter it below.");
+    resetConfirmSubmitBtn.disabled = false;
+    resetResendLink.disabled = false;
+    resetCodeInput.focus();
+  }).catch(function (err) {
+    showStatus(resetConfirmStatus, "Couldn't send a code just now — please try again.");
+    resetResendLink.disabled = false;
+    console.error(err);
+  });
+}
+
+resetResendLink.addEventListener("click", sendResetCode);
+
+function validateResetConfirmPassword() {
+  var value = resetConfirmPasswordInput.value;
+  var ok = value !== "" && value === resetNewPasswordInput.value;
+  resetConfirmPasswordField.classList.toggle("has-error", !ok && value !== "");
+  resetConfirmPasswordError.hidden = ok || value === "";
+  return ok;
+}
+resetConfirmPasswordInput.addEventListener("blur", validateResetConfirmPassword);
+resetConfirmPasswordInput.addEventListener("input", function () {
+  if (resetConfirmPasswordField.classList.contains("has-error")) validateResetConfirmPassword();
+});
+
+resetCodeInput.addEventListener("input", function () {
+  resetCodeInput.value = resetCodeInput.value.replace(/\D/g, "").slice(0, 6);
+});
+
+resetConfirmForm.addEventListener("submit", function (e) {
+  e.preventDefault();
+  var code = resetCodeInput.value.trim();
+  var confirmOk = validateResetConfirmPassword();
+  if (!resetConfirmForm.checkValidity()) {
+    resetConfirmForm.reportValidity();
+    return;
+  }
+  if (!/^\d{6}$/.test(code)) {
+    showStatus(resetConfirmStatus, "Enter the 6-digit code from the email.");
+    return;
+  }
+  if (!confirmOk) return;
+
+  var newPassword = resetNewPasswordInput.value;
+
+  suppressAutoRedirect = true;
+  resetConfirmSubmitBtn.disabled = true;
+  resetResendLink.disabled = true;
+  showStatus(resetConfirmStatus, "Resetting…");
+
+  confirmPasswordResetFn({ email: pendingResetEmail, code: code, newPassword: newPassword }).then(function () {
+    return signInWithEmailAndPassword(auth, pendingResetEmail, newPassword);
+  }).then(function (cred) {
+    if (!cred.user.emailVerified) {
+      showVerifyView(pendingResetEmail);
+      return sendVerifyCode();
+    }
+    suppressAutoRedirect = false;
+    window.location.replace("profile.html");
+  }).catch(function (err) {
+    suppressAutoRedirect = false;
+    showStatus(resetConfirmStatus, err && err.message ? err.message : "That code isn't right — please try again.");
+    resetConfirmSubmitBtn.disabled = false;
+    resetResendLink.disabled = false;
+    console.error(err);
   });
 });
 
