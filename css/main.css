@@ -1227,7 +1227,56 @@ p { margin: 0; text-wrap: pretty; }
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   padding: 32px 40px;
+  display: flex;
+  align-items: center;
+  gap: 40px;
 }
+.contact-card-info { flex: 1; min-width: 0; }
+
+.contact-card-qr {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  padding-left: 40px;
+  border-left: 1px solid var(--line);
+}
+.contact-qr-code {
+  width: 112px;
+  height: 112px;
+  border-radius: 10px;
+  background: var(--surface);
+  padding: 6px;
+  border: 1px solid var(--line);
+}
+.contact-qr-label {
+  font-size: 0.78rem;
+  color: var(--ink-muted);
+  max-width: 14ch;
+  line-height: 1.4;
+}
+.contact-qr-download {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+  padding: 9px 18px;
+  border-radius: 980px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+  transition: transform .3s var(--ease), box-shadow .3s var(--ease);
+}
+.contact-qr-download:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--accent) 38%, transparent);
+}
+
 .contact-meta {
   display: flex;
   flex-wrap: wrap;
@@ -1327,6 +1376,13 @@ p { margin: 0; text-wrap: pretty; }
 
 @media (max-width: 760px) {
   .contact-actions { grid-template-columns: 1fr; }
+  .contact-card { flex-direction: column; align-items: stretch; }
+  .contact-card-qr {
+    padding-left: 0;
+    padding-top: 28px;
+    border-left: none;
+    border-top: 1px solid var(--line);
+  }
 }
 @media (max-width: 560px) {
   .contact { padding: 80px 0 96px; }
