@@ -1244,8 +1244,8 @@ p { margin: 0; text-wrap: pretty; }
   border-left: 1px solid var(--line);
 }
 .contact-qr-code {
-  width: 112px;
-  height: 112px;
+  width: 128px;
+  height: 128px;
   border-radius: 10px;
   background: var(--surface);
   padding: 6px;
