@@ -52,17 +52,18 @@
   </div>
 
   <div class="login-card login-enter" id="password-card" hidden>
-    <h2 class="login-heading" style="font-size: 1.25rem;">Change Password</h2>
+    <h2 class="login-heading" style="font-size: 1.25rem;">Reset Password</h2>
+    <p class="login-sub">We'll email a 6-digit code to your account to confirm a new password — same as "Forgot password?" on the sign-in page.</p>
 
-    <form class="login-form" id="password-form" novalidate>
+    <div id="password-request-actions">
+      <button type="button" class="btn btn-primary login-submit" id="password-request-btn">Email me a reset code</button>
+    </div>
+    <p class="login-status" id="password-request-status" role="status" aria-live="polite"></p>
+
+    <form class="login-form" id="password-form" novalidate hidden>
       <div class="login-field">
-        <label for="password-current">Current password</label>
-        <div class="login-password-wrap">
-          <input type="password" id="password-current" autocomplete="current-password" required />
-          <button type="button" class="login-password-toggle" data-toggle-for="password-current" aria-label="Show password">
-            <svg class="login-eye-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-          </button>
-        </div>
+        <label for="password-code-input">Verification code</label>
+        <input type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" id="password-code-input" placeholder="6-digit code" />
       </div>
 
       <div class="login-field">
@@ -86,9 +87,11 @@
         <p class="login-field-error" id="password-confirm-error" hidden>Passwords don't match.</p>
       </div>
 
-      <button type="submit" class="btn btn-primary login-submit" id="password-save-btn">Change password</button>
+      <button type="submit" class="btn btn-primary login-submit" id="password-save-btn">Reset password</button>
 
       <p class="login-status" id="password-status" role="status" aria-live="polite"></p>
+
+      <button type="button" class="login-forgot-link" id="password-resend-link">Resend code</button>
     </form>
   </div>
 
@@ -130,14 +133,8 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import {
-  getAuth,
-  onAuthStateChanged,
-  signOut,
-  EmailAuthProvider,
-  reauthenticateWithCredential,
-  updatePassword
-} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-functions.js";
 import {
   initializeFirestore,
   doc,
@@ -169,6 +166,9 @@ var auth = getAuth(app);
 var db = initializeFirestore(app, {
   experimentalForceLongPolling: true
 });
+var functions = getFunctions(app, "asia-south1");
+var requestPasswordResetCodeFn = httpsCallable(functions, "requestPasswordResetCode");
+var confirmPasswordResetFn = httpsCallable(functions, "confirmPasswordReset");
 
 // Wire every show/hide password button generically, same as login.html.
 document.querySelectorAll(".login-password-toggle").forEach(function (btn) {
@@ -253,20 +253,23 @@ form.addEventListener("submit", function (e) {
 });
 
 // ---------------------------------------------------------------------
-// Change password -- re-checks the current password against Firebase
-// Auth (reauthenticateWithCredential) before updatePassword() will even
-// allow the change, same safeguard the invoice-cleanup tool's delete step
-// uses. No emailed code here -- unlike "forgot password" (login.html),
-// this is an already-signed-in account confirming itself.
+// Reset password -- same emailed 6-digit code flow as "Forgot password?"
+// on login.html (requestPasswordResetCode / confirmPasswordReset), rather
+// than a re-enter-your-current-password change. Since this account is
+// already signed in, the email is known already -- no login ID field.
 // ---------------------------------------------------------------------
+var passwordRequestActions = document.getElementById("password-request-actions");
+var passwordRequestBtn = document.getElementById("password-request-btn");
+var passwordRequestStatus = document.getElementById("password-request-status");
 var passwordForm = document.getElementById("password-form");
-var passwordCurrentInput = document.getElementById("password-current");
+var passwordCodeInput = document.getElementById("password-code-input");
 var passwordNewInput = document.getElementById("password-new");
 var passwordConfirmInput = document.getElementById("password-confirm");
 var passwordConfirmField = document.getElementById("password-confirm-field");
 var passwordConfirmError = document.getElementById("password-confirm-error");
 var passwordStatus = document.getElementById("password-status");
 var passwordSaveBtn = document.getElementById("password-save-btn");
+var passwordResendLink = document.getElementById("password-resend-link");
 
 function validatePasswordConfirm() {
   var value = passwordConfirmInput.value;
@@ -280,52 +283,80 @@ passwordConfirmInput.addEventListener("input", function () {
   if (passwordConfirmField.classList.contains("has-error")) validatePasswordConfirm();
 });
 
+passwordCodeInput.addEventListener("input", function () {
+  passwordCodeInput.value = passwordCodeInput.value.replace(/\D/g, "").slice(0, 6);
+});
+
+function showPasswordRequestStatus(message, isError) {
+  passwordRequestStatus.textContent = message;
+  passwordRequestStatus.classList.toggle("is-error", !!isError);
+  passwordRequestStatus.classList.add("is-visible");
+}
+
 function showPasswordStatus(message, isError) {
   passwordStatus.textContent = message;
   passwordStatus.classList.toggle("is-error", !!isError);
   passwordStatus.classList.add("is-visible");
 }
 
-function friendlyPasswordError(err) {
-  var code = err && err.code;
-  if (code === "auth/wrong-password" || code === "auth/invalid-credential") return "Your current password isn't right.";
-  if (code === "auth/weak-password") return "Choose a new password with at least 6 characters.";
-  if (code === "auth/too-many-requests") return "Too many attempts. Please wait a moment and try again.";
-  if (code === "auth/network-request-failed") return "Network error — check your connection and try again.";
-  return "Something went wrong changing your password. Please try again.";
+function sendPasswordResetCode() {
+  passwordRequestBtn.disabled = true;
+  passwordResendLink.disabled = true;
+  return requestPasswordResetCodeFn({ email: auth.currentUser.email }).then(function () {
+    passwordRequestActions.hidden = true;
+    passwordForm.hidden = false;
+    passwordCodeInput.value = "";
+    passwordNewInput.value = "";
+    passwordConfirmInput.value = "";
+    showPasswordStatus("We emailed a 6-digit code — enter it below.");
+    passwordResendLink.disabled = false;
+    passwordCodeInput.focus();
+  }).catch(function (err) {
+    showPasswordRequestStatus("Couldn't send a code just now — please try again.", true);
+    console.error(err);
+  }).finally(function () {
+    passwordRequestBtn.disabled = false;
+  });
 }
+
+passwordRequestBtn.addEventListener("click", function () {
+  passwordRequestStatus.classList.remove("is-visible", "is-error");
+  sendPasswordResetCode();
+});
+passwordResendLink.addEventListener("click", sendPasswordResetCode);
 
 passwordForm.addEventListener("submit", function (e) {
   e.preventDefault();
+  var code = passwordCodeInput.value.trim();
   var confirmOk = validatePasswordConfirm();
   if (!passwordForm.checkValidity()) {
     passwordForm.reportValidity();
     return;
   }
+  if (!/^\d{6}$/.test(code)) {
+    showPasswordStatus("Enter the 6-digit code from the email.");
+    return;
+  }
   if (!confirmOk) return;
 
-  var currentPassword = passwordCurrentInput.value;
   var newPassword = passwordNewInput.value;
 
   passwordSaveBtn.disabled = true;
-  passwordSaveBtn.textContent = "Changing…";
-  passwordStatus.classList.remove("is-visible", "is-error");
+  passwordResendLink.disabled = true;
+  showPasswordStatus("Resetting…");
 
-  var credential = EmailAuthProvider.credential(auth.currentUser.email, currentPassword);
-  reauthenticateWithCredential(auth.currentUser, credential)
-    .then(function () { return updatePassword(auth.currentUser, newPassword); })
-    .then(function () {
-      passwordForm.reset();
-      showPasswordStatus("Password changed.");
-    })
-    .catch(function (err) {
-      showPasswordStatus(friendlyPasswordError(err), true);
-      console.error(err);
-    })
-    .finally(function () {
-      passwordSaveBtn.disabled = false;
-      passwordSaveBtn.textContent = "Change password";
-    });
+  confirmPasswordResetFn({ email: auth.currentUser.email, code: code, newPassword: newPassword }).then(function () {
+    passwordForm.reset();
+    passwordForm.hidden = true;
+    passwordRequestActions.hidden = false;
+    showPasswordRequestStatus("Password reset.");
+  }).catch(function (err) {
+    showPasswordStatus(err && err.message ? err.message : "That code isn't right — please try again.", true);
+    console.error(err);
+  }).finally(function () {
+    passwordSaveBtn.disabled = false;
+    passwordResendLink.disabled = false;
+  });
 });
 
 onAuthStateChanged(auth, function (user) {
