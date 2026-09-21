@@ -4,6 +4,7 @@ const { defineSecret } = require("firebase-functions/params");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
 const { getStorage } = require("firebase-admin/storage");
+const { getAuth } = require("firebase-admin/auth");
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 
@@ -196,6 +197,78 @@ var invoiceCleanupDeleteGate = makeCodeGate(
 );
 exports.requestInvoiceCleanupDeleteCode = invoiceCleanupDeleteGate.request;
 exports.verifyInvoiceCleanupDeleteCode = invoiceCleanupDeleteGate.verify;
+
+// Sign-up email verification -- same emailed 6-digit code pattern as the
+// gates above, sent from the same contact@newkamalmetalworks.co.in mailbox,
+// but for any freshly signed-in account rather than a master action, so it
+// can't use requireMasterWithEmail()/makeCodeGate() as-is: any authenticated
+// user may request/verify their own code (client accounts self-register --
+// see firestore.rules on /profiles), and a correct code doesn't just open a
+// verified-write window, it directly flips Firebase Auth's own emailVerified
+// flag via the Admin SDK. Every other page's guard already just checks
+// user.emailVerified (see e.g. billing.html's onAuthStateChanged), so this
+// is the only place that needed to change -- nothing downstream of sign-in
+// does.
+async function requireAuthWithEmail(request) {
+  if (!request.auth) throw new HttpsError("unauthenticated", "Sign in first.");
+  var email = request.auth.token.email;
+  if (!email) throw new HttpsError("failed-precondition", "No email on this account.");
+  return { uid: request.auth.uid, email: email };
+}
+
+exports.requestSignupCode = onCall({ region: "asia-south1" }, async function (request) {
+  var account = await requireAuthWithEmail(request);
+  var db = getFirestore();
+  var code = ("" + crypto.randomInt(0, 1000000)).padStart(6, "0");
+
+  await db.collection("signupVerify").doc(account.uid).set({
+    codeHash: hashVerifyCode(code, account.uid),
+    sentAt: new Date(),
+    attempts: 0
+  });
+
+  await db.collection("mail").add({
+    to: [account.email],
+    message: {
+      subject: "Verify your New Kamal Metal Works account",
+      html:
+        "<p>Use this code to verify your email and finish setting up your New Kamal Metal Works account:</p>" +
+        "<p style=\"font-size:28px;font-weight:700;letter-spacing:4px;\">" + code + "</p>" +
+        "<p>This code expires in 10 minutes. If you didn't request this, you can ignore this email.</p>"
+    }
+  });
+
+  return { ok: true };
+});
+
+exports.verifySignupCode = onCall({ region: "asia-south1" }, async function (request) {
+  var account = await requireAuthWithEmail(request);
+  var code = ((request.data && request.data.code) || "").trim();
+  if (!/^\d{6}$/.test(code)) throw new HttpsError("invalid-argument", "Enter the 6-digit code.");
+
+  var db = getFirestore();
+  var ref = db.collection("signupVerify").doc(account.uid);
+  var snap = await ref.get();
+  if (!snap.exists) throw new HttpsError("failed-precondition", "Request a code first.");
+  var data = snap.data();
+
+  var sentAt = data.sentAt && data.sentAt.toDate ? data.sentAt.toDate() : new Date(data.sentAt);
+  if (Date.now() - sentAt.getTime() > CODE_TTL_MS) {
+    throw new HttpsError("deadline-exceeded", "That code expired -- request a new one.");
+  }
+  if ((data.attempts || 0) >= CODE_MAX_ATTEMPTS) {
+    throw new HttpsError("resource-exhausted", "Too many attempts -- request a new code.");
+  }
+  if (hashVerifyCode(code, account.uid) !== data.codeHash) {
+    await ref.update({ attempts: (data.attempts || 0) + 1 });
+    throw new HttpsError("permission-denied", "That code isn't right.");
+  }
+
+  await getAuth().updateUser(account.uid, { emailVerified: true });
+  await ref.delete();
+
+  return { ok: true };
+});
 
 async function requireGateVerified(collectionName, uid) {
   var db = getFirestore();

@@ -38,6 +38,14 @@
     <p class="welcome-sub welcome-fade" style="--d:.16s">How can we help you today?</p>
   </div>
 
+  <section class="qa-section welcome-fade" id="welcome-client-soon" style="--d:.34s" hidden>
+    <div class="login-card login-enter" style="max-width: 520px; margin: 0 auto; text-align: center;">
+      <span class="login-kicker">Coming Soon</span>
+      <h2 class="welcome-heading" style="font-size: clamp(1.4rem, 3.6vw, 1.9rem);">We're Building This for You.</h2>
+      <p class="welcome-sub">Order tracking, quotations and more, made for you specifically — we're still building this part out. Check back soon.</p>
+    </div>
+  </section>
+
   <section class="qa-section welcome-fade" id="welcome-quick-actions" style="--d:.34s" hidden>
     <h2 class="qa-heading">Quick Actions.</h2>
     <div class="qa-slider">
@@ -204,6 +212,7 @@ function reveal(name, role) {
   heading.textContent = name ? "Welcome, " + name + "." : "Welcome.";
   kicker.textContent = role === "master" ? "Master Access" : "Client Access";
   document.getElementById("welcome-quick-actions").hidden = role !== "master";
+  document.getElementById("welcome-client-soon").hidden = role === "master";
   loadingCard.hidden = true;
   welcomeCard.hidden = false;
 

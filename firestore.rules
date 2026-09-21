@@ -94,6 +94,14 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Written only by requestSignupCode / verifySignupCode (Cloud
+    // Functions, Admin SDK) -- never by a client. verifySignupCode is also
+    // the only thing that can flip a Firebase Auth user's emailVerified
+    // flag, so this can't be forged from devtools either. See login.html.
+    match /signupVerify/{uid} {
+      allow read, write: if false;
+    }
+
     match /invoices/{invoiceId} {
       allow read, write: if isMaster();
     }

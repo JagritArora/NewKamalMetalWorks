@@ -119,6 +119,22 @@
       <p class="login-status" id="signup-status" role="status" aria-live="polite"></p>
     </form>
 
+    <form class="login-form" id="verify-form" novalidate hidden>
+      <p class="login-sub">We've emailed a 6-digit code to <strong id="verify-email"></strong>. Enter it below to verify your account.</p>
+
+      <div class="login-field">
+        <label for="verify-code-input">Verification code</label>
+        <input type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" id="verify-code-input" placeholder="6-digit code" />
+      </div>
+
+      <button type="submit" class="btn btn-primary login-submit" id="verify-submit-btn">Verify &amp; continue</button>
+
+      <p class="login-status" id="verify-status" role="status" aria-live="polite"></p>
+
+      <button type="button" class="login-forgot-link" id="verify-resend-link">Resend code</button>
+      <button type="button" class="login-forgot-link" id="verify-signout-link">Use a different account</button>
+    </form>
+
     <p class="login-footnote" id="login-footnote">Need help? <a href="index.html#contact">Contact us</a>.</p>
   </div>
 </main>
@@ -159,11 +175,11 @@ import {
   getAuth,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  sendEmailVerification,
   sendPasswordResetEmail,
   onAuthStateChanged,
   signOut
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-functions.js";
 import {
   initializeFirestore,
   doc,
@@ -183,6 +199,9 @@ var firebaseConfig = {
 var app = initializeApp(firebaseConfig);
 var auth = getAuth(app);
 var db = initializeFirestore(app, { experimentalForceLongPolling: true });
+var functions = getFunctions(app, "asia-south1");
+var requestSignupCodeFn = httpsCallable(functions, "requestSignupCode");
+var verifySignupCodeFn = httpsCallable(functions, "verifySignupCode");
 
 // Wire every show/hide password button generically, since the sign-up
 // form now has two password fields alongside the original sign-in one.
@@ -204,6 +223,7 @@ var tabSignup = document.getElementById("tab-signup");
 var signinForm = document.getElementById("signin-form");
 var signupForm = document.getElementById("signup-form");
 var resetForm = document.getElementById("reset-form");
+var verifyForm = document.getElementById("verify-form");
 var heading = document.getElementById("login-heading");
 var sub = document.getElementById("login-sub");
 
@@ -215,6 +235,7 @@ function activateTab(name) {
   tabSignup.setAttribute("aria-selected", String(isSignup));
   signinForm.hidden = isSignup;
   signupForm.hidden = !isSignup;
+  verifyForm.hidden = true;
   heading.textContent = isSignup ? "Create Your Account" : "Sign In";
   sub.textContent = isSignup
     ? "Set a password and tell us a bit about your company so we can process your orders and quotations."
@@ -225,7 +246,7 @@ tabSignin.addEventListener("click", function () { activateTab("signin"); });
 tabSignup.addEventListener("click", function () { activateTab("signup"); });
 
 if (new URLSearchParams(window.location.search).has("unverified")) {
-  showStatus(document.getElementById("login-status"), "Please verify your email before signing in. Check your inbox for the verification link.");
+  showStatus(document.getElementById("login-status"), "Please verify your email before signing in.");
 }
 
 // Set while a form handler itself is controlling navigation (sign in or
@@ -255,6 +276,86 @@ function friendlyError(err) {
   return "Something went wrong signing in. Please try again.";
 }
 
+// ---- Email verification (emailed 6-digit code, via requestSignupCode /
+// verifySignupCode -- see functions/index.js) ----
+var verifyEmailEl = document.getElementById("verify-email");
+var verifyCodeInput = document.getElementById("verify-code-input");
+var verifyStatus = document.getElementById("verify-status");
+var verifySubmitBtn = document.getElementById("verify-submit-btn");
+var verifyResendLink = document.getElementById("verify-resend-link");
+var verifySignoutLink = document.getElementById("verify-signout-link");
+
+function showVerifyView(email) {
+  loginTabs.hidden = true;
+  signinForm.hidden = true;
+  signupForm.hidden = true;
+  resetForm.hidden = true;
+  verifyForm.hidden = false;
+  heading.textContent = "Verify Your Email";
+  sub.textContent = "";
+  verifyEmailEl.textContent = email;
+  verifyCodeInput.value = "";
+  verifyStatus.classList.remove("is-visible");
+}
+
+function sendVerifyCode() {
+  verifySubmitBtn.disabled = true;
+  verifyResendLink.disabled = true;
+  return requestSignupCodeFn().then(function () {
+    showStatus(verifyStatus, "We emailed a 6-digit code — enter it below.");
+    verifySubmitBtn.disabled = false;
+    verifyResendLink.disabled = false;
+    verifyCodeInput.focus();
+  }).catch(function (err) {
+    showStatus(verifyStatus, "Couldn't send a verification code just now — please try again.");
+    verifyResendLink.disabled = false;
+    console.error(err);
+  });
+}
+
+verifyForm.addEventListener("submit", function (e) {
+  e.preventDefault();
+  var code = verifyCodeInput.value.trim();
+  if (!/^\d{6}$/.test(code)) {
+    showStatus(verifyStatus, "Enter the 6-digit code from the email.");
+    return;
+  }
+
+  verifySubmitBtn.disabled = true;
+  verifyResendLink.disabled = true;
+  showStatus(verifyStatus, "Verifying…");
+
+  verifySignupCodeFn({ code: code }).then(function () {
+    // The ID token still has the old emailVerified=false claim until it's
+    // refreshed -- otherwise every other page's own guard (see
+    // billing.html etc.) would bounce this user straight back here.
+    return auth.currentUser.reload();
+  }).then(function () {
+    suppressAutoRedirect = false;
+    window.location.replace("profile.html");
+  }).catch(function (err) {
+    showStatus(verifyStatus, err && err.message ? err.message : "That code isn't right — please try again.");
+    verifySubmitBtn.disabled = false;
+    verifyResendLink.disabled = false;
+    console.error(err);
+  });
+});
+
+verifyCodeInput.addEventListener("input", function () {
+  verifyCodeInput.value = verifyCodeInput.value.replace(/\D/g, "").slice(0, 6);
+});
+
+verifyResendLink.addEventListener("click", sendVerifyCode);
+
+verifySignoutLink.addEventListener("click", function () {
+  suppressAutoRedirect = true;
+  signOut(auth).then(function () {
+    suppressAutoRedirect = false;
+    loginTabs.hidden = false;
+    activateTab("signin");
+  });
+});
+
 signinForm.addEventListener("submit", function (e) {
   e.preventDefault();
   if (!signinForm.checkValidity()) {
@@ -271,16 +372,12 @@ signinForm.addEventListener("submit", function (e) {
 
   signInWithEmailAndPassword(auth, email, password).then(function (cred) {
     if (!cred.user.emailVerified) {
-      // Re-send a fresh link on every blocked attempt, since this also
-      // covers accounts created by hand in the console (or from before
-      // this check existed) that never got an original verification email.
-      return sendEmailVerification(cred.user).catch(function () {}).then(function () {
-        return signOut(auth);
-      }).then(function () {
-        suppressAutoRedirect = false;
-        document.getElementById("login-password").value = "";
-        showStatus(status, "Please verify your email before signing in — we've sent a verification link to " + email + ". Check your inbox, then sign in again.");
-      });
+      // Stay signed in (this also covers accounts created by hand in the
+      // console, or from before this check existed, that never verified)
+      // and let them finish right here rather than bouncing them out.
+      document.getElementById("login-password").value = "";
+      showVerifyView(email);
+      return sendVerifyCode();
     }
     suppressAutoRedirect = false;
     window.location.replace("profile.html");
@@ -422,10 +519,7 @@ signupForm.addEventListener("submit", function (e) {
   signupSubmitBtn.textContent = "Creating account…";
   signupStatus.classList.remove("is-visible");
 
-  var createdUser = null;
-
   createUserWithEmailAndPassword(auth, email, password).then(function (cred) {
-    createdUser = cred.user;
     return setDoc(doc(db, "profiles", cred.user.uid), {
       fullName: fullName,
       company: company,
@@ -434,17 +528,12 @@ signupForm.addEventListener("submit", function (e) {
       updatedAt: serverTimestamp()
     }, { merge: true });
   }).then(function () {
-    // The profile is saved, but the account itself stays unusable until the
-    // email is verified -- send the link, sign back out immediately, and
-    // send them to the sign-in tab rather than through to welcome.html.
-    return sendEmailVerification(createdUser).catch(function () {}).then(function () {
-      return signOut(auth);
-    });
-  }).then(function () {
-    suppressAutoRedirect = false;
+    // The profile is saved, but the account stays unusable until the email
+    // is verified -- stay signed in and let them finish right here rather
+    // than sending them back through the sign-in form a second time.
     signupForm.reset();
-    activateTab("signin");
-    showStatus(status, "Account created — we've sent a verification link to " + email + ". Verify it, then sign in.");
+    showVerifyView(email);
+    return sendVerifyCode();
   }).catch(function (err) {
     suppressAutoRedirect = false;
     showStatus(signupStatus, friendlySignupError(err));
@@ -462,11 +551,12 @@ signupForm.addEventListener("submit", function (e) {
 onAuthStateChanged(auth, function (user) {
   if (!user || suppressAutoRedirect) return;
   if (!user.emailVerified) {
+    // Landed here still signed in from an earlier, unfinished verification
+    // (e.g. closed the tab mid-code) -- pick straight back up rather than
+    // signing them out and making them re-enter their password.
     suppressAutoRedirect = true;
-    signOut(auth).then(function () {
-      suppressAutoRedirect = false;
-      showStatus(status, "Please verify your email before signing in. Check your inbox for the verification link.");
-    });
+    showVerifyView(user.email);
+    sendVerifyCode();
     return;
   }
   window.location.replace("profile.html");
