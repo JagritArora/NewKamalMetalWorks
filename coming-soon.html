@@ -69,6 +69,7 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { enforceSessionTimeout } from "./js/session-guard.js";
 
 var firebaseConfig = {
   apiKey: "AIzaSyDkEyDAOah5XzAOVjUux9SLhH60To2oTKs",
@@ -99,6 +100,7 @@ onAuthStateChanged(auth, function (user) {
     });
     return;
   }
+  if (enforceSessionTimeout(auth, signOut)) return;
   document.getElementById("soon-loading").hidden = true;
   document.getElementById("soon-card").hidden = false;
 });

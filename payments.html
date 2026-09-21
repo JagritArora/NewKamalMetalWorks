@@ -105,6 +105,7 @@ import {
   limit,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { enforceSessionTimeout } from "./js/session-guard.js";
 
 var firebaseConfig = {
   apiKey: "AIzaSyDkEyDAOah5XzAOVjUux9SLhH60To2oTKs",
@@ -314,6 +315,7 @@ onAuthStateChanged(auth, function (user) {
     signOut(auth).then(function () { window.location.replace("login.html?unverified=1"); });
     return;
   }
+  if (enforceSessionTimeout(auth, signOut)) return;
 
   getDoc(doc(db, "profiles", user.uid)).then(function (snap) {
     var data = snap.exists() ? snap.data() : {};

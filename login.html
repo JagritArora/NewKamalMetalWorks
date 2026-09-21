@@ -222,6 +222,7 @@ import {
   setDoc,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { startSession, enforceSessionTimeout } from "./js/session-guard.js";
 
 var firebaseConfig = {
   apiKey: "AIzaSyDkEyDAOah5XzAOVjUux9SLhH60To2oTKs",
@@ -285,6 +286,8 @@ tabSignup.addEventListener("click", function () { activateTab("signup"); });
 
 if (new URLSearchParams(window.location.search).has("unverified")) {
   showStatus(document.getElementById("login-status"), "Please verify your email before signing in.");
+} else if (new URLSearchParams(window.location.search).has("expired")) {
+  showStatus(document.getElementById("login-status"), "Your session expired after 4 hours — please sign in again.");
 }
 
 // Set while a form handler itself is controlling navigation (sign in or
@@ -370,6 +373,7 @@ verifyForm.addEventListener("submit", function (e) {
     return auth.currentUser.reload();
   }).then(function () {
     suppressAutoRedirect = false;
+    startSession();
     window.location.replace("profile.html");
   }).catch(function (err) {
     showStatus(verifyStatus, err && err.message ? err.message : "That code isn't right — please try again.");
@@ -418,6 +422,7 @@ signinForm.addEventListener("submit", function (e) {
       return sendVerifyCode();
     }
     suppressAutoRedirect = false;
+    startSession();
     window.location.replace("profile.html");
   }).catch(function (err) {
     suppressAutoRedirect = false;
@@ -582,6 +587,7 @@ resetConfirmForm.addEventListener("submit", function (e) {
       return sendVerifyCode();
     }
     suppressAutoRedirect = false;
+    startSession();
     window.location.replace("profile.html");
   }).catch(function (err) {
     suppressAutoRedirect = false;
@@ -699,6 +705,7 @@ onAuthStateChanged(auth, function (user) {
     sendVerifyCode();
     return;
   }
+  if (enforceSessionTimeout(auth, signOut)) return;
   window.location.replace("profile.html");
 });
 
