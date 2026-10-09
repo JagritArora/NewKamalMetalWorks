@@ -69,6 +69,12 @@
             <option value="all">All Years</option>
           </select>
         </div>
+        <div class="login-field">
+          <label for="supply-filter-month">Month</label>
+          <select id="supply-filter-month">
+            <option value="all">All Months</option>
+          </select>
+        </div>
       </div>
 
       <div class="supply-backfill-box" id="supply-backfill-box" hidden>
@@ -799,6 +805,29 @@ function populateFilters() {
   // that's the view a master is almost always after -- "All Years" stays
   // one click away for the full picture.
   if (yearsSorted.length) fySel.value = yearsSorted[0];
+
+  populateMonths(fySel.value);
+}
+
+// Month options are scoped to whatever Financial Year is currently
+// selected (re-run whenever that select changes), so the list never
+// shows a month with no deliveries in it. Keys sort chronologically in
+// FY order (Apr..Mar) since "YYYY-MM" sorts lexicographically the same
+// way within a single FY's two calendar years.
+function populateMonths(fy) {
+  var monthSel = document.getElementById("supply-filter-month");
+  var months = {};
+  allLines.forEach(function (l) {
+    if (fy !== "all" && l.financialYear !== fy) return;
+    var k = monthKey(l.date);
+    if (k) months[k] = true;
+  });
+  var keys = Object.keys(months).sort();
+  var prevValue = monthSel.value;
+  monthSel.innerHTML = '<option value="all">All Months</option>' + keys.map(function (k) {
+    return '<option value="' + k + '">' + monthLabel(k) + "</option>";
+  }).join("");
+  monthSel.value = keys.indexOf(prevValue) !== -1 ? prevValue : "all";
 }
 
 function currentFilters() {
@@ -806,7 +835,8 @@ function currentFilters() {
     buyerId: document.getElementById("supply-filter-buyer").value,
     partNo: document.getElementById("supply-filter-item").value,
     invoiceNo: document.getElementById("supply-filter-invoice").value,
-    fy: document.getElementById("supply-filter-fy").value
+    fy: document.getElementById("supply-filter-fy").value,
+    month: document.getElementById("supply-filter-month").value
   };
 }
 
@@ -818,6 +848,7 @@ function filteredLines() {
       if (f.invoiceNo !== "all" && l.invoiceNo !== f.invoiceNo) return false;
     } else if (f.partNo !== "all" && l.partNo !== f.partNo) return false;
     if (f.fy !== "all" && l.financialYear !== f.fy) return false;
+    if (f.month !== "all" && monthKey(l.date) !== f.month) return false;
     return true;
   });
 }
@@ -1247,8 +1278,15 @@ function retheme() {
   applyFilters();
 }
 
-["supply-filter-buyer", "supply-filter-item", "supply-filter-invoice", "supply-filter-fy"].forEach(function (id) {
+["supply-filter-buyer", "supply-filter-item", "supply-filter-invoice", "supply-filter-month"].forEach(function (id) {
   document.getElementById(id).addEventListener("change", applyFilters);
+});
+// Financial Year also re-scopes the Month dropdown to only the months
+// that year actually has data in, resetting Month back to "All Months"
+// first if the previously selected month doesn't exist in the new year.
+document.getElementById("supply-filter-fy").addEventListener("change", function () {
+  populateMonths(this.value);
+  applyFilters();
 });
 
 document.getElementById("supply-item-metric-qty").addEventListener("click", function () {
