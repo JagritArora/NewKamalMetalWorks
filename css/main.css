@@ -2605,6 +2605,7 @@ button.login-back {
 .login-subview .login-form { margin-top: 0; }
 #password-request-actions { margin: 10px 0; }
 .login-field { display: flex; flex-direction: column; gap: 8px; }
+.login-field[hidden] { display: none; }
 .login-field label {
   font-size: 0.82rem;
   font-weight: 600;

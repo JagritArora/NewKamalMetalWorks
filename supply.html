@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/main.css?v=56" />
+<link rel="stylesheet" href="css/main.css?v=57" />
 </head>
 <body class="login-page">
 
@@ -33,9 +33,15 @@
     <section class="billing-card">
       <div class="chart-card-head">
         <h2 class="billing-card-title">Filters</h2>
-        <div class="chart-toggle-group" role="group" aria-label="Filter by item or invoice">
-          <button type="button" class="chart-toggle-btn is-active" id="supply-filter-mode-item">Item</button>
-          <button type="button" class="chart-toggle-btn" id="supply-filter-mode-invoice">Invoice</button>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <div class="chart-toggle-group" role="group" aria-label="Filter by item or invoice">
+            <button type="button" class="chart-toggle-btn is-active" id="supply-filter-mode-item">Item</button>
+            <button type="button" class="chart-toggle-btn" id="supply-filter-mode-invoice">Invoice</button>
+          </div>
+          <div class="chart-toggle-group" role="group" aria-label="Show sale figures with or without GST">
+            <button type="button" class="chart-toggle-btn is-active" id="supply-gst-mode-excl">Excl. GST</button>
+            <button type="button" class="chart-toggle-btn" id="supply-gst-mode-incl">Incl. GST</button>
+          </div>
         </div>
       </div>
       <div class="supply-filter-row">
@@ -51,9 +57,9 @@
             <option value="all">All Items</option>
           </select>
         </div>
-        <div class="login-field" id="supply-filter-invoice-field">
+        <div class="login-field" id="supply-filter-invoice-field" hidden>
           <label for="supply-filter-invoice">Invoice</label>
-          <select id="supply-filter-invoice" disabled>
+          <select id="supply-filter-invoice">
             <option value="all">All Invoices</option>
           </select>
         </div>
@@ -96,7 +102,7 @@
           <span class="stat-tile-value mono" id="supply-stat-qty">—</span>
         </div>
         <div class="stat-tile stat-tile--accent">
-          <span class="stat-tile-label">Sales Value</span>
+          <span class="stat-tile-label" id="supply-stat-value-label">Sales Value</span>
           <span class="stat-tile-value" id="supply-stat-value">—</span>
         </div>
         <div class="stat-tile">
@@ -149,8 +155,8 @@
               <th>Buyer</th>
               <th>Item</th>
               <th>Qty</th>
-              <th>Avg. Rate</th>
-              <th>Amount</th>
+              <th id="supply-table-rate-th">Avg. Rate</th>
+              <th id="supply-table-amount-th">Amount</th>
               <th>Margin</th>
               <th>Profit</th>
             </tr>
@@ -337,6 +343,31 @@ var ChartLib = null;
 // toggled by the buttons above the Filters row. Only one of the two
 // filters below applies at a time; the hidden one just sits at "all".
 var supplyFilterMode = "item";
+
+// Display-only toggle -- every /supply amount is stored and priced
+// without GST (same subtotal rate billing.html charges before adding
+// IGST), so "Incl. GST" just grosses up the sales-value figures below by
+// the same 18% IGST rate billing.html uses. Profit/margin are left alone
+// since GST collected is a pass-through, not revenue.
+var GST_RATE = 0.18;
+var gstMode = "excl";
+function gstMultiplier() { return gstMode === "incl" ? 1 + GST_RATE : 1; }
+function salesValueLabel() { return "Sales Value" + (gstMode === "incl" ? " (incl. GST)" : " (excl. GST)"); }
+
+document.getElementById("supply-gst-mode-excl").addEventListener("click", function () {
+  if (gstMode === "excl") return;
+  gstMode = "excl";
+  this.classList.add("is-active");
+  document.getElementById("supply-gst-mode-incl").classList.remove("is-active");
+  applyFilters();
+});
+document.getElementById("supply-gst-mode-incl").addEventListener("click", function () {
+  if (gstMode === "incl") return;
+  gstMode = "incl";
+  this.classList.add("is-active");
+  document.getElementById("supply-gst-mode-excl").classList.remove("is-active");
+  applyFilters();
+});
 
 // The historical-data cleanup (Backfill + rate correction) is done for
 // now -- flip this back to true to bring both maintenance boxes back
@@ -796,8 +827,8 @@ function setSupplyFilterMode(mode) {
   supplyFilterMode = mode;
   document.getElementById("supply-filter-mode-item").classList.toggle("is-active", mode === "item");
   document.getElementById("supply-filter-mode-invoice").classList.toggle("is-active", mode === "invoice");
-  document.getElementById("supply-filter-item").disabled = mode !== "item";
-  document.getElementById("supply-filter-invoice").disabled = mode !== "invoice";
+  document.getElementById("supply-filter-item-field").hidden = mode !== "item";
+  document.getElementById("supply-filter-invoice-field").hidden = mode !== "invoice";
   applyFilters();
 }
 document.getElementById("supply-filter-mode-item").addEventListener("click", function () { setSupplyFilterMode("item"); });
@@ -904,16 +935,18 @@ document.getElementById("supply-correction-btn").addEventListener("click", funct
 });
 
 function renderStats(lines) {
+  var mult = gstMultiplier();
   var qty = 0, value = 0, profit = 0, knownProfitCount = 0;
   var invoiceNos = {};
   lines.forEach(function (l) {
     qty += l.qty;
-    value += l.amount || 0;
+    value += (l.amount || 0) * mult;
     if (l.profit != null) { profit += l.profit; knownProfitCount++; }
     if (l.invoiceNo) invoiceNos[l.invoiceNo] = true;
   });
 
   document.getElementById("supply-stat-qty").textContent = qty.toLocaleString("en-IN");
+  document.getElementById("supply-stat-value-label").textContent = salesValueLabel();
   document.getElementById("supply-stat-value").textContent = formatCurrency(value);
   document.getElementById("supply-stat-profit").textContent = knownProfitCount ? formatCurrency(profit) : "—";
   document.getElementById("supply-stat-invoices").textContent = Object.keys(invoiceNos).length.toLocaleString("en-IN");
@@ -921,10 +954,13 @@ function renderStats(lines) {
 
 function renderTable(lines) {
   var body = document.getElementById("supply-table-body");
+  document.getElementById("supply-table-rate-th").textContent = gstMode === "incl" ? "Avg. Rate (incl. GST)" : "Avg. Rate";
+  document.getElementById("supply-table-amount-th").textContent = gstMode === "incl" ? "Amount (incl. GST)" : "Amount";
   if (!lines.length) {
     body.innerHTML = '<tr><td colspan="9" class="billing-history-empty">No deliveries match these filters.</td></tr>';
     return;
   }
+  var mult = gstMultiplier();
   var shown = lines.slice(0, 200);
   body.innerHTML = shown.map(function (l) {
     return "<tr>" +
@@ -933,8 +969,8 @@ function renderTable(lines) {
       "<td>" + l.buyerName + "</td>" +
       "<td>" + l.description + "</td>" +
       "<td>" + l.qty.toLocaleString("en-IN") + "</td>" +
-      "<td>" + (l.rate != null ? l.rate.toFixed(2) : "—") + "</td>" +
-      "<td>" + (l.amount != null ? formatCurrency(l.amount) : "—") + "</td>" +
+      "<td>" + (l.rate != null ? (l.rate * mult).toFixed(2) : "—") + "</td>" +
+      "<td>" + (l.amount != null ? formatCurrency(l.amount * mult) : "—") + "</td>" +
       "<td>" + (l.margin != null ? l.margin.toFixed(2) : "—") + "</td>" +
       "<td>" + (l.profit != null ? formatCurrency(l.profit) : "—") + "</td>" +
       "</tr>";
@@ -1008,6 +1044,7 @@ function renderItemChart(lines) {
   empty.hidden = true;
   canvas.style.display = "block";
 
+  var mult = gstMultiplier();
   var labels, values, tooltipTitles, isTrend = f.partNo !== "all";
 
   if (isTrend) {
@@ -1015,7 +1052,7 @@ function renderItemChart(lines) {
     lines.forEach(function (l) {
       var k = monthKey(l.date);
       monthly[k] = monthly[k] || 0;
-      monthly[k] += itemMetric === "qty" ? l.qty : (l.amount || 0);
+      monthly[k] += itemMetric === "qty" ? l.qty : ((l.amount || 0) * mult);
     });
     var keys = Object.keys(monthly).sort();
     labels = keys.map(monthLabel);
@@ -1028,7 +1065,7 @@ function renderItemChart(lines) {
     lines.forEach(function (l) {
       byItem[l.partNo] = byItem[l.partNo] || { partNo: l.partNo, label: l.description, qty: 0, value: 0 };
       byItem[l.partNo].qty += l.qty;
-      byItem[l.partNo].value += l.amount || 0;
+      byItem[l.partNo].value += (l.amount || 0) * mult;
     });
     var ranked = Object.keys(byItem).map(function (k) { return byItem[k]; })
       .sort(function (a, b) { return (itemMetric === "qty" ? b.qty - a.qty : b.value - a.value); })
@@ -1037,7 +1074,7 @@ function renderItemChart(lines) {
     tooltipTitles = ranked.map(function (r) { return r.label; });
     values = ranked.map(function (r) { return itemMetric === "qty" ? r.qty : r.value; });
     titleEl.textContent = "Item Sale";
-    subEl.textContent = "Top items by " + (itemMetric === "qty" ? "quantity delivered" : "sales value") +
+    subEl.textContent = "Top items by " + (itemMetric === "qty" ? "quantity delivered" : salesValueLabel().toLowerCase()) +
       (f.buyerId !== "all" ? " · " + document.getElementById("supply-filter-buyer").selectedOptions[0].textContent : "") +
       (supplyFilterMode === "invoice" && f.invoiceNo !== "all" ? " · Invoice " + f.invoiceNo : "");
   }
@@ -1052,7 +1089,7 @@ function renderItemChart(lines) {
       data: {
         labels: labels,
         datasets: [{
-          label: itemMetric === "qty" ? "Qty" : "Sales Value",
+          label: itemMetric === "qty" ? "Qty" : salesValueLabel(),
           data: values,
           backgroundColor: theme.accent,
           borderRadius: 4,
@@ -1081,7 +1118,7 @@ function renderItemChart(lines) {
   } else {
     itemChart.data.labels = labels;
     itemChart.data.datasets[0].data = values;
-    itemChart.data.datasets[0].label = itemMetric === "qty" ? "Qty" : "Sales Value";
+    itemChart.data.datasets[0].label = itemMetric === "qty" ? "Qty" : salesValueLabel();
     itemChart.data.datasets[0].backgroundColor = theme.accent;
     itemChart.options.scales = baseScales(theme, valueFormatter);
     itemChart.options.plugins.tooltip.callbacks.title = function (items) { return tooltipTitles[items[0].dataIndex]; };
@@ -1117,12 +1154,13 @@ function renderSalesChart(lines) {
   empty.hidden = true;
   canvas.style.display = "block";
 
+  var mult = gstMultiplier();
   var monthly = {};
   var monthlyProfit = {};
   lines.forEach(function (l) {
     var k = monthKey(l.date);
     monthly[k] = monthly[k] || 0;
-    monthly[k] += l.amount || 0;
+    monthly[k] += (l.amount || 0) * mult;
     if (l.profit != null) {
       monthlyProfit[k] = (monthlyProfit[k] || 0) + l.profit;
     }
@@ -1148,7 +1186,7 @@ function renderSalesChart(lines) {
       data: {
         labels: labels,
         datasets: [{
-          label: "Sales Value",
+          label: salesValueLabel(),
           data: values,
           borderColor: theme.accent,
           backgroundColor: theme.accent + "26",
@@ -1187,6 +1225,7 @@ function renderSalesChart(lines) {
     });
   } else {
     salesChart.data.labels = labels;
+    salesChart.data.datasets[0].label = salesValueLabel();
     salesChart.data.datasets[0].data = values;
     salesChart.data.datasets[0].borderColor = theme.accent;
     salesChart.data.datasets[0].backgroundColor = theme.accent + "26";
