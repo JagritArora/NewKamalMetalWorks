@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/main.css?v=61" />
+<link rel="stylesheet" href="css/main.css?v=74" />
 </head>
 <body class="login-page">
 
@@ -25,9 +25,13 @@
 
 <main class="login-shell billing-shell">
   <div class="billing-wrap" id="billing-wrap" hidden>
-    <a href="welcome.html" class="billing-back-link" style="color: var(--ink);">Back to <span style="color: var(--accent);">Dashboard</span></a>
-    <h1 class="welcome-heading" style="font-size: clamp(1.8rem, 4vw, 2.3rem);">Generate an Invoice.</h1>
-    <p class="welcome-sub">Pick the buyer and items, generate the tax invoice, then send it from the history below.</p>
+    <header class="page-hero">
+      <svg class="page-hero-art" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M12 11v6M9 14h6"/></svg>
+      <a href="welcome.html" class="billing-back-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6"/></svg><span>Dashboard</span></a>
+      <span class="page-hero-kicker"><span class="page-hero-index">01</span>Billing</span>
+      <h1 class="welcome-heading page-hero-title">Generate an Invoice.</h1>
+      <p class="welcome-sub page-hero-sub">Pick the buyer and items, generate the tax invoice, then send it from the history below.</p>
+    </header>
 
     <section class="billing-card">
       <div class="billing-card-head">
@@ -2717,6 +2721,8 @@ window.NKMWBillingBridge = {
   }
 };
 </script>
+<script src="js/nk-select.js?v=1" defer></script>
+<script src="js/ui-fx.js?v=2" defer></script>
 <script src="js/bot-widget.js?v=2" defer></script>
 </body>
 </html>

@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/main.css?v=61" />
+<link rel="stylesheet" href="css/main.css?v=74" />
 </head>
 <body class="login-page">
 
@@ -25,9 +25,13 @@
 
 <main class="login-shell billing-shell">
   <div class="billing-wrap" id="cleanup-wrap" hidden>
-    <a href="welcome.html" class="billing-back-link" style="color: var(--ink);">Back to <span style="color: var(--accent);">Dashboard</span></a>
-    <h1 class="welcome-heading" style="font-size: clamp(1.8rem, 4vw, 2.3rem);">Invoice Cleanup.</h1>
-    <p class="welcome-sub">Permanently remove every trace of a test invoice — Firestore records, PDFs, and the invoice counter. Master only, double code-verified.</p>
+    <header class="page-hero page-hero--danger">
+      <svg class="page-hero-art" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"/><path d="M9 7V4h6v3"/></svg>
+      <a href="welcome.html" class="billing-back-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6"/></svg><span>Dashboard</span></a>
+      <span class="page-hero-kicker"><span class="page-hero-index">!</span>Danger Zone</span>
+      <h1 class="welcome-heading page-hero-title">Invoice Cleanup.</h1>
+      <p class="welcome-sub page-hero-sub">Permanently remove every trace of a test invoice — Firestore records, PDFs, and the invoice counter. Master only, double code-verified.</p>
+    </header>
 
     <!-- ================= Gate 1: open the tool ================= -->
     <section class="billing-card" id="cleanup-unlock-card">
@@ -461,6 +465,8 @@ onAuthStateChanged(auth, function (user) {
   });
 });
 </script>
+<script src="js/nk-select.js?v=1" defer></script>
+<script src="js/ui-fx.js?v=2" defer></script>
 <script src="js/bot-widget.js?v=2" defer></script>
 </body>
 </html>

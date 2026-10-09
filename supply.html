@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/main.css?v=61" />
+<link rel="stylesheet" href="css/main.css?v=74" />
 </head>
 <body class="login-page">
 
@@ -25,9 +25,13 @@
 
 <main class="login-shell billing-shell">
   <div class="billing-wrap" id="supply-wrap" hidden>
-    <a href="welcome.html" class="billing-back-link" style="color: var(--ink);">Back to <span style="color: var(--accent);">Dashboard</span></a>
-    <h1 class="welcome-heading" style="font-size: clamp(1.8rem, 4vw, 2.3rem);">Supply Overview.</h1>
-    <p class="welcome-sub">Every item you've delivered, by buyer and item, straight from your invoices.</p>
+    <header class="page-hero">
+      <svg class="page-hero-art" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V13M10.5 20V8M17 20V4"/><path d="M3 20h18"/></svg>
+      <a href="welcome.html" class="billing-back-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6"/></svg><span>Dashboard</span></a>
+      <span class="page-hero-kicker"><span class="page-hero-index">05</span>Insights</span>
+      <h1 class="welcome-heading page-hero-title">Supply Overview.</h1>
+      <p class="welcome-sub page-hero-sub">Every item you've delivered, by buyer and item, straight from your invoices.</p>
+    </header>
     <p class="login-status" id="supply-status" role="status" aria-live="polite"></p>
 
     <section class="billing-card">
@@ -107,18 +111,22 @@
 
       <div class="supply-stats-grid" id="supply-stats-grid">
         <div class="stat-tile">
+          <span class="stat-tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5 12 3l9 4.5-9 4.5z"/><path d="M3 7.5V16.5L12 21l9-4.5V7.5"/><path d="M12 12v9"/></svg></span>
           <span class="stat-tile-label">Qty Delivered</span>
           <span class="stat-tile-value mono" id="supply-stat-qty">—</span>
         </div>
         <div class="stat-tile stat-tile--accent">
+          <span class="stat-tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 5h10M7 9h10M13 5c3 0 3 8-3 8H7l7 6"/></svg></span>
           <span class="stat-tile-label" id="supply-stat-value-label">Sales Value</span>
           <span class="stat-tile-value" id="supply-stat-value">—</span>
         </div>
         <div class="stat-tile">
+          <span class="stat-tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></span>
           <span class="stat-tile-label">Profit</span>
           <span class="stat-tile-value" id="supply-stat-profit">—</span>
         </div>
         <div class="stat-tile">
+          <span class="stat-tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg></span>
           <span class="stat-tile-label">Invoices</span>
           <span class="stat-tile-value mono" id="supply-stat-invoices">—</span>
         </div>
@@ -1072,8 +1080,63 @@ function baseScales(theme, valueFormatter) {
         font: { family: "IBM Plex Sans" },
         callback: valueFormatter
       },
-      border: { display: false }
+      border: { display: false, dash: [3, 4] }
     }
+  };
+}
+
+// Presentation-only chart helpers: gradient fills, staggered entrance
+// timing and a themed tooltip. Scriptable fills read chartArea at draw
+// time, so they stay correct across resizes and data updates.
+function barFill(theme) {
+  return function (ctx) {
+    var area = ctx.chart.chartArea;
+    if (!area) return theme.accent;
+    var g = ctx.chart.ctx.createLinearGradient(0, area.bottom, 0, area.top);
+    g.addColorStop(0, theme.accent + "4D");
+    g.addColorStop(1, theme.accent);
+    return g;
+  };
+}
+function areaFill(color) {
+  return function (ctx) {
+    var area = ctx.chart.chartArea;
+    if (!area) return color + "26";
+    var g = ctx.chart.ctx.createLinearGradient(0, area.top, 0, area.bottom);
+    g.addColorStop(0, color + "59");
+    g.addColorStop(1, color + "00");
+    return g;
+  };
+}
+function staggerDelay(step) {
+  return function (ctx) {
+    return ctx.type === "data" && ctx.mode === "default" ? ctx.dataIndex * step + ctx.datasetIndex * 160 : 0;
+  };
+}
+function tooltipStyle(theme) {
+  return {
+    backgroundColor: theme.surface,
+    borderColor: theme.line,
+    borderWidth: 1,
+    titleColor: theme.ink,
+    bodyColor: theme.ink,
+    padding: 12,
+    cornerRadius: 12,
+    caretSize: 6,
+    boxPadding: 6,
+    usePointStyle: true,
+    titleFont: { family: "Space Grotesk", weight: "600", size: 13 },
+    bodyFont: { family: "IBM Plex Sans", size: 12 }
+  };
+}
+function lineDataset(theme, color) {
+  return {
+    borderColor: color,
+    backgroundColor: areaFill(color),
+    pointBackgroundColor: theme.surface,
+    pointBorderColor: color,
+    pointHoverBackgroundColor: color,
+    pointHoverBorderColor: theme.surface
   };
 }
 
@@ -1149,14 +1212,17 @@ function renderItemChart(lines) {
         datasets: [{
           label: itemMetric === "qty" ? "Qty" : salesValueLabel(),
           data: values,
-          backgroundColor: theme.accent,
-          borderRadius: 4,
+          backgroundColor: barFill(theme),
+          hoverBackgroundColor: theme.accent,
+          borderRadius: 8,
+          borderSkipped: false,
           maxBarThickness: 42
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        animation: { duration: 900, easing: "easeOutQuart", delay: staggerDelay(70) },
         plugins: {
           legend: { display: false },
           tooltip: {
@@ -1173,11 +1239,14 @@ function renderItemChart(lines) {
         scales: baseScales(theme, valueFormatter)
       }
     });
+    Object.assign(itemChart.options.plugins.tooltip, tooltipStyle(theme));
   } else {
     itemChart.data.labels = labels;
     itemChart.data.datasets[0].data = values;
     itemChart.data.datasets[0].label = itemMetric === "qty" ? "Qty" : salesValueLabel();
-    itemChart.data.datasets[0].backgroundColor = theme.accent;
+    itemChart.data.datasets[0].backgroundColor = barFill(theme);
+    itemChart.data.datasets[0].hoverBackgroundColor = theme.accent;
+    Object.assign(itemChart.options.plugins.tooltip, tooltipStyle(theme));
     itemChart.options.scales = baseScales(theme, valueFormatter);
     itemChart.options.plugins.tooltip.callbacks.title = function (items) { return tooltipTitles[items[0].dataIndex]; };
     itemChart.options.plugins.tooltip.callbacks.label = function (ctx) {
@@ -1282,31 +1351,53 @@ function renderSalesChart(lines) {
           label: salesValueLabel(),
           data: values,
           borderColor: theme.accent,
-          backgroundColor: theme.accent + "26",
-          pointBackgroundColor: theme.accent,
-          pointRadius: 3,
-          pointHoverRadius: 5,
-          borderWidth: 2,
-          tension: 0.3,
+          backgroundColor: areaFill(theme.accent),
+          pointBackgroundColor: theme.surface,
+          pointBorderColor: theme.accent,
+          pointBorderWidth: 2,
+          pointHoverBackgroundColor: theme.accent,
+          pointHoverBorderColor: theme.surface,
+          pointHoverBorderWidth: 3,
+          pointRadius: 3.5,
+          pointHoverRadius: 7,
+          borderWidth: 2.5,
+          tension: 0.35,
           fill: true
         }, {
           label: "Profit",
           data: profitValues,
           borderColor: theme.success,
-          backgroundColor: theme.success + "26",
-          pointBackgroundColor: theme.success,
-          pointRadius: 3,
-          pointHoverRadius: 5,
-          borderWidth: 2,
-          tension: 0.3,
+          backgroundColor: areaFill(theme.success),
+          pointBackgroundColor: theme.surface,
+          pointBorderColor: theme.success,
+          pointBorderWidth: 2,
+          pointHoverBackgroundColor: theme.success,
+          pointHoverBorderColor: theme.surface,
+          pointHoverBorderWidth: 3,
+          pointRadius: 3.5,
+          pointHoverRadius: 7,
+          borderWidth: 2.5,
+          tension: 0.35,
           fill: true
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        interaction: { mode: "index", intersect: false },
+        animations: {
+          y: {
+            duration: 1000,
+            easing: "easeOutQuart",
+            from: function (ctx) {
+              if (ctx.type !== "data" || !ctx.chart.scales || !ctx.chart.scales.y) return undefined;
+              return ctx.chart.scales.y.getPixelForValue(0);
+            },
+            delay: staggerDelay(45)
+          }
+        },
         plugins: {
-          legend: { display: true, position: "top", align: "end", labels: { boxWidth: 12, font: { family: "IBM Plex Sans" } } },
+          legend: { display: true, position: "top", align: "end", labels: { usePointStyle: true, pointStyle: "circle", boxWidth: 8, boxHeight: 8, padding: 14, font: { family: "IBM Plex Sans" } } },
           tooltip: {
             callbacks: {
               title: tooltipTitleCallback,
@@ -1317,17 +1408,15 @@ function renderSalesChart(lines) {
         scales: baseScales(theme, function (v) { return formatCompactCurrency(v); })
       }
     });
+    Object.assign(salesChart.options.plugins.tooltip, tooltipStyle(theme));
   } else {
     salesChart.data.labels = labels;
     salesChart.data.datasets[0].label = salesValueLabel();
     salesChart.data.datasets[0].data = values;
-    salesChart.data.datasets[0].borderColor = theme.accent;
-    salesChart.data.datasets[0].backgroundColor = theme.accent + "26";
-    salesChart.data.datasets[0].pointBackgroundColor = theme.accent;
+    Object.assign(salesChart.data.datasets[0], lineDataset(theme, theme.accent));
     salesChart.data.datasets[1].data = profitValues;
-    salesChart.data.datasets[1].borderColor = theme.success;
-    salesChart.data.datasets[1].backgroundColor = theme.success + "26";
-    salesChart.data.datasets[1].pointBackgroundColor = theme.success;
+    Object.assign(salesChart.data.datasets[1], lineDataset(theme, theme.success));
+    Object.assign(salesChart.options.plugins.tooltip, tooltipStyle(theme));
     salesChart.options.plugins.tooltip.callbacks.title = tooltipTitleCallback;
     salesChart.options.scales = baseScales(theme, function (v) { return formatCompactCurrency(v); });
     salesChart.update();
@@ -1417,6 +1506,8 @@ onAuthStateChanged(auth, function (user) {
   });
 });
 </script>
+<script src="js/nk-select.js?v=1" defer></script>
+<script src="js/ui-fx.js?v=2" defer></script>
 <script src="js/bot-widget.js?v=2" defer></script>
 </body>
 </html>

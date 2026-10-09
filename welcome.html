@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/main.css?v=61" />
+<link rel="stylesheet" href="css/main.css?v=74" />
 </head>
 <body class="login-page">
 
@@ -32,7 +32,7 @@
 </nav>
 
 <main class="login-shell welcome-shell">
-  <div class="welcome-card" id="welcome-card" hidden>
+  <div class="welcome-card welcome-card--wide" id="welcome-card" hidden>
     <span class="login-kicker welcome-fade" id="welcome-kicker" style="--d:0s">Client Access</span>
     <h1 class="welcome-heading welcome-fade" id="welcome-heading" style="--d:.08s">Welcome.</h1>
     <p class="welcome-sub welcome-fade" style="--d:.16s">How can we help you today?</p>
@@ -46,56 +46,103 @@
     </div>
   </section>
 
-  <section class="qa-section welcome-fade" id="welcome-quick-actions" style="--d:.34s" hidden>
-    <h2 class="qa-heading">Quick Actions.</h2>
-    <div class="qa-slider">
-      <div class="qa-track" id="qa-track">
-        <a href="billing.html" class="qa-card">
-          <span class="qa-plus" aria-hidden="true">+</span>
-          <span class="qa-kicker">Billing</span>
+  <section class="qa-section welcome-fade" id="welcome-quick-actions" style="--d:.3s" hidden>
+    <div class="qa-head">
+      <h2 class="qa-heading">Quick Actions.</h2>
+      <span class="qa-count">05 tools &middot; Billing</span>
+    </div>
+
+    <div class="qa-grid">
+      <a href="billing.html" class="qa-card qa-card--feature" style="--i:0">
+        <svg class="qa-feature-art" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>
+        <span class="qa-index">01</span>
+        <span class="qa-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M12 11v6M9 14h6"/></svg>
+        </span>
+        <span class="qa-body">
+          <span class="qa-kicker">Billing &middot; Start here</span>
           <span class="qa-title">Generate a New Invoice.</span>
           <span class="qa-desc">Pick the buyer and items, then raise a tax invoice and email it out in one go.</span>
-        </a>
-        <a href="inspection.html" class="qa-card">
-          <span class="qa-plus" aria-hidden="true">+</span>
+        </span>
+        <span class="qa-go">Start invoice
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </span>
+      </a>
+
+      <a href="inspection.html" class="qa-card" style="--i:1">
+        <span class="qa-index">02</span>
+        <span class="qa-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3h6v1"/><path d="M9.5 12.5l2 2 3.5-4"/></svg>
+        </span>
+        <span class="qa-body">
           <span class="qa-kicker">Billing</span>
-          <span class="qa-title">Generate Inspection Report.</span>
+          <span class="qa-title">Inspection Report.</span>
           <span class="qa-desc">Pick a raised invoice and see the breakdown of what it billed.</span>
-        </a>
-        <a href="invoices.html" class="qa-card">
-          <span class="qa-plus" aria-hidden="true">+</span>
+        </span>
+        <span class="qa-go">Open
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </span>
+      </a>
+
+      <a href="invoices.html" class="qa-card" style="--i:2">
+        <span class="qa-index">03</span>
+        <span class="qa-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="5" rx="1.5"/><path d="M5 9v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9"/><path d="M10 13h4"/></svg>
+        </span>
+        <span class="qa-body">
           <span class="qa-kicker">Billing</span>
-          <span class="qa-title">Browse Historical Invoices.</span>
+          <span class="qa-title">Historical Invoices.</span>
           <span class="qa-desc">Search and filter every invoice you've ever raised, all in one place.</span>
-        </a>
-        <a href="payments.html" class="qa-card">
-          <span class="qa-plus" aria-hidden="true">+</span>
-          <span class="qa-kicker">Billing</span>
-          <span class="qa-title">Payment Info</span>
+        </span>
+        <span class="qa-go">Open
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </span>
+      </a>
+
+      <a href="payments.html" class="qa-card" style="--i:3">
+        <span class="qa-index">04</span>
+        <span class="qa-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M3 10h18"/><path d="M16 15h2"/></svg>
+        </span>
+        <span class="qa-body">
+          <span class="qa-kicker">Payments</span>
+          <span class="qa-title">Payment Info.</span>
           <span class="qa-desc">Log an incoming payment against an invoice and keep your books current.</span>
-        </a>
-        <a href="supply.html" class="qa-card">
-          <span class="qa-plus" aria-hidden="true">+</span>
-          <span class="qa-kicker">Billing</span>
+        </span>
+        <span class="qa-go">Open
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </span>
+      </a>
+
+      <a href="supply.html" class="qa-card" style="--i:4">
+        <span class="qa-index">05</span>
+        <span class="qa-icon" aria-hidden="true">
+          <svg class="qa-bars" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="13" width="3" height="7" rx="1"/><rect x="10.5" y="8" width="3" height="12" rx="1"/><rect x="17" y="4" width="3" height="16" rx="1"/></svg>
+        </span>
+        <span class="qa-body">
+          <span class="qa-kicker">Insights</span>
           <span class="qa-title">Supply Overview.</span>
-          <span class="qa-desc">See what you've delivered, by buyer and item, with interactive sales charts.</span>
-        </a>
-        <a href="cleanup.html" class="qa-card qa-card--danger">
-          <span class="qa-plus" aria-hidden="true">+</span>
-          <span class="qa-kicker">Danger Zone</span>
-          <span class="qa-title">Invoice Cleanup.</span>
-          <span class="qa-desc">Permanently delete a test invoice and every trace of it — Firestore records, PDFs, and the invoice counter.</span>
-        </a>
-      </div>
+          <span class="qa-desc">What you've delivered, by buyer and item, with interactive sales charts.</span>
+        </span>
+        <span class="qa-go">Open
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </span>
+      </a>
     </div>
-    <div class="qa-nav">
-      <button type="button" class="qa-arrow" id="qa-prev" aria-label="Previous">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg>
-      </button>
-      <button type="button" class="qa-arrow" id="qa-next" aria-label="Next">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg>
-      </button>
-    </div>
+
+    <a href="cleanup.html" class="qa-card qa-card--danger" style="--i:5">
+      <span class="qa-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"/><path d="M9 7V4h6v3"/></svg>
+      </span>
+      <span class="qa-body">
+        <span class="qa-kicker">Danger Zone</span>
+        <span class="qa-title">Invoice Cleanup.</span>
+        <span class="qa-desc">Permanently delete a test invoice and every trace of it — Firestore records, PDFs, and the invoice counter.</span>
+      </span>
+      <span class="qa-go">Proceed
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </span>
+    </a>
   </section>
 
   <div class="login-card login-enter login-loading-card" id="welcome-loading">
@@ -216,13 +263,6 @@ function reveal(name, role) {
   document.getElementById("welcome-client-soon").hidden = role === "master";
   loadingCard.hidden = true;
   welcomeCard.hidden = false;
-
-  // Pin the carousel back to its resting (left-most) scroll position on
-  // every load -- a browser can otherwise restore whatever scroll/focus
-  // state the track last had (e.g. back-forward navigation), which skips
-  // the left inset and lands mid-carousel instead.
-  var track = document.getElementById("qa-track");
-  if (track) track.scrollLeft = 0;
 }
 
 onAuthStateChanged(auth, function (user) {
@@ -280,34 +320,18 @@ onAuthStateChanged(auth, function (user) {
   });
 });
 
-var qaTrack = document.getElementById("qa-track");
-// One card (plus the track's gap) per arrow click, rather than a
-// fraction of the whole visible width -- so a click always advances by
-// exactly one tile no matter how many fit on screen at once.
-function qaStep() {
-  var card = qaTrack.querySelector(".qa-card");
-  if (!card) return qaTrack.clientWidth;
-  var gap = parseFloat(getComputedStyle(qaTrack).columnGap) || 0;
-  return card.getBoundingClientRect().width + gap;
-}
-document.getElementById("qa-prev").addEventListener("click", function () {
-  qaTrack.scrollBy({ left: -qaStep(), behavior: "smooth" });
-});
-document.getElementById("qa-next").addEventListener("click", function () {
-  qaTrack.scrollBy({ left: qaStep(), behavior: "smooth" });
-});
-
-// Chrome/Safari restore a scrollable element's own scroll position (and
-// whatever card was last focused) on a back-forward-cache restore --
-// "pageshow" fires in that case even though none of the module script
-// above re-runs, so this is the one place that reliably catches it and
-// pins the carousel back to its left-most resting position either way.
-window.addEventListener("pageshow", function () {
-  qaTrack.scrollLeft = 0;
+document.querySelectorAll(".qa-card").forEach(function (card) {
+  card.addEventListener("pointermove", function (e) {
+    var r = card.getBoundingClientRect();
+    card.style.setProperty("--mx", (e.clientX - r.left) + "px");
+    card.style.setProperty("--my", (e.clientY - r.top) + "px");
+  });
 });
 
 document.getElementById("year").textContent = new Date().getFullYear();
 </script>
+<script src="js/nk-select.js?v=1" defer></script>
+<script src="js/ui-fx.js?v=2" defer></script>
 <script src="js/bot-widget.js?v=2" defer></script>
 </body>
 </html>

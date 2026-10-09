@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/main.css?v=61" />
+<link rel="stylesheet" href="css/main.css?v=74" />
 </head>
 <body class="login-page">
 
@@ -25,12 +25,88 @@
 
 <main class="login-shell billing-shell">
   <div class="billing-wrap" id="payments-wrap" hidden>
-    <a href="welcome.html" class="billing-back-link" style="color: var(--ink);">Back to <span style="color: var(--accent);">Dashboard</span></a>
-    <h1 class="welcome-heading" style="font-size: clamp(1.8rem, 4vw, 2.3rem);">Payments.</h1>
-    <p class="welcome-sub">Track which invoices are still pending and mark them cleared as payments come in.</p>
+    <header class="page-hero">
+      <svg class="page-hero-art" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M3 10h18"/><path d="M16 15h2"/></svg>
+      <a href="welcome.html" class="billing-back-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6"/></svg><span>Dashboard</span></a>
+      <span class="page-hero-kicker"><span class="page-hero-index">04</span>Payments</span>
+      <h1 class="welcome-heading page-hero-title">Payments.</h1>
+      <p class="welcome-sub page-hero-sub">Track which invoices are still pending and mark them cleared as payments come in.</p>
+    </header>
 
     <section class="billing-card">
-      <h2 class="billing-card-title">Payments</h2>
+      <div class="chart-card-head">
+        <h2 class="billing-card-title">Overview</h2>
+        <div class="pay-head-actions">
+          <div class="chart-toggle-group" role="group" aria-label="Filter by status">
+            <button type="button" class="chart-toggle-btn is-active" data-status="all">All</button>
+            <button type="button" class="chart-toggle-btn" data-status="pending">Pending</button>
+            <button type="button" class="chart-toggle-btn" data-status="cleared">Cleared</button>
+          </div>
+          <div class="chart-toggle-group" role="group" aria-label="Reset filters">
+            <button type="button" class="chart-toggle-btn" id="pay-reset">Reset</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="pay-filter-row">
+        <div class="login-field">
+          <label>From</label>
+          <div id="pay-from-slot"></div>
+        </div>
+        <div class="login-field">
+          <label>To</label>
+          <div id="pay-to-slot"></div>
+        </div>
+        <div class="pay-presets" role="group" aria-label="Quick date ranges">
+          <button type="button" class="pay-chip" data-preset="month">This month</button>
+          <button type="button" class="pay-chip" data-preset="30">Last 30 days</button>
+          <button type="button" class="pay-chip" data-preset="90">Last 90 days</button>
+          <button type="button" class="pay-chip" data-preset="fy">This FY</button>
+        </div>
+      </div>
+
+      <div class="supply-stats-grid pay-stats-grid">
+        <div class="stat-tile stat-tile--accent">
+          <span class="stat-tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+          <span class="stat-tile-label">Pending Amount</span>
+          <span class="stat-tile-value" id="pay-stat-pending">—</span>
+          <span class="stat-tile-sub" id="pay-stat-pending-sub">&nbsp;</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg></span>
+          <span class="stat-tile-label">Pending Invoices</span>
+          <span class="stat-tile-value mono" id="pay-stat-count">—</span>
+          <span class="stat-tile-sub" id="pay-stat-count-sub">&nbsp;</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 2.6 17.5A2 2 0 0 0 4.3 20.5h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></span>
+          <span class="stat-tile-label">Oldest Pending</span>
+          <span class="stat-tile-value mono" id="pay-stat-oldest">—</span>
+          <span class="stat-tile-sub" id="pay-stat-oldest-sub">&nbsp;</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg></span>
+          <span class="stat-tile-label">Cleared</span>
+          <span class="stat-tile-value" id="pay-stat-cleared">—</span>
+          <span class="stat-tile-sub" id="pay-stat-cleared-sub">&nbsp;</span>
+        </div>
+      </div>
+
+      <div class="pay-aging">
+        <div class="pay-aging-head">
+          <span class="pay-aging-title">Pending by age</span>
+          <span class="pay-aging-note" id="pay-aging-note"></span>
+        </div>
+        <div class="pay-aging-bar" id="pay-aging-bar"></div>
+        <div class="pay-aging-legend" id="pay-aging-legend"></div>
+      </div>
+    </section>
+
+    <section class="billing-card">
+      <div class="chart-card-head">
+        <h2 class="billing-card-title">Payments</h2>
+        <span class="pay-result-count" id="pay-result-count"></span>
+      </div>
       <div class="billing-history-wrap">
         <table class="billing-history-table" id="billing-payments-table">
           <thead>
@@ -49,6 +125,9 @@
             <tr><td colspan="8" class="billing-history-empty">Loading&hellip;</td></tr>
           </tbody>
         </table>
+      </div>
+      <div class="pay-more-row">
+        <button type="button" class="pay-more-btn" id="pay-more" hidden>Show more</button>
       </div>
     </section>
   </div>
@@ -89,6 +168,7 @@
   </div>
 </footer>
 
+<script src="js/datepicker.js?v=1"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
@@ -100,9 +180,6 @@ import {
   getDocs,
   updateDoc,
   collection,
-  query,
-  orderBy,
-  limit,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { enforceSessionTimeout } from "./js/session-guard.js";
@@ -190,39 +267,229 @@ function showConfirmDialog(title, body, confirmLabel) {
 }
 
 // ---------------------------------------------------------------------
-// Payments -- lists every /payments doc sorted by date descending
-// (latest first), regardless of status, and lets a pending invoice be
-// marked cleared, or a cleared one reverted, in place.
+// Payments -- loads every /payments doc once, then filters (date range +
+// status), summarises and pages through them client-side. The full set is
+// needed for a date-range search to reach older bills; the table still
+// renders PAGE_SIZE rows at a time, and each row's invoice PDF link is
+// looked up only once that row is actually shown.
 // ---------------------------------------------------------------------
+var PAGE_SIZE = 50;
+var allPayments = [];
+var paymentsLoaded = false;
+var pdfCache = {};
+var payState = { from: "", to: "", status: "all", shown: PAGE_SIZE };
+var renderToken = 0;
+
+function createdMillis(p) { return p.createdAt && p.createdAt.toMillis ? p.createdAt.toMillis() : 0; }
+function pad2(n) { return (n < 10 ? "0" : "") + n; }
+function localKey(d) { return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()); }
+function setText(id, text) { document.getElementById(id).textContent = text; }
+function plural(n, word) { return n.toLocaleString("en-IN") + " " + word + (n === 1 ? "" : "s"); }
+
+function daysSince(dateStr) {
+  if (!dateStr) return 0;
+  var then = new Date(dateStr + "T00:00:00");
+  var now = new Date();
+  now.setHours(0, 0, 0, 0);
+  return Math.max(0, Math.round((now - then) / 86400000));
+}
+
 function loadPayments() {
   var body = document.getElementById("billing-payments-body");
-  return getDocs(query(collection(db, "payments"), orderBy("createdAt", "desc"), limit(50)))
+  return getDocs(collection(db, "payments"))
     .then(function (snap) {
-      if (snap.empty) {
-        body.innerHTML = '<tr><td colspan="8" class="billing-history-empty">No payments yet.</td></tr>';
-        return;
-      }
       var rows = [];
       snap.forEach(function (d) { rows.push({ id: d.id, data: d.data() }); });
-      rows.sort(function (a, b) { return (b.data.date || "").localeCompare(a.data.date || ""); });
-
-      // A payment doc shares its id with the invoice it was raised from
-      // (see billing.html's invoice-generate/edit flow), so that same id
-      // looks the matching invoice up for its PDF link.
-      return Promise.all(rows.map(function (row) {
-        return getDoc(doc(db, "invoices", row.id))
-          .then(function (invSnap) { row.pdfUrl = invSnap.exists() ? invSnap.data().pdfUrl : null; })
-          .catch(function () { row.pdfUrl = null; });
-      })).then(function () {
-        body.innerHTML = "";
-        rows.forEach(function (row) { body.appendChild(buildPaymentRow(row.id, row.data, row.pdfUrl)); });
+      rows.sort(function (a, b) {
+        return (b.data.date || "").localeCompare(a.data.date || "") || createdMillis(b.data) - createdMillis(a.data);
       });
+      allPayments = rows;
+      paymentsLoaded = true;
+      return renderPayments();
     })
     .catch(function (err) {
       body.innerHTML = '<tr><td colspan="8" class="billing-history-empty">Couldn’t load payments.</td></tr>';
       console.error(err);
     });
 }
+
+function inDateRange(p) {
+  var d = p.date || "";
+  if (payState.from && d < payState.from) return false;
+  if (payState.to && d > payState.to) return false;
+  return true;
+}
+
+var AGING_BUCKETS = [
+  { label: "0–30 days", max: 30, cls: "is-fresh" },
+  { label: "31–60 days", max: 60, cls: "is-warm" },
+  { label: "60+ days", max: Infinity, cls: "is-hot" }
+];
+
+function renderPaySummary(rows) {
+  var pending = rows.filter(function (r) { return r.data.status !== "cleared"; });
+  var cleared = rows.filter(function (r) { return r.data.status === "cleared"; });
+  var pendingAmt = 0, clearedAmt = 0, oldest = null;
+  pending.forEach(function (r) {
+    pendingAmt += r.data.amount || 0;
+    if (!oldest || (r.data.date || "") < (oldest.data.date || "")) oldest = r;
+  });
+  cleared.forEach(function (r) { clearedAmt += r.data.amount || 0; });
+  var total = pendingAmt + clearedAmt;
+
+  setText("pay-stat-pending", formatCurrency(pendingAmt));
+  setText("pay-stat-pending-sub", total ? Math.round(pendingAmt / total * 100) + "% of billed amount" : "Nothing billed in this range");
+  setText("pay-stat-count", pending.length.toLocaleString("en-IN"));
+  setText("pay-stat-count-sub", "of " + plural(rows.length, "invoice"));
+  if (oldest) {
+    setText("pay-stat-oldest", daysSince(oldest.data.date) + " days");
+    setText("pay-stat-oldest-sub", (oldest.data.invoiceNo || "") + " · " + formatDisplayDate(oldest.data.date));
+  } else {
+    setText("pay-stat-oldest", "—");
+    setText("pay-stat-oldest-sub", "Nothing pending");
+  }
+  setText("pay-stat-cleared", formatCurrency(clearedAmt));
+  setText("pay-stat-cleared-sub", plural(cleared.length, "invoice"));
+
+  var buckets = AGING_BUCKETS.map(function (b) { return { b: b, amount: 0, count: 0 }; });
+  pending.forEach(function (r) {
+    var age = daysSince(r.data.date);
+    for (var i = 0; i < buckets.length; i++) {
+      if (age <= buckets[i].b.max) { buckets[i].amount += r.data.amount || 0; buckets[i].count++; break; }
+    }
+  });
+
+  var bar = document.getElementById("pay-aging-bar");
+  if (!bar.querySelector(".pay-aging-seg")) {
+    bar.innerHTML = buckets.map(function (bk) { return '<span class="pay-aging-seg ' + bk.b.cls + '"></span>'; }).join("") +
+      '<span class="pay-aging-empty">No pending payments in this range.</span>';
+    void bar.offsetWidth;
+  }
+  var segs = bar.querySelectorAll(".pay-aging-seg");
+  buckets.forEach(function (bk, i) {
+    segs[i].style.width = (pendingAmt ? bk.amount / pendingAmt * 100 : 0) + "%";
+    segs[i].title = bk.b.label + ": " + formatCurrency(bk.amount) + " · " + plural(bk.count, "invoice");
+  });
+  bar.classList.toggle("is-empty", !pendingAmt);
+  setText("pay-aging-note", pending.length ? formatCurrency(pendingAmt) + " outstanding" : "");
+  document.getElementById("pay-aging-legend").innerHTML = buckets.map(function (bk) {
+    return '<div class="pay-aging-item ' + bk.b.cls + '">' +
+      '<span class="pay-aging-dot"></span>' +
+      '<span class="pay-aging-label">' + bk.b.label + "</span>" +
+      '<span class="pay-aging-amt">' + formatCurrency(bk.amount) + "</span>" +
+      '<span class="pay-aging-cnt">' + plural(bk.count, "invoice") + "</span>" +
+      "</div>";
+  }).join("");
+}
+
+function renderPayments() {
+  if (!paymentsLoaded) return;
+  var token = ++renderToken;
+  var body = document.getElementById("billing-payments-body");
+  var inRange = allPayments.filter(function (r) { return inDateRange(r.data); });
+  renderPaySummary(inRange);
+
+  var rows = inRange.filter(function (r) {
+    if (payState.status === "all") return true;
+    return payState.status === "cleared" ? r.data.status === "cleared" : r.data.status !== "cleared";
+  });
+  var visible = rows.slice(0, payState.shown);
+  setText("pay-result-count", rows.length ? "Showing " + visible.length.toLocaleString("en-IN") + " of " + rows.length.toLocaleString("en-IN") : "");
+  var moreBtn = document.getElementById("pay-more");
+  moreBtn.hidden = rows.length <= visible.length;
+  moreBtn.textContent = "Show more (" + (rows.length - visible.length).toLocaleString("en-IN") + " left)";
+
+  if (!rows.length) {
+    body.innerHTML = '<tr><td colspan="8" class="billing-history-empty">' +
+      (allPayments.length ? "No payments match these filters." : "No payments yet.") + "</td></tr>";
+    return;
+  }
+
+  // A payment doc shares its id with the invoice it was raised from
+  // (see billing.html's invoice-generate/edit flow), so that same id
+  // looks the matching invoice up for its PDF link.
+  return Promise.all(visible.map(function (row) {
+    if (row.id in pdfCache) return null;
+    return getDoc(doc(db, "invoices", row.id))
+      .then(function (invSnap) { pdfCache[row.id] = invSnap.exists() ? invSnap.data().pdfUrl : null; })
+      .catch(function () { pdfCache[row.id] = null; });
+  })).then(function () {
+    if (token !== renderToken) return;
+    body.innerHTML = "";
+    visible.forEach(function (row) { body.appendChild(buildPaymentRow(row.id, row.data, pdfCache[row.id])); });
+  });
+}
+
+// ---- Filters: date range, quick presets, status ----
+var presetChips = document.querySelectorAll(".pay-chip");
+function markPreset(name) {
+  presetChips.forEach(function (c) { c.classList.toggle("is-active", c.dataset.preset === name); });
+}
+function setRange(from, to) {
+  payState.from = from;
+  payState.to = to;
+  fromPicker.value = from;
+  toPicker.value = to;
+  fromPicker.setMax(to);
+  toPicker.setMin(from);
+  payState.shown = PAGE_SIZE;
+  renderPayments();
+}
+var fromPicker = NKDatePicker.create({
+  placeholder: "Any date",
+  clearable: true,
+  onChange: function (v) { markPreset(""); setRange(v, payState.to); }
+});
+var toPicker = NKDatePicker.create({
+  placeholder: "Any date",
+  clearable: true,
+  onChange: function (v) { markPreset(""); setRange(payState.from, v); }
+});
+document.getElementById("pay-from-slot").appendChild(fromPicker.el);
+document.getElementById("pay-to-slot").appendChild(toPicker.el);
+
+presetChips.forEach(function (chip) {
+  chip.addEventListener("click", function () {
+    var name = chip.dataset.preset;
+    if (chip.classList.contains("is-active")) { markPreset(""); setRange("", ""); return; }
+    var now = new Date();
+    var from;
+    if (name === "month") {
+      from = localKey(new Date(now.getFullYear(), now.getMonth(), 1));
+    } else if (name === "fy") {
+      from = (now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1) + "-04-01";
+    } else {
+      var d = new Date(now);
+      d.setDate(d.getDate() - (parseInt(name, 10) - 1));
+      from = localKey(d);
+    }
+    markPreset(name);
+    setRange(from, localKey(now));
+  });
+});
+
+var statusBtns = document.querySelectorAll("[data-status]");
+function setStatus(status) {
+  payState.status = status;
+  statusBtns.forEach(function (b) { b.classList.toggle("is-active", b.dataset.status === status); });
+  payState.shown = PAGE_SIZE;
+  renderPayments();
+}
+statusBtns.forEach(function (b) {
+  b.addEventListener("click", function () { if (payState.status !== b.dataset.status) setStatus(b.dataset.status); });
+});
+
+document.getElementById("pay-reset").addEventListener("click", function () {
+  markPreset("");
+  payState.status = "all";
+  statusBtns.forEach(function (b) { b.classList.toggle("is-active", b.dataset.status === "all"); });
+  setRange("", "");
+});
+
+document.getElementById("pay-more").addEventListener("click", function () {
+  payState.shown += PAGE_SIZE;
+  renderPayments();
+});
 
 function buildPaymentRow(paymentId, pay, pdfUrl) {
   var isCleared = pay.status === "cleared";
@@ -233,16 +500,17 @@ function buildPaymentRow(paymentId, pay, pdfUrl) {
     "<td>" + (pay.buyerName || "") + "</td>" +
     "<td>" + formatCurrency(pay.amount || 0) + "</td>" +
     "<td><span class=\"billing-payment-status " + (isCleared ? "is-cleared" : "is-pending") + "\">" +
-      (isCleared ? "Cleared" : "Pending") + "</span></td>" +
+      (isCleared ? "Cleared" : "Pending") + "</span>" +
+      (isCleared ? "" : '<span class="pay-age' + (daysSince(pay.date) > 60 ? " is-late" : "") + '">' + daysSince(pay.date) + "d</span>") + "</td>" +
     "<td>" + (isCleared ? formatDisplayDate(pay.clearedOn) : "—") + "</td>" +
-    "<td>" + (pdfUrl ? '<a href="' + pdfUrl + '" target="_blank" rel="noopener">View</a>' : "—") + "</td>" +
+    "<td>" + (pdfUrl ? '<a class="pay-pdf-link" href="' + pdfUrl + '" target="_blank" rel="noopener">View<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>' : "—") + "</td>" +
     "<td></td>";
 
   var actionCell = tr.lastElementChild;
   if (isCleared) {
     var undoBtn = document.createElement("button");
     undoBtn.type = "button";
-    undoBtn.className = "billing-ratecard-link-btn";
+    undoBtn.className = "pay-action-btn pay-action-btn--ghost";
     undoBtn.textContent = "Mark pending";
     undoBtn.addEventListener("click", function () {
       showConfirmDialog(
@@ -261,17 +529,15 @@ function buildPaymentRow(paymentId, pay, pdfUrl) {
   } else {
     var clearBtn = document.createElement("button");
     clearBtn.type = "button";
-    clearBtn.className = "billing-seed-btn";
+    clearBtn.className = "billing-seed-btn pay-action-btn";
     clearBtn.textContent = "Mark cleared";
     clearBtn.addEventListener("click", function () {
       actionCell.innerHTML = "";
       var wrap = document.createElement("div");
       wrap.className = "billing-payment-clear-row";
 
-      var dateInputEl = document.createElement("input");
-      dateInputEl.type = "date";
-      dateInputEl.value = new Date().toISOString().slice(0, 10);
-      dateInputEl.max = new Date().toISOString().slice(0, 10);
+      var todayIso = NKDatePicker.today();
+      var dateInputEl = NKDatePicker.create({ value: todayIso, max: todayIso, compact: true, align: "right" });
 
       var confirmBtn = document.createElement("button");
       confirmBtn.type = "button";
@@ -295,7 +561,7 @@ function buildPaymentRow(paymentId, pay, pdfUrl) {
       cancelBtn.innerHTML = "&times;";
       cancelBtn.addEventListener("click", function () { loadPayments(); });
 
-      wrap.appendChild(dateInputEl);
+      wrap.appendChild(dateInputEl.el);
       wrap.appendChild(confirmBtn);
       wrap.appendChild(cancelBtn);
       actionCell.appendChild(wrap);
@@ -332,6 +598,8 @@ onAuthStateChanged(auth, function (user) {
   });
 });
 </script>
+<script src="js/nk-select.js?v=1" defer></script>
+<script src="js/ui-fx.js?v=2" defer></script>
 <script src="js/bot-widget.js?v=2" defer></script>
 </body>
 </html>
