@@ -218,8 +218,7 @@ function initProcessBelt() {
 
   function evaluateMode() {
     var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    var isMobile = window.innerWidth < 480;
-    var wantDesktop = gsapReady && !!api && !!svg && !reduceMotion && !isMobile;
+    var wantDesktop = gsapReady && !!api && !!svg && !reduceMotion;
     var wantMode = wantDesktop ? "desktop" : "static";
     if (wantMode === currentMode) return;
 

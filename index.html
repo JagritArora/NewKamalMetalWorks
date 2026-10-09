@@ -28,9 +28,9 @@
 <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/main.css?v=76" />
+<link rel="stylesheet" href="css/main.css?v=84" />
 </head>
-<body>
+<body class="home">
 <script src="js/page-transition.js?v=1"></script>
 
 <nav class="site-nav">
@@ -46,6 +46,7 @@
     <li><a href="login.html" class="nav-login">Login</a></li>
   </ul>
   <button class="nav-toggle" id="nav-toggle" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+  <span class="nav-progress" aria-hidden="true"></span>
 </nav>
 
 <main>
@@ -53,7 +54,8 @@
     <div class="container">
 
       <div class="hero-copy">
-        <h1 class="hero-headline">Precision Sheet Metal Parts, Built to Your Drawing.</h1>
+        <span class="hero-kicker"><span class="hero-kicker-dot" aria-hidden="true"></span>ISO 9001:2015 certified &middot; Faridabad, since 1999</span>
+        <h1 class="hero-headline">Precision Sheet Metal Parts, Built to <span class="hero-accent">Your Drawing.</span></h1>
         <p class="hero-sub">Blanking, punching, bending and plating under one roof &mdash; one vendor accountable for the whole part, from raw coil to finished coat.</p>
         <div class="hero-cta">
           <a href="#contact" class="btn btn-primary">Request a quote</a>
@@ -61,22 +63,26 @@
         </div>
       </div>
 
+      <div class="hero-visual">
+      <span class="hero-badge hero-badge--a"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M8.3 12.4 10.8 15l5-6"/></svg>First-article approved</span>
+      <span class="hero-badge hero-badge--b"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20 14 10"/><circle cx="17" cy="7" r="3"/><path d="M4 20h4"/></svg>Dies built in-house</span>
       <div class="spec-panel">
+        <span class="spec-scan" aria-hidden="true"></span>
         <svg viewBox="0 0 320 210" role="img" aria-label="Technical drawing of a stamped sheet metal bracket with two mounting holes and dimension callouts">
-          <path class="spec-outline" d="M40,20 L280,20 L300,40 L300,140 L280,160 L40,160 L20,140 L20,40 Z"/>
-          <circle class="spec-hole" cx="90" cy="90" r="14"/>
-          <circle class="spec-hole" cx="230" cy="90" r="14"/>
+          <path class="spec-outline" pathLength="1" d="M40,20 L280,20 L300,40 L300,140 L280,160 L40,160 L20,140 L20,40 Z"/>
+          <circle class="spec-hole" pathLength="1" cx="90" cy="90" r="14"/>
+          <circle class="spec-hole" pathLength="1" cx="230" cy="90" r="14"/>
           <text class="spec-dim-label" x="90" y="118" text-anchor="middle">&#8960;14 (2x)</text>
 
-          <line class="spec-dim" x1="20" y1="178" x2="300" y2="178"/>
-          <line class="spec-dim" x1="20" y1="165" x2="20" y2="182"/>
-          <line class="spec-dim" x1="300" y1="165" x2="300" y2="182"/>
+          <line class="spec-dim" pathLength="1" x1="20" y1="178" x2="300" y2="178"/>
+          <line class="spec-dim" pathLength="1" x1="20" y1="165" x2="20" y2="182"/>
+          <line class="spec-dim" pathLength="1" x1="300" y1="165" x2="300" y2="182"/>
           <text class="spec-dim-label" x="160" y="196" text-anchor="middle">280 mm</text>
 
-          <line class="spec-dim" x1="8" y1="20" x2="8" y2="160"/>
-          <line class="spec-dim" x1="2" y1="20" x2="14" y2="20"/>
-          <line class="spec-dim" x1="2" y1="160" x2="14" y2="160"/>
-          <text class="spec-dim-label" x="8" y="14" text-anchor="middle">140 mm</text>
+          <line class="spec-dim" pathLength="1" x1="8" y1="20" x2="8" y2="160"/>
+          <line class="spec-dim" pathLength="1" x1="2" y1="20" x2="14" y2="20"/>
+          <line class="spec-dim" pathLength="1" x1="2" y1="160" x2="14" y2="160"/>
+          <text class="spec-dim-label" x="2" y="12" text-anchor="start">140 mm</text>
         </svg>
         <div class="spec-row">
           <div class="spec-item"><span class="label">Material</span><span class="value">Galvanized Steel</span></div>
@@ -84,7 +90,104 @@
           <div class="spec-item"><span class="label">Tolerance</span><span class="value">&#177;0.1 mm</span></div>
         </div>
       </div>
+      </div>
 
+    </div>
+    <a href="#numbers" class="hero-scroll" aria-label="Scroll down"><span class="hero-scroll-mouse" aria-hidden="true"><span></span></span><span class="hero-scroll-label mono">Scroll</span></a>
+  </section>
+
+  <section class="marquee" aria-label="What we make">
+    <div class="marquee-row" data-marquee>
+      <div class="marquee-track">
+        <span class="mq-item">Sheet Metal Parts</span><span class="mq-sep" aria-hidden="true"></span>
+        <span class="mq-item mq-item--outline">Fabricated Parts</span><span class="mq-sep" aria-hidden="true"></span>
+        <span class="mq-item">Metal Stampings</span><span class="mq-sep" aria-hidden="true"></span>
+        <span class="mq-item mq-item--outline">Pressed Components</span><span class="mq-sep" aria-hidden="true"></span>
+        <span class="mq-item">Powder Coated Parts</span><span class="mq-sep" aria-hidden="true"></span>
+        <span class="mq-item mq-item--outline">Washers</span><span class="mq-sep" aria-hidden="true"></span>
+      </div>
+    </div>
+    <div class="marquee-row marquee-row--reverse marquee-row--small" data-marquee aria-hidden="true">
+      <div class="marquee-track">
+        <span class="mq-op mono">Blanking</span><span class="mq-op mono">Punching</span><span class="mq-op mono">Bending</span><span class="mq-op mono">Plating</span>
+        <span class="mq-op mono">Embossing</span><span class="mq-op mono">Threading</span><span class="mq-op mono">Notching</span><span class="mq-op mono">Knurling</span>
+        <span class="mq-op mono">In-house dies</span><span class="mq-op mono">ISO 9001:2015</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="numbers" class="stats" aria-label="New Kamal Metal Works at a glance">
+    <div class="container">
+      <div class="stats-head reveal">
+        <span class="section-kicker">At a glance</span>
+        <h2 class="section-heading">One Roof. Every Step<br>the Part Needs.</h2>
+      </div>
+      <div class="stats-grid">
+        <article class="stat-card stat-card--feature spot reveal">
+          <span class="stat-card-kicker">In business since 1999</span>
+          <div class="stat-card-figure"><span data-count="years">0</span><span class="stat-card-unit">years</span></div>
+          <p class="stat-card-label">Pressing and fabricating parts to customer drawings in Faridabad.</p>
+          <div class="stat-timeline" aria-hidden="true">
+            <span class="st-year">1999</span>
+            <span class="st-track"><span class="st-fill"></span><span class="st-dot"></span></span>
+            <span class="st-year" data-year-now>Today</span>
+          </div>
+        </article>
+
+        <article class="stat-card spot reveal">
+          <span class="stat-card-kicker">One continuous line</span>
+          <div class="stat-card-figure"><span data-count="4">0</span></div>
+          <p class="stat-card-label">Press operations under one roof</p>
+          <ol class="stat-steps" aria-label="Blanking, punching, bending, plating">
+            <li>Blank</li><li>Punch</li><li>Bend</li><li>Plate</li>
+          </ol>
+        </article>
+
+        <article class="stat-card spot reveal">
+          <span class="stat-card-kicker">Added to the same job</span>
+          <div class="stat-card-figure"><span data-count="4">0</span></div>
+          <p class="stat-card-label">Finishing operations</p>
+          <ul class="stat-ops" aria-label="Embossing, threading, notching, knurling">
+            <li title="Embossing"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="1"/><circle cx="12" cy="12" r="3.5"/></svg></li>
+            <li title="Threading"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 3h7L17 5.5 15.5 8h-7L7 5.5 8.5 3Z"/><path d="M9.5 8v13M14.5 8v13M9 11.5h6M9 15h6M9 18.5h6"/></svg></li>
+            <li title="Notching"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h11l5 5v11H4V4Z"/><path d="M15 4v5h5"/></svg></li>
+            <li title="Knurling"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8 8 4M9 8 13 4M14 8 18 4M4 13l4-4M9 13l4-4M14 13l4-4M4 18l4-4M9 18l4-4M14 18l4-4"/></svg></li>
+          </ul>
+        </article>
+
+        <article class="stat-card stat-card--wide spot reveal">
+          <div class="stat-card-split">
+            <div>
+              <span class="stat-card-kicker">Sourced to spec</span>
+              <div class="stat-card-figure"><span data-count="6">0</span></div>
+              <p class="stat-card-label">Materials, from CRCA sheet to Bakelite</p>
+            </div>
+            <ul class="stat-swatches" aria-label="CRCA, PB strip, bronze, spring steel, GI sheet, Bakelite">
+              <li style="--sw:#9aa3ab"><span>CRCA</span></li>
+              <li style="--sw:#c9965a"><span>PB Strip</span></li>
+              <li style="--sw:#a8743c"><span>Bronze</span></li>
+              <li style="--sw:#5d6873"><span>Spring</span></li>
+              <li style="--sw:#cfd6dc"><span>GI</span></li>
+              <li style="--sw:#6e3b25"><span>Bakelite</span></li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="stat-card stat-card--wide spot reveal">
+          <div class="stat-card-split">
+            <div>
+              <span class="stat-card-kicker">Certified quality system</span>
+              <div class="stat-card-figure stat-card-figure--text">ISO 9001:2015</div>
+              <p class="stat-card-label">Certificate valid through September 2029</p>
+            </div>
+            <svg class="stat-seal" viewBox="0 0 100 100" aria-hidden="true">
+              <circle class="stat-seal-track" cx="50" cy="50" r="42"/>
+              <circle class="stat-seal-ring" cx="50" cy="50" r="42" pathLength="1"/>
+              <path class="stat-seal-check" pathLength="1" d="M34 51.5 45 62l22-24"/>
+            </svg>
+          </div>
+        </article>
+      </div>
     </div>
   </section>
 
@@ -231,53 +334,72 @@
           <p class="mat-panel-sub">Metals, alloys and engineering plastics &mdash; sourced to spec and run on tooling that suits them, whatever the drawing calls for.</p>
         </div>
 
+        <div class="mat-filter" role="group" aria-label="Filter materials by what the part needs">
+          <span class="mat-filter-label mono">The part needs</span>
+          <button type="button" class="mat-chip is-active" data-trait="all">Anything</button>
+          <button type="button" class="mat-chip" data-trait="finish">A clean finish</button>
+          <button type="button" class="mat-chip" data-trait="spring">To spring back</button>
+          <button type="button" class="mat-chip" data-trait="conductive">To conduct</button>
+          <button type="button" class="mat-chip" data-trait="friction">Low friction</button>
+          <button type="button" class="mat-chip" data-trait="corrosion">To resist rust</button>
+          <button type="button" class="mat-chip" data-trait="fatigue">Repeated loading</button>
+          <button type="button" class="mat-chip" data-trait="insulation">Insulation</button>
+        </div>
+        <p class="mat-filter-count mono" aria-live="polite"></p>
+
         <div class="mat-grid">
-          <article class="mat-tile">
+          <article class="mat-tile spot" data-traits="finish">
             <svg class="mat-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5.5" width="16" height="3" rx="1"/><rect x="4" y="10.5" width="16" height="3" rx="1"/><rect x="4" y="15.5" width="16" height="3" rx="1"/></svg>
             <span class="mat-tag">CRCA</span>
             <h3 class="mat-highlight">Tight-Tolerance Sheet</h3>
             <p class="mat-sub">Formed into enclosures, brackets and stamped body parts.</p>
             <p class="mat-sub">Specified where a clean, consistent surface finish matters.</p>
+            <ul class="mat-traits"><li>Clean finish</li><li>Tight tolerance</li></ul>
           </article>
 
-          <article class="mat-tile">
+          <article class="mat-tile spot" data-traits="spring conductive">
             <svg class="mat-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12c1.6-5 3.2-5 4.8 0s3.2 5 4.8 0 3.2-5 4.8 0 3.2 5 4.8 0"/></svg>
             <span class="mat-tag">PB Strip</span>
             <h3 class="mat-highlight">Spring-Temper Stock</h3>
             <p class="mat-sub">Pressed into electrical contacts, connectors and switchgear parts.</p>
             <p class="mat-sub">Specified where a part needs to flex, spring back and keep conducting.</p>
+            <ul class="mat-traits"><li>Springs back</li><li>Conducts</li></ul>
           </article>
 
-          <article class="mat-tile">
+          <article class="mat-tile spot" data-traits="friction corrosion">
             <svg class="mat-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg>
             <span class="mat-tag">Bronze</span>
             <h3 class="mat-highlight">Low-Friction, Corrosion-Resistant</h3>
             <p class="mat-sub">Machined into bushings, bearings and wear fittings.</p>
             <p class="mat-sub">Specified where two metal parts move against each other.</p>
+            <ul class="mat-traits"><li>Low friction</li><li>Resists rust</li></ul>
           </article>
 
-          <article class="mat-tile">
+          <article class="mat-tile spot" data-traits="spring fatigue">
             <svg class="mat-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 15c4-9 12-9 16 0"/><path d="M4 15v3"/><path d="M20 15v3"/></svg>
             <span class="mat-tag">Spring Steel</span>
             <h3 class="mat-highlight">High-Tensile, Fatigue-Resistant</h3>
             <p class="mat-sub">Formed into clips, leaf springs and load-bearing fasteners.</p>
             <p class="mat-sub">Specified where a part is loaded and released, cycle after cycle.</p>
+            <ul class="mat-traits"><li>Springs back</li><li>Repeated loading</li></ul>
           </article>
 
-          <article class="mat-tile">
+          <article class="mat-tile spot" data-traits="corrosion">
             <svg class="mat-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v6c0 5-3 8-7 9-4-1-7-4-7-9V6l7-3Z"/></svg>
             <span class="mat-tag">GI Sheet</span>
             <h3 class="mat-highlight">Zinc-Coated, Weather-Ready</h3>
             <p class="mat-sub">Formed into outdoor enclosures, ducting and structural cladding.</p>
             <p class="mat-sub">Specified where the part lives outdoors and has to resist rust.</p>
+            <ul class="mat-traits"><li>Resists rust</li><li>Outdoor use</li></ul>
           </article>
 
-          <article class="mat-tile">
+          <article class="mat-tile spot" data-traits="insulation">
             <svg class="mat-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 19.5 7v10L12 21.5 4.5 17V7L12 2.5Z"/></svg>
             <span class="mat-tag">Bakelite</span>
             <h3 class="mat-highlight">Heat &amp; Insulation Rated</h3>
             <p class="mat-sub">Cut and machined into switchgear bodies, handles and insulating mounts.</p>
             <p class="mat-sub">Specified where a part sits near heat and can't carry current.</p>
+            <ul class="mat-traits"><li>Insulating</li><li>Heat rated</li></ul>
           </article>
         </div>
       </div>
@@ -290,35 +412,40 @@
       <h2 class="tooling-title reveal">A Part Is Only as Good<br>as the Tool Behind It.</h2>
       <p class="tooling-sub reveal">Every component starts as a die, not a sheet. We design, build and maintain our own progressive and compound tools in-house &mdash; so tolerance, cycle time and tool life are settled long before your first production run.</p>
 
-      <div class="tooling-grid">
-        <div class="tooling-tile reveal">
+      <div class="tooling-flow">
+        <span class="tooling-line" aria-hidden="true"><span class="tooling-line-fill"></span><span class="tooling-line-pulse"></span></span>
+        <div class="tooling-grid">
+        <div class="tooling-tile reveal" style="--step:0">
+          <span class="tooling-step mono">01</span>
           <span class="tooling-icon-badge"><svg class="tooling-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20 14 10"/><circle cx="17" cy="7" r="3"/><path d="M4 20h4"/></svg></span>
-          <h3 class="tooling-tile-title">In-House Die Design<br>&amp; Build</h3>
+          <h3 class="tooling-tile-title">In-House Die Design <br>&amp; Build</h3>
           <span class="tooling-rule"></span>
           <p class="tooling-tile-desc">Tools are engineered and built on-site, station by station, before the first sheet ever runs.</p>
         </div>
-
-        <div class="tooling-tile reveal">
+        <div class="tooling-tile reveal" style="--step:1">
+          <span class="tooling-step mono">02</span>
           <span class="tooling-icon-badge"><svg class="tooling-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="9" width="18" height="6" rx="1"/><path d="M8 9v6M13 9v6"/></svg></span>
-          <h3 class="tooling-tile-title">Progressive &amp;<br>Compound Tooling</h3>
+          <h3 class="tooling-tile-title">Progressive &amp; <br>Compound Tooling</h3>
           <span class="tooling-rule"></span>
           <p class="tooling-tile-desc">One strip, many stations, a single pass &mdash; fewer handlings per part, and lower cost at volume.</p>
         </div>
-
-        <div class="tooling-tile reveal">
-          <span class="tooling-icon-badge"><svg class="tooling-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 1-5.4 5.4L4 17l3 3 5.3-5.3a4 4 0 0 1 5.4-5.4l-3-3-2 2Z"/></svg></span>
-          <h3 class="tooling-tile-title">Tool Maintenance<br>&amp; Repair</h3>
-          <span class="tooling-rule"></span>
-          <p class="tooling-tile-desc">Dies are serviced and re-ground in-house, so tool wear never becomes your delivery problem.</p>
-        </div>
-
-        <div class="tooling-tile reveal">
+        <div class="tooling-tile reveal" style="--step:2">
+          <span class="tooling-step mono">03</span>
           <span class="tooling-icon-badge"><svg class="tooling-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 12.5 11 15l4.5-5"/><circle cx="12" cy="12" r="9"/></svg></span>
-          <h3 class="tooling-tile-title">First-Article<br>Approval</h3>
+          <h3 class="tooling-tile-title">First-Article <br>Approval</h3>
           <span class="tooling-rule"></span>
           <p class="tooling-tile-desc">Every new tool proves itself on a first-article sample before a full run is cleared.</p>
         </div>
+        <div class="tooling-tile reveal" style="--step:3">
+          <span class="tooling-step mono">04</span>
+          <span class="tooling-icon-badge"><svg class="tooling-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 1-5.4 5.4L4 17l3 3 5.3-5.3a4 4 0 0 1 5.4-5.4l-3-3-2 2Z"/></svg></span>
+          <h3 class="tooling-tile-title">Tool Maintenance <br>&amp; Repair</h3>
+          <span class="tooling-rule"></span>
+          <p class="tooling-tile-desc">Dies are serviced and re-ground in-house, so tool wear never becomes your delivery problem.</p>
+        </div>
+        </div>
       </div>
+      <p class="tooling-loop reveal"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v4h-4"/></svg>Every die comes back for service in-house &mdash; then goes straight back on the line.</p>
     </div>
   </section>
 
@@ -331,33 +458,45 @@
       </div>
 
       <div class="qual-layout">
-        <div class="qual-grid">
-          <article class="qual-tile reveal">
-            <svg class="qual-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h11l5 5v11H4Z"/><path d="M15 4v5h5"/><path d="M8 13h8M8 17h5"/></svg>
-            <h3 class="qual-tile-title">Incoming Material Checks</h3>
-            <p class="qual-tile-desc">Coil and sheet stock verified against mill test certificates before it's released to the floor.</p>
-          </article>
-
-          <article class="qual-tile reveal">
-            <svg class="qual-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.3 15.3 21 21"/></svg>
-            <h3 class="qual-tile-title">First-Article &amp; In-Process Inspection</h3>
-            <p class="qual-tile-desc">Every new tool is sampled and measured before a full run starts, then re-checked at intervals through it.</p>
-          </article>
-
-          <article class="qual-tile reveal">
-            <svg class="qual-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l2-6 4 12 2-6h6"/></svg>
-            <h3 class="qual-tile-title">Calibrated Gauging</h3>
-            <p class="qual-tile-desc">Dimensions confirmed with calibrated plug, ring and fixture gauges at the press, not only at final QC.</p>
-          </article>
-
-          <article class="qual-tile reveal">
-            <svg class="qual-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 12l2 2 4-4"/></svg>
-            <h3 class="qual-tile-title">Final Inspection &amp; Traceability</h3>
-            <p class="qual-tile-desc">Each lot is checked, recorded and traceable back to the raw material batch before it ships.</p>
-          </article>
+        <div class="qtl" data-qtl>
+          <span class="qtl-rail" aria-hidden="true"><span class="qtl-rail-fill"></span></span>
+          <ol class="qtl-list">
+          <li class="qtl-step">
+            <span class="qtl-node"><svg class="qual-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h11l5 5v11H4Z"/><path d="M15 4v5h5"/><path d="M8 13h8M8 17h5"/></svg></span>
+            <div class="qtl-card spot">
+              <span class="qtl-stage mono">Stage 01 &middot; Before release to the floor</span>
+              <h3 class="qual-tile-title">Incoming Material Checks</h3>
+              <p class="qual-tile-desc">Coil and sheet stock verified against mill test certificates before it's released to the floor.</p>
+            </div>
+          </li>
+          <li class="qtl-step">
+            <span class="qtl-node"><svg class="qual-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.3 15.3 21 21"/></svg></span>
+            <div class="qtl-card spot">
+              <span class="qtl-stage mono">Stage 02 &middot; Before &amp; through the run</span>
+              <h3 class="qual-tile-title">First-Article &amp; In-Process Inspection</h3>
+              <p class="qual-tile-desc">Every new tool is sampled and measured before a full run starts, then re-checked at intervals through it.</p>
+            </div>
+          </li>
+          <li class="qtl-step">
+            <span class="qtl-node"><svg class="qual-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l2-6 4 12 2-6h6"/></svg></span>
+            <div class="qtl-card spot">
+              <span class="qtl-stage mono">Stage 03 &middot; At the press</span>
+              <h3 class="qual-tile-title">Calibrated Gauging</h3>
+              <p class="qual-tile-desc">Dimensions confirmed with calibrated plug, ring and fixture gauges at the press, not only at final QC.</p>
+            </div>
+          </li>
+          <li class="qtl-step">
+            <span class="qtl-node"><svg class="qual-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 12l2 2 4-4"/></svg></span>
+            <div class="qtl-card spot">
+              <span class="qtl-stage mono">Stage 04 &middot; Before it ships</span>
+              <h3 class="qual-tile-title">Final Inspection &amp; Traceability</h3>
+              <p class="qual-tile-desc">Each lot is checked, recorded and traceable back to the raw material batch before it ships.</p>
+            </div>
+          </li>
+          </ol>
         </div>
 
-        <aside class="qual-cert reveal">
+        <aside class="qual-cert spot reveal">
           <span class="qual-cert-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M8.3 12.4 10.8 15l5-6"/></svg></span>
           <span class="qual-cert-eyebrow">Certified</span>
           <h3 class="qual-cert-title">ISO 9001:2015</h3>
@@ -367,6 +506,10 @@
             <div><dt>Certified by</dt><dd>QRO Certification LLP</dd></div>
             <div><dt>Valid through</dt><dd>15 September 2029</dd></div>
           </dl>
+          <div class="qual-cert-days" data-valid-until="2029-09-15">
+            <span class="qual-cert-days-num mono" data-days-left>&mdash;</span>
+            <span class="qual-cert-days-label">days of certification remaining</span>
+          </div>
         </aside>
       </div>
     </div>
@@ -374,6 +517,7 @@
 
   <section id="about" class="profile">
     <div class="container">
+      <span class="profile-watermark" aria-hidden="true" data-parallax>1999</span>
       <div class="profile-head reveal">
         <span class="profile-kicker">Profile</span>
         <h2 class="profile-title">Customer and Quality<br>First, Since 1999.</h2>
@@ -401,7 +545,7 @@
           </div>
         </div>
 
-        <aside class="profile-message reveal">
+        <aside class="profile-message spot reveal">
           <span class="profile-message-year">1999</span>
           <span class="profile-message-label">Our Message</span>
           <p class="profile-message-quote">&ldquo;We began as a maker of sheet metal components, and we have held to a single motto ever since &mdash; customer and quality first.&rdquo;</p>
@@ -419,7 +563,7 @@
         <p class="contact-sub">Call, message on WhatsApp, or email it across &mdash; we'll come back with a price and a lead time.</p>
       </div>
 
-      <div class="contact-card reveal">
+      <div class="contact-card spot reveal">
         <div class="contact-card-info">
           <ul class="contact-meta">
             <li><span>Firm</span><strong>New Kamal Metal Works</strong></li>
@@ -443,17 +587,17 @@
       </div>
 
       <div class="contact-actions">
-        <a class="contact-action reveal" href="tel:+919818650504">
+        <a class="contact-action spot reveal" href="tel:+919818650504">
           <span class="contact-action-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 4h3l1.5 4-2 1.5a11 11 0 0 0 5.5 5.5L16 13l4 1.5v3a2 2 0 0 1-2.2 2C11.5 18.8 5.2 12.5 4.5 6.2A2 2 0 0 1 6.5 4Z"/></svg></span>
           <span class="contact-action-title">Call Us</span>
           <span class="contact-action-sub">+91 98186 50504</span>
         </a>
-        <a class="contact-action reveal" href="https://wa.me/919818650504" target="_blank" rel="noopener">
+        <a class="contact-action spot reveal" href="https://wa.me/919818650504" target="_blank" rel="noopener">
           <span class="contact-action-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5a8.5 8.5 0 0 0-7.3 12.8L3.5 20.5l4.3-1.2A8.5 8.5 0 1 0 12 3.5Z"/><path d="M8.7 8.4c.3-.6.6-.6.9-.6h.6c.2 0 .4 0 .6.5l.7 1.7c.1.2.1.4 0 .6l-.6.8c-.1.2-.1.3 0 .5.4.8 1.5 1.9 2.3 2.3.2.1.3.1.5 0l.8-.6c.2-.1.4-.1.6 0l1.7.7c.4.2.5.4.5.6v.6c0 .3 0 .6-.6.9-.6.4-1.3.5-2 .3-1.9-.5-3.9-1.8-5.3-3.2-1.4-1.4-2.4-3.1-3-4.9-.2-.7-.1-1.4.3-2Z"/></svg></span>
           <span class="contact-action-title">WhatsApp</span>
           <span class="contact-action-sub">Send a drawing or a question</span>
         </a>
-        <a class="contact-action reveal" href="https://maps.app.goo.gl/XeKHRTpy2aPhVkEt7" target="_blank" rel="noopener">
+        <a class="contact-action spot reveal" href="https://maps.app.goo.gl/XeKHRTpy2aPhVkEt7" target="_blank" rel="noopener">
           <span class="contact-action-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.8-6.5-11A6.5 6.5 0 0 1 18.5 10c0 5.2-6.5 11-6.5 11Z"/><circle cx="12" cy="10" r="2.4"/></svg></span>
           <span class="contact-action-title">Get Directions</span>
           <span class="contact-action-sub">Industrial Area&#8209;4, Faridabad</span>
@@ -463,24 +607,59 @@
   </section>
 </main>
 
-<footer class="site-footer">
+<footer class="site-footer site-footer--home">
   <div class="container footer-inner">
-    <div class="footer-top">
-      <a href="#hero" class="footer-brand">New Kamal <span>Metal Works</span></a>
-      <ul class="footer-links">
-        <li><a href="#operations">Operations</a></li>
-        <li><a href="#capabilities">Capabilities</a></li>
-        <li><a href="#materials">Materials</a></li>
-        <li><a href="#tooling">Tooling</a></li>
-        <li><a href="#quality">Quality</a></li>
-        <li><a href="#about">About</a></li>
-        <li><a href="#contact">Contact</a></li>
-      </ul>
+    <div class="footer-cta reveal">
+      <div class="footer-cta-copy">
+        <span class="footer-cta-kicker">Ready when you are</span>
+        <h2 class="footer-cta-title">Have a drawing?<br>Let&rsquo;s make the part.</h2>
+      </div>
+      <div class="footer-cta-actions">
+        <a class="btn btn-primary" href="https://wa.me/919818650504" target="_blank" rel="noopener">Send it on WhatsApp</a>
+        <a class="footer-cta-link" href="tel:+919818650504">or call +91 98186 50504</a>
+      </div>
+    </div>
+
+    <div class="footer-cols">
+      <div class="footer-col footer-col--brand">
+        <a href="#hero" class="footer-brand">New Kamal <span>Metal Works</span></a>
+        <p class="footer-blurb">Precision sheet metal components, pressed &amp; stamped parts and fabricated assemblies &mdash; built to your drawing in Faridabad since 1999.</p>
+        <span class="footer-iso"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M8.3 12.4 10.8 15l5-6"/></svg>ISO 9001:2015 certified</span>
+      </div>
+      <nav class="footer-col" aria-label="Footer">
+        <h3 class="footer-col-title">Explore</h3>
+        <ul class="footer-links">
+          <li><a href="#operations">Operations</a></li>
+          <li><a href="#capabilities">Capabilities</a></li>
+          <li><a href="#materials">Materials</a></li>
+          <li><a href="#tooling">Tooling</a></li>
+          <li><a href="#quality">Quality</a></li>
+          <li><a href="#about">About</a></li>
+          <li><a href="#contact">Contact</a></li>
+        </ul>
+      </nav>
+      <div class="footer-col">
+        <h3 class="footer-col-title">Reach us</h3>
+        <ul class="footer-reach">
+          <li><a href="tel:+919818650504">+91 98186 50504</a></li>
+          <li><a href="https://wa.me/919818650504" target="_blank" rel="noopener">WhatsApp</a></li>
+          <li><a href="mailto:contact@newkamalmetalworks.co.in">contact@newkamalmetalworks.co.in</a></li>
+          <li><a href="https://maps.app.goo.gl/XeKHRTpy2aPhVkEt7" target="_blank" rel="noopener">Plot No. 118, Industrial Area&#8209;4, Faridabad</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h3 class="footer-col-title">Company</h3>
+        <dl class="footer-facts">
+          <div><dt>Proprietor</dt><dd>Kamal Arora</dd></div>
+          <div><dt>GSTIN</dt><dd>06AGQPA5950R1ZR</dd></div>
+          <div><dt>ISO cert. no.</dt><dd>3050260916130Q</dd></div>
+          <div><dt>Established</dt><dd>1999</dd></div>
+        </dl>
+      </div>
     </div>
 
     <div class="footer-bottom">
       <p class="footer-legal">&copy; <span id="year"></span> New Kamal Metal Works, Faridabad. All rights reserved.</p>
-      <p class="footer-meta">ISO 9001:2015 certified &middot; GSTIN 06AGQPA5950R1ZR</p>
       <div class="footer-credit">
         <p class="footer-credit-name">Designed by <span class="footer-credit-highlight">Jagrit Arora</span></p>
         <p class="footer-credit-links">
@@ -489,6 +668,10 @@
           <a href="tel:+919599030400">+91 95990 30400</a>
         </p>
       </div>
+      <a href="#hero" class="footer-top-btn" aria-label="Back to top">
+        <svg class="footer-top-ring" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="21" class="ftr-track"/><circle cx="24" cy="24" r="21" class="ftr-fill" pathLength="1"/></svg>
+        <svg class="footer-top-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg>
+      </a>
     </div>
   </div>
 </footer>
@@ -500,7 +683,8 @@
 <script src="js/scenes/threading-scene.js?v=4"></script>
 <script src="js/scenes/notching-scene.js?v=5"></script>
 <script src="js/scenes/knurling-scene.js?v=5"></script>
-<script src="js/main.js?v=16"></script>
+<script src="js/main.js?v=17"></script>
+<script src="js/home-fx.js?v=3"></script>
 <script>document.getElementById("year").textContent = new Date().getFullYear();</script>
 <script type="module">
 // A signed-in client shouldn't have to re-enter their login ID and password
