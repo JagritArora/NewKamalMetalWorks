@@ -2899,6 +2899,9 @@ button.login-back {
   transition: background .2s ease, color .2s ease;
 }
 .chart-toggle-btn.is-active { background: var(--accent); color: var(--accent-ink); }
+#supply-filter-reset { transition: color .2s ease, transform .15s ease; }
+#supply-filter-reset:hover { color: var(--accent); }
+#supply-filter-reset:active { transform: scale(0.93); }
 .chart-canvas-wrap { margin-top: 16px; position: relative; height: 260px; }
 .chart-empty {
   margin-top: 16px;

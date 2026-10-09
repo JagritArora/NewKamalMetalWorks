@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/main.css?v=57" />
+<link rel="stylesheet" href="css/main.css?v=61" />
 </head>
 <body class="login-page">
 
@@ -41,6 +41,9 @@
           <div class="chart-toggle-group" role="group" aria-label="Show sale figures with or without GST">
             <button type="button" class="chart-toggle-btn is-active" id="supply-gst-mode-excl">Excl. GST</button>
             <button type="button" class="chart-toggle-btn" id="supply-gst-mode-incl">Incl. GST</button>
+          </div>
+          <div class="chart-toggle-group" role="group" aria-label="Reset filters">
+            <button type="button" class="chart-toggle-btn" id="supply-filter-reset">Reset Filters</button>
           </div>
         </div>
       </div>
@@ -372,6 +375,30 @@ document.getElementById("supply-gst-mode-incl").addEventListener("click", functi
   gstMode = "incl";
   this.classList.add("is-active");
   document.getElementById("supply-gst-mode-excl").classList.remove("is-active");
+  applyFilters();
+});
+
+// Reset Filters -- back to the page's own default view: most recent
+// Financial Year, All Months, every buyer/item, Item mode, and GST
+// figures shown excl. GST.
+document.getElementById("supply-filter-reset").addEventListener("click", function () {
+  document.getElementById("supply-filter-buyer").value = "all";
+  document.getElementById("supply-filter-item").value = "all";
+  document.getElementById("supply-filter-invoice").value = "all";
+
+  var fySel = document.getElementById("supply-filter-fy");
+  fySel.value = fySel.options.length > 1 ? fySel.options[1].value : "all";
+  populateMonths(fySel.value);
+  document.getElementById("supply-filter-month").value = "all";
+
+  if (supplyFilterMode !== "item") setSupplyFilterMode("item");
+
+  if (gstMode !== "excl") {
+    gstMode = "excl";
+    document.getElementById("supply-gst-mode-excl").classList.add("is-active");
+    document.getElementById("supply-gst-mode-incl").classList.remove("is-active");
+  }
+
   applyFilters();
 });
 
@@ -1186,22 +1213,53 @@ function renderSalesChart(lines) {
   canvas.style.display = "block";
 
   var mult = gstMultiplier();
-  var monthly = {};
-  var monthlyProfit = {};
-  lines.forEach(function (l) {
-    var k = monthKey(l.date);
-    monthly[k] = monthly[k] || 0;
-    monthly[k] += (l.amount || 0) * mult;
-    if (l.profit != null) {
-      monthlyProfit[k] = (monthlyProfit[k] || 0) + l.profit;
-    }
-  });
-  var keys = Object.keys(monthly).sort();
-  var labels = keys.map(monthLabel);
-  var values = keys.map(function (k) { return monthly[k]; });
-  var profitValues = keys.map(function (k) { return monthlyProfit[k] || 0; });
-
   var f = currentFilters();
+  // Grouping by month is useless once a single Month is already selected
+  // (one point) -- switch to grouping by invoice instead so the trend
+  // still shows real movement. The x-axis label is just the part of the
+  // invoice number after its "/" (e.g. "2026-27/327" -> "327"); the full
+  // number still shows in the tooltip title.
+  var byInvoice = f.month !== "all";
+  var labels, values, profitValues, tooltipTitles;
+
+  if (byInvoice) {
+    var invoices = {};
+    lines.forEach(function (l) {
+      var key = l.invoiceNo || "—";
+      var entry = invoices[key] || { amount: 0, profit: 0, profitKnown: false, date: l.date || "" };
+      entry.amount += (l.amount || 0) * mult;
+      if (l.profit != null) { entry.profit += l.profit; entry.profitKnown = true; }
+      if (l.date && (!entry.date || l.date < entry.date)) entry.date = l.date;
+      invoices[key] = entry;
+    });
+    var invoiceKeys = Object.keys(invoices).sort(function (a, b) {
+      return (invoices[a].date || "").localeCompare(invoices[b].date || "") || a.localeCompare(b);
+    });
+    tooltipTitles = invoiceKeys;
+    labels = invoiceKeys.map(function (k) {
+      var slashAt = k.indexOf("/");
+      return slashAt === -1 ? k : k.slice(slashAt + 1);
+    });
+    values = invoiceKeys.map(function (k) { return invoices[k].amount; });
+    profitValues = invoiceKeys.map(function (k) { return invoices[k].profitKnown ? invoices[k].profit : 0; });
+  } else {
+    var monthly = {};
+    var monthlyProfit = {};
+    lines.forEach(function (l) {
+      var k = monthKey(l.date);
+      monthly[k] = monthly[k] || 0;
+      monthly[k] += (l.amount || 0) * mult;
+      if (l.profit != null) {
+        monthlyProfit[k] = (monthlyProfit[k] || 0) + l.profit;
+      }
+    });
+    var keys = Object.keys(monthly).sort();
+    tooltipTitles = keys.map(monthLabel);
+    labels = tooltipTitles;
+    values = keys.map(function (k) { return monthly[k]; });
+    profitValues = keys.map(function (k) { return monthlyProfit[k] || 0; });
+  }
+
   var bits = [];
   if (f.buyerId !== "all") bits.push(document.getElementById("supply-filter-buyer").selectedOptions[0].textContent);
   if (supplyFilterMode === "invoice") {
@@ -1209,7 +1267,11 @@ function renderSalesChart(lines) {
   } else if (f.partNo !== "all") {
     bits.push(document.getElementById("supply-filter-item").selectedOptions[0].textContent);
   }
-  subEl.textContent = bits.length ? "Revenue & profit by month · " + bits.join(" · ") : "Revenue & profit by month, all buyers and items";
+  subEl.textContent = byInvoice
+    ? "Revenue & profit by invoice for " + document.getElementById("supply-filter-month").selectedOptions[0].textContent + (bits.length ? " · " + bits.join(" · ") : "")
+    : (bits.length ? "Revenue & profit by month · " + bits.join(" · ") : "Revenue & profit by month, all buyers and items");
+
+  var tooltipTitleCallback = function (items) { return tooltipTitles[items[0].dataIndex]; };
 
   if (!salesChart) {
     salesChart = new ChartLib(canvas.getContext("2d"), {
@@ -1247,6 +1309,7 @@ function renderSalesChart(lines) {
           legend: { display: true, position: "top", align: "end", labels: { boxWidth: 12, font: { family: "IBM Plex Sans" } } },
           tooltip: {
             callbacks: {
+              title: tooltipTitleCallback,
               label: function (ctx) { return ctx.dataset.label + ": " + formatCurrency(ctx.parsed.y); }
             }
           }
@@ -1265,6 +1328,7 @@ function renderSalesChart(lines) {
     salesChart.data.datasets[1].borderColor = theme.success;
     salesChart.data.datasets[1].backgroundColor = theme.success + "26";
     salesChart.data.datasets[1].pointBackgroundColor = theme.success;
+    salesChart.options.plugins.tooltip.callbacks.title = tooltipTitleCallback;
     salesChart.options.scales = baseScales(theme, function (v) { return formatCompactCurrency(v); });
     salesChart.update();
   }
