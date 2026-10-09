@@ -169,7 +169,10 @@
       if (openPicker === api) openPicker = null;
     }
 
-    trigger.addEventListener("click", function () { if (pop) close(); else open(); });
+    trigger.addEventListener("click", function () {
+      if (el.classList.contains("is-locked")) return;
+      if (pop) close(); else open();
+    });
 
     var api = {
       el: el,
@@ -177,6 +180,12 @@
       set value(v) { state.value = v || ""; syncLabel(); },
       setMin: function (v) { state.min = v || ""; },
       setMax: function (v) { state.max = v || ""; },
+      setLocked: function (locked) {
+        el.classList.toggle("is-locked", !!locked);
+        trigger.setAttribute("aria-disabled", locked ? "true" : "false");
+        if (locked) close();
+      },
+      focus: function () { trigger.focus({ preventScroll: true }); },
       open: open,
       close: close,
       _position: position,
@@ -194,5 +203,67 @@
   window.addEventListener("scroll", function () { if (openPicker) openPicker._position(); }, true);
   window.addEventListener("resize", function () { if (openPicker) openPicker._position(); });
 
-  window.NKDatePicker = { create: create, today: todayKey };
+  // Upgrade an existing <input type="date"> in place: the native input
+  // stays (visually hidden) as the source of truth, so page scripts keep
+  // reading/setting .value, toggling readOnly/min/max and listening for
+  // "change" exactly as before.
+  var inputValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value");
+  function enhance(input) {
+    if (input.__nkd || input.hasAttribute("data-native")) return;
+    input.__nkd = true;
+    var picker = create({
+      value: inputValue.get.call(input),
+      min: input.min,
+      max: input.max,
+      placeholder: input.placeholder || "Select date",
+      clearable: input.hasAttribute("data-clearable"),
+      onChange: function (v) {
+        inputValue.set.call(input, v);
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        input.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+    });
+    input.parentNode.insertBefore(picker.el, input);
+    picker.el.appendChild(input);
+    input.classList.add("nks-native");
+    input.tabIndex = -1;
+    input.setAttribute("aria-hidden", "true");
+    if (input.id) {
+      var lbl = document.querySelector('label[for="' + input.id + '"]');
+      if (lbl) {
+        if (!lbl.id) lbl.id = input.id + "-dp-label";
+        picker.el.querySelector(".dp-trigger").setAttribute("aria-labelledby", lbl.id);
+      }
+    }
+    function sync() {
+      picker.value = inputValue.get.call(input);
+      picker.setMin(input.min);
+      picker.setMax(input.max);
+      picker.setLocked(input.readOnly || input.disabled);
+      picker.el.hidden = input.hidden;
+    }
+    Object.defineProperty(input, "value", {
+      configurable: true,
+      get: function () { return inputValue.get.call(input); },
+      set: function (v) { inputValue.set.call(input, v); sync(); }
+    });
+    new MutationObserver(sync).observe(input, { attributes: true, attributeFilter: ["min", "max", "readonly", "disabled", "hidden"] });
+    input.addEventListener("change", sync);
+    input.addEventListener("focus", function () { picker.focus(); });
+    sync();
+  }
+  function scan(root) {
+    if (root.matches && root.matches('input[type="date"]')) enhance(root);
+    else if (root.querySelectorAll) Array.prototype.forEach.call(root.querySelectorAll('input[type="date"]'), enhance);
+  }
+  function start() {
+    scan(document.body);
+    new MutationObserver(function (muts) {
+      muts.forEach(function (m) { m.addedNodes.forEach(function (n) { if (n.nodeType === 1) scan(n); }); });
+    }).observe(document.body, { childList: true, subtree: true });
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
+  else start();
+
+  window.NKDatePicker = { create: create, enhance: enhance, today: todayKey };
 })();

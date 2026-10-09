@@ -12,9 +12,10 @@
 <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/main.css?v=74" />
+<link rel="stylesheet" href="css/main.css?v=76" />
 </head>
 <body class="login-page">
+<script src="js/page-transition.js?v=1"></script>
 
 <nav class="site-nav">
   <a href="index.html#hero" class="brand">New Kamal <span>Metal Works</span></a>
@@ -467,6 +468,7 @@ onAuthStateChanged(auth, function (user) {
 
 document.getElementById("year").textContent = new Date().getFullYear();
 </script>
+<script src="js/datepicker.js?v=2" defer></script>
 <script src="js/nk-select.js?v=1" defer></script>
 <script src="js/ui-fx.js?v=2" defer></script>
 <script src="js/bot-widget.js?v=2" defer></script>
