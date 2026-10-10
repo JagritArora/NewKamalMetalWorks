@@ -5747,6 +5747,63 @@ body.home a, body.home button { -webkit-tap-highlight-color: transparent; }
   transition: background .2s ease, border-color .2s ease, transform .15s ease;
 }
 .pur-add-line svg { width: 16px; height: 16px; transition: transform .35s var(--ease); }
+.pur-add-row { display: flex; gap: 10px; margin-top: 12px; }
+.pur-add-row .pur-add-line { flex: 1 1 auto; width: auto; margin-top: 0; }
+.pur-add-line--charge {
+  flex: 0 1 auto;
+  color: var(--ink-muted);
+  background: transparent;
+  border-color: var(--line);
+}
+.pur-add-row .pur-add-line--charge { flex: 0 1 auto; padding-inline: 20px; }
+.pur-add-line--charge:hover { color: var(--accent); }
+
+/* Weight box's "kg" chip flips a line to a lump sum; the pill flips it back. */
+.pur-basis-chip {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 5px;
+  padding: 3px 6px;
+  font-family: inherit;
+  font-size: 0.78rem;
+  color: var(--ink-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: color .2s ease, border-color .2s ease, background .2s ease;
+}
+.pur-basis-chip svg { display: none; }
+.pur-lump-pill svg { width: 11px; height: 11px; flex: none; opacity: .55; transition: opacity .2s ease; }
+.pur-basis-chip:hover, .pur-basis-chip:focus-visible {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  outline: none;
+}
+.pur-lump-pill:hover svg { opacity: 1; }
+.pur-lump-pill {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-height: 46px;
+  padding: 0 12px;
+  font-family: inherit;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+  border: 1px dashed color-mix(in srgb, var(--accent) 50%, var(--line));
+  border-radius: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .2s ease, border-color .2s ease;
+}
+.pur-lump-pill:hover, .pur-lump-pill:focus-visible { background: color-mix(in srgb, var(--accent) 12%, transparent); border-color: var(--accent); outline: none; }
+.pur-line.is-lump .pur-wt-box { display: none; }
+.pur-line.is-lump .pur-lump-pill { display: flex; }
 .pur-add-line:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); border-color: var(--accent); }
 .pur-add-line:hover svg { transform: rotate(90deg); }
 .pur-add-line:active { transform: scale(.99); }
@@ -5767,6 +5824,7 @@ body.home a, body.home button { -webkit-tap-highlight-color: transparent; }
 /* Register: the items on each bill. */
 .pur-items-cell { min-width: 170px; }
 .pur-item-line { display: block; }
+.pur-mat-tag.pur-mat-tag--charge { color: var(--ink-muted); background: color-mix(in srgb, var(--ink-muted) 14%, transparent); }
 .pur-item-line + .pur-item-line { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line); }
 .pur-mat-tag {
   display: inline-block;
@@ -5971,6 +6029,7 @@ body.home a, body.home button { -webkit-tap-highlight-color: transparent; }
 @media (max-width: 640px) {
   .pur-lines-head { display: none; }
   .pur-lines { gap: 12px; margin-top: 14px; }
+  .pur-add-row { flex-direction: column; }
   .pur-line {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     grid-template-areas:
