@@ -5478,6 +5478,14 @@ body.home a, body.home button { -webkit-tap-highlight-color: transparent; }
   align-items: end;
 }
 .pur-gst-types { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+/* "Other rate…" puts a % box beside the dropdown, on the same line. */
+@media (min-width: 641px) {
+  .pur-gst-row:has(.pur-gst-custom:not([hidden])) { grid-template-columns: minmax(0, 1fr) 280px; }
+}
+.pur-gst-rate:has(.pur-gst-custom:not([hidden])) { display: grid; grid-template-columns: minmax(0, 1fr) 96px; column-gap: 8px; }
+.pur-gst-rate:has(.pur-gst-custom:not([hidden])) > label { grid-column: 1 / -1; }
+.pur-gst-custom { animation: app-rise .3s var(--ease) backwards; }
+.pur-gst-custom[hidden] { display: none; }
 .pur-gst-opt {
   display: flex;
   align-items: center;
@@ -5643,19 +5651,6 @@ body.home a, body.home button { -webkit-tap-highlight-color: transparent; }
 .pur-check-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .pur-check-title { font-family: "Space Grotesk", sans-serif; font-size: 0.96rem; font-weight: 600; color: var(--ink); }
 .pur-check-sub { font-size: 0.78rem; color: var(--ink-muted); line-height: 1.45; }
-.pur-check--compact {
-  justify-self: start;
-  gap: 8px;
-  padding: 0;
-  background: none;
-  border: none;
-}
-.pur-check--compact .pur-check-box { width: 16px; height: 16px; border-radius: 5px; }
-.pur-check--compact .pur-check-box svg { width: 11px; height: 11px; }
-.pur-check--compact .pur-check-title { font-family: inherit; font-size: 0.8rem; font-weight: 500; color: var(--ink-muted); }
-.pur-check--compact:hover .pur-check-title { color: var(--ink); }
-.pur-check--compact:has(input:checked) { background: none; box-shadow: none; }
-.pur-check--compact:has(input:checked) .pur-check-title { color: var(--ink); }
 
 .pur-adj-badge {
   display: inline-block;
@@ -6307,6 +6302,23 @@ body.home a, body.home button { -webkit-tap-highlight-color: transparent; }
 }
 .confirm-dialog-confirm.pur-confirm-danger { color: #fff; background: var(--danger); }
 .confirm-dialog-confirm.pur-confirm-danger:hover { box-shadow: 0 8px 20px color-mix(in srgb, var(--danger) 35%, transparent); }
+.confirm-dialog-confirm.pur-confirm-danger:disabled { opacity: .5; cursor: default; box-shadow: none; }
+
+/* Delete-with-code dialog: the emailed 6-digit code, then Delete. */
+.pur-code-box {
+  margin-top: 16px;
+  padding: 14px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+.pur-code-copy { margin: 0 0 10px; font-size: 0.82rem; line-height: 1.45; color: var(--ink-muted); }
+.pur-code-copy.is-error { color: var(--danger); }
+.pur-code-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.pur-code-input:focus { outline: none; border-color: var(--danger); box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger) 18%, transparent); }
+.pur-code-input:disabled { opacity: .55; }
+.pur-code-input::placeholder { letter-spacing: normal; font-size: 0.88rem; }
+.pur-code-dialog .confirm-dialog-actions { margin-top: 18px; }
 
 @media (max-width: 960px) {
   .pur-form { grid-template-columns: 1fr; }

@@ -135,14 +135,29 @@ service cloud.firestore {
     // its item lines (item, material, weight, rate per kg), the CGST/SGST
     // or IGST on it with any rounding, and whether it's an adjustment
     // bill. Kept for GST input credit and cost analysis. Master only.
+    // Changing or deleting a bill goes only through the savePurchaseEdit /
+    // deletePurchaseRecord Cloud Functions, after an emailed code -- never
+    // straight from the browser. New bills are added from the page.
     match /purchases/{purchaseId} {
-      allow read, write: if isMaster();
+      allow read, create: if isMaster();
+      allow update, delete: if false;
     }
 
     // Supplier directory behind the purchase form's dropdown -- name,
-    // GSTIN and the state it implies. Master only.
+    // GSTIN and the state it implies. Master only; deleting one goes
+    // through deletePurchaseRecord like a bill does.
     match /suppliers/{supplierId} {
-      allow read, write: if isMaster();
+      allow read, create, update: if isMaster();
+      allow delete: if false;
+    }
+
+    // Written only by requestPurchaseDeleteCode / deletePurchaseRecord
+    // (Cloud Functions, Admin SDK) -- never by a client.
+    match /purchaseDeleteVerify/{uid} {
+      allow read, write: if false;
+    }
+    match /purchaseEditVerify/{uid} {
+      allow read, write: if false;
     }
 
     // Purchase-form settings -- for now the Item / Material suggestions

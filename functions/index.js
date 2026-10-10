@@ -2,7 +2,7 @@ const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { defineSecret } = require("firebase-functions/params");
 const { initializeApp } = require("firebase-admin/app");
-const { getFirestore } = require("firebase-admin/firestore");
+const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 const { getStorage } = require("firebase-admin/storage");
 const { getAuth } = require("firebase-admin/auth");
 const nodemailer = require("nodemailer");
@@ -96,6 +96,34 @@ async function requireMasterWithEmail(request) {
   return { uid: request.auth.uid, email: email };
 }
 
+// Checks a 6-digit code against the pending one in a gate collection --
+// expiry, attempt limit and hash -- and returns that gate doc's ref.
+// Throws an HttpsError the page can show as-is when it doesn't pass.
+async function checkGateCode(collectionName, uid, rawCode) {
+  var code = (rawCode || "").trim();
+  if (!/^\d{6}$/.test(code)) throw new HttpsError("invalid-argument", "Enter the 6-digit code.");
+
+  var db = getFirestore();
+  var ref = db.collection(collectionName).doc(uid);
+  var snap = await ref.get();
+  if (!snap.exists || !snap.data().codeHash) throw new HttpsError("failed-precondition", "Request a code first.");
+  var data = snap.data();
+
+  var sentAt = data.sentAt && data.sentAt.toDate ? data.sentAt.toDate() : new Date(data.sentAt);
+  if (Date.now() - sentAt.getTime() > CODE_TTL_MS) {
+    throw new HttpsError("deadline-exceeded", "That code expired -- request a new one.");
+  }
+  if ((data.attempts || 0) >= CODE_MAX_ATTEMPTS) {
+    throw new HttpsError("resource-exhausted", "Too many attempts -- request a new code.");
+  }
+
+  if (hashVerifyCode(code, uid) !== data.codeHash) {
+    await ref.update({ attempts: (data.attempts || 0) + 1 });
+    throw new HttpsError("permission-denied", "That code isn't right.");
+  }
+  return ref;
+}
+
 // Builds a {request, verify} pair of onCall functions for one code-gated
 // collection -- identical flow for the rate card and the inspection specs,
 // differing only in which collection holds the pending code and the copy
@@ -129,27 +157,7 @@ function makeCodeGate(collectionName, subject, introHtml) {
 
   var verifyFn = onCall({ region: "asia-south1" }, async function (request) {
     var master = await requireMasterWithEmail(request);
-    var code = ((request.data && request.data.code) || "").trim();
-    if (!/^\d{6}$/.test(code)) throw new HttpsError("invalid-argument", "Enter the 6-digit code.");
-
-    var db = getFirestore();
-    var ref = db.collection(collectionName).doc(master.uid);
-    var snap = await ref.get();
-    if (!snap.exists) throw new HttpsError("failed-precondition", "Request a code first.");
-    var data = snap.data();
-
-    var sentAt = data.sentAt && data.sentAt.toDate ? data.sentAt.toDate() : new Date(data.sentAt);
-    if (Date.now() - sentAt.getTime() > CODE_TTL_MS) {
-      throw new HttpsError("deadline-exceeded", "That code expired -- request a new one.");
-    }
-    if ((data.attempts || 0) >= CODE_MAX_ATTEMPTS) {
-      throw new HttpsError("resource-exhausted", "Too many attempts -- request a new code.");
-    }
-
-    if (hashVerifyCode(code, master.uid) !== data.codeHash) {
-      await ref.update({ attempts: (data.attempts || 0) + 1 });
-      throw new HttpsError("permission-denied", "That code isn't right.");
-    }
+    var ref = await checkGateCode(collectionName, master.uid, request.data && request.data.code);
 
     await ref.update({
       verifiedUntil: new Date(Date.now() + VERIFIED_TTL_MS),
@@ -197,6 +205,81 @@ var invoiceCleanupDeleteGate = makeCodeGate(
 );
 exports.requestInvoiceCleanupDeleteCode = invoiceCleanupDeleteGate.request;
 exports.verifyInvoiceCleanupDeleteCode = invoiceCleanupDeleteGate.verify;
+
+// Deleting a purchase bill or a supplier (purchases.html) takes an emailed
+// code too, against accidental deletes. The code is checked and the
+// record deleted here in one call, and the code is used up by it -- one
+// code, one delete. firestore.rules refuse deletes on /purchases and
+// /suppliers from the browser, so this is the only way to remove either.
+var purchaseDeleteGate = makeCodeGate(
+  "purchaseDeleteVerify",
+  "Your purchase deletion code",
+  "<p><strong>This confirms a permanent deletion.</strong> Use this code to finish deleting the record you selected on the New Kamal Metal Works purchases page:</p>"
+);
+exports.requestPurchaseDeleteCode = purchaseDeleteGate.request;
+
+exports.deletePurchaseRecord = onCall({ region: "asia-south1" }, async function (request) {
+  var master = await requireMasterWithEmail(request);
+  var data = request.data || {};
+  var collectionName = data.kind === "purchase" ? "purchases" : data.kind === "supplier" ? "suppliers" : null;
+  var id = typeof data.id === "string" ? data.id.trim() : "";
+  if (!collectionName || !id) throw new HttpsError("invalid-argument", "Nothing to delete.");
+
+  var gateRef = await checkGateCode("purchaseDeleteVerify", master.uid, data.code);
+
+  var db = getFirestore();
+  var target = db.collection(collectionName).doc(id);
+  var snap = await target.get();
+  if (!snap.exists) throw new HttpsError("not-found", "That record is already gone.");
+  if (collectionName === "suppliers") {
+    var bills = await db.collection("purchases").where("supplierId", "==", id).limit(1).get();
+    if (!bills.empty) throw new HttpsError("failed-precondition", "This supplier still has bills in the register -- delete or move those first.");
+  }
+
+  await target.delete();
+  await gateRef.set({ codeHash: null, verifiedUntil: null }, { merge: true });
+  return { ok: true };
+});
+
+// Saving changes to an existing purchase bill takes an emailed code the
+// same way -- one code, one save -- so a bill can't be changed by a slip.
+// New bills are still added straight from the page; firestore.rules only
+// refuse updates. Only the bill's own fields are taken from the page.
+var purchaseEditGate = makeCodeGate(
+  "purchaseEditVerify",
+  "Your purchase edit code",
+  "<p>Use this code to confirm the changes you're saving to a purchase bill on the New Kamal Metal Works purchases page:</p>"
+);
+exports.requestPurchaseEditCode = purchaseEditGate.request;
+
+var PURCHASE_FIELDS = [
+  "supplierId", "supplierName", "supplierGstin", "supplierState", "billNo", "date", "financialYear",
+  "lines", "materials", "weightKg", "isAdjustment", "gstType", "gstRate", "notes",
+  "gstRounding", "totalRounding", "taxableValue", "cgst", "sgst", "igst", "totalGst", "roundOff", "total"
+];
+exports.savePurchaseEdit = onCall({ region: "asia-south1" }, async function (request) {
+  var master = await requireMasterWithEmail(request);
+  var data = request.data || {};
+  var id = typeof data.id === "string" ? data.id.trim() : "";
+  var bill = data.bill;
+  if (!id || !bill || typeof bill !== "object") throw new HttpsError("invalid-argument", "Nothing to save.");
+  if (!Array.isArray(bill.lines) || !bill.lines.length || typeof bill.billNo !== "string" || typeof bill.total !== "number") {
+    throw new HttpsError("invalid-argument", "That bill looks incomplete -- reload the page and try again.");
+  }
+
+  var gateRef = await checkGateCode("purchaseEditVerify", master.uid, data.code);
+
+  var db = getFirestore();
+  var target = db.collection("purchases").doc(id);
+  var snap = await target.get();
+  if (!snap.exists) throw new HttpsError("not-found", "That bill was deleted -- nothing to save.");
+
+  var update = { updatedAt: FieldValue.serverTimestamp() };
+  PURCHASE_FIELDS.forEach(function (k) { if (bill[k] !== undefined) update[k] = bill[k]; });
+  await target.update(update);
+  await gateRef.set({ codeHash: null, verifiedUntil: null }, { merge: true });
+  return { ok: true };
+});
 
 // Sign-up email verification -- same emailed 6-digit code pattern as the
 // gates above, sent from the same contact@newkamalmetalworks.co.in mailbox,
