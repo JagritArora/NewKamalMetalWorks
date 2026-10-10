@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/main.css?v=103" />
+<link rel="stylesheet" href="css/main.css?v=105" />
 </head>
 <body class="login-page">
 <script src="js/page-transition.js?v=1"></script>
@@ -50,13 +50,17 @@
   <section class="qa-section welcome-fade" id="welcome-quick-actions" style="--d:.3s" hidden>
     <div class="qa-head">
       <h2 class="qa-heading">Quick Actions.</h2>
-      <span class="qa-count">06 tools &middot; Billing &amp; Purchases</span>
+      <span class="qa-count" id="qa-count">Billing &amp; Purchases</span>
     </div>
 
+    <!-- Tiles number themselves in this order (see the script below). The
+         first five make the top block; any after that sit two to a row.
+         The Danger Zone tile stays last: beside an odd one out (on its
+         left), otherwise across the whole row. -->
     <div class="qa-grid">
-      <a href="billing.html" class="qa-card qa-card--feature" style="--i:0">
+      <a href="billing.html" class="qa-card qa-card--feature">
         <svg class="qa-feature-art" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>
-        <span class="qa-index">01</span>
+        <span class="qa-index"></span>
         <span class="qa-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M12 11v6M9 14h6"/></svg>
         </span>
@@ -69,9 +73,8 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </span>
       </a>
-
-      <a href="supply.html" class="qa-card" style="--i:1">
-        <span class="qa-index">02</span>
+      <a href="supply.html" class="qa-card">
+        <span class="qa-index"></span>
         <span class="qa-icon" aria-hidden="true">
           <svg class="qa-bars" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="13" width="3" height="7" rx="1"/><rect x="10.5" y="8" width="3" height="12" rx="1"/><rect x="17" y="4" width="3" height="16" rx="1"/></svg>
         </span>
@@ -84,8 +87,22 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </span>
       </a>
-      <a href="payments.html" class="qa-card" style="--i:2">
-        <span class="qa-index">03</span>
+      <a href="purchases.html" class="qa-card">
+        <span class="qa-index"></span>
+        <span class="qa-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2.5 3.5h3l2.4 11.2a1.5 1.5 0 0 0 1.5 1.2h8.4a1.5 1.5 0 0 0 1.5-1.1l1.6-6.8H6.6"/></svg>
+        </span>
+        <span class="qa-body">
+          <span class="qa-kicker">Purchases</span>
+          <span class="qa-title">Purchase Register.</span>
+          <span class="qa-desc">Log what you buy &mdash; supplier, weight, rate and GST &mdash; for your returns and cost analysis.</span>
+        </span>
+        <span class="qa-go">Open
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </span>
+      </a>
+      <a href="payments.html" class="qa-card">
+        <span class="qa-index"></span>
         <span class="qa-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M3 10h18"/><path d="M16 15h2"/></svg>
         </span>
@@ -98,8 +115,8 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </span>
       </a>
-      <a href="inspection.html" class="qa-card" style="--i:3">
-        <span class="qa-index">04</span>
+      <a href="inspection.html" class="qa-card">
+        <span class="qa-index"></span>
         <span class="qa-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3h6v1"/><path d="M9.5 12.5l2 2 3.5-4"/></svg>
         </span>
@@ -112,8 +129,8 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </span>
       </a>
-      <a href="invoices.html" class="qa-card" style="--i:4">
-        <span class="qa-index">05</span>
+      <a href="invoices.html" class="qa-card">
+        <span class="qa-index"></span>
         <span class="qa-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="5" rx="1.5"/><path d="M5 9v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9"/><path d="M10 13h4"/></svg>
         </span>
@@ -126,40 +143,21 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </span>
       </a>
-
-
-
+      <a href="cleanup.html" class="qa-card qa-card--danger">
+        <span class="qa-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"/><path d="M9 7V4h6v3"/></svg>
+        </span>
+        <span class="qa-body">
+          <span class="qa-kicker">Danger Zone</span>
+          <span class="qa-title">Invoice Cleanup.</span>
+          <span class="qa-desc">Permanently delete a test invoice and every trace of it — Firestore records, PDFs, and the invoice counter.</span>
+        </span>
+        <span class="qa-go">Proceed
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </span>
+      </a>
     </div>
 
-    <a href="purchases.html" class="qa-card qa-card--wide" style="--i:5">
-      <span class="qa-index">06</span>
-      <span class="qa-icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2.5 3.5h3l2.4 11.2a1.5 1.5 0 0 0 1.5 1.2h8.4a1.5 1.5 0 0 0 1.5-1.1l1.6-6.8H6.6"/></svg>
-      </span>
-      <span class="qa-body">
-        <span class="qa-kicker">Purchases &middot; New</span>
-        <span class="qa-title">Purchase Register.</span>
-        <span class="qa-desc">Log what you buy &mdash; supplier, weight, rate per kg and GST &mdash; ready for your returns and cost analysis.</span>
-      </span>
-      <span class="qa-tags" aria-hidden="true"><span>kg &times; &#8377;/kg</span><span>CGST &middot; SGST</span><span>IGST</span></span>
-      <span class="qa-go">Open
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-      </span>
-    </a>
-
-    <a href="cleanup.html" class="qa-card qa-card--danger" style="--i:6">
-      <span class="qa-icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"/><path d="M9 7V4h6v3"/></svg>
-      </span>
-      <span class="qa-body">
-        <span class="qa-kicker">Danger Zone</span>
-        <span class="qa-title">Invoice Cleanup.</span>
-        <span class="qa-desc">Permanently delete a test invoice and every trace of it — Firestore records, PDFs, and the invoice counter.</span>
-      </span>
-      <span class="qa-go">Proceed
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-      </span>
-    </a>
   </section>
 
   <div class="login-card login-enter login-loading-card" id="welcome-loading" role="status">
@@ -363,6 +361,18 @@ onAuthStateChanged(auth, function (user) {
     reveal("", "client");
   });
 });
+
+// Quick Actions number themselves in page order (01, 02...), stagger in
+// that order, and the heading counts them -- so adding or moving a tool
+// is only a matter of where its tile sits in .qa-grid.
+var qaTiles = document.querySelectorAll(".qa-grid > .qa-card:not(.qa-card--danger)");
+qaTiles.forEach(function (card, i) {
+  var index = card.querySelector(".qa-index");
+  if (index) index.textContent = String(i + 1).padStart(2, "0");
+  card.style.setProperty("--i", i);
+});
+document.querySelector(".qa-card--danger").style.setProperty("--i", qaTiles.length);
+document.getElementById("qa-count").textContent = String(qaTiles.length).padStart(2, "0") + " tools · Billing & Purchases";
 
 document.querySelectorAll(".qa-card").forEach(function (card) {
   card.addEventListener("pointermove", function (e) {

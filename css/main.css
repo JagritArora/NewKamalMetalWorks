@@ -1903,9 +1903,9 @@ button.login-back {
 .qa-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  grid-auto-rows: minmax(210px, auto);
   gap: 16px;
 }
+.qa-grid > .qa-card:not(.qa-card--feature) { min-height: 210px; }
 
 .qa-card {
   --mx: 50%;
@@ -2105,7 +2105,8 @@ button.login-back {
   .qa-card--feature { grid-column: 1 / -1; grid-row: span 1; min-height: 280px; }
 }
 @media (max-width: 560px) {
-  .qa-grid { grid-template-columns: 1fr; grid-auto-rows: auto; }
+  .qa-grid { grid-template-columns: 1fr; }
+  .qa-grid > .qa-card:not(.qa-card--feature) { min-height: 0; }
   .qa-card .qa-icon { margin-bottom: 0; }
   .qa-card--danger { flex-direction: column; align-items: flex-start; gap: 14px; }
 }
@@ -6411,37 +6412,32 @@ body.home a, body.home button { -webkit-tap-highlight-color: transparent; }
   .pur-gst-dot::after, .pur-gst-opt, .pur-export-btn, .pur-export-btn svg { transition: none; }
 }
 
-/* ---- Welcome: full-width Purchases tile under the bento grid ---- */
-.qa-card--wide {
-  margin-top: 16px;
+/* ---- Welcome: tiles after the top block (the 6th on) ----
+   Two to a row, laid out sideways, so a new tool slots in without
+   touching the CSS. The Danger Zone tile is always last: when the tool
+   count leaves one tile on its own, Danger Zone takes the left half of
+   that row and the tile the right; otherwise it spans the whole row. */
+.qa-grid { grid-auto-flow: row dense; }
+.qa-grid > .qa-card:nth-child(n+6):not(.qa-card--danger) {
+  grid-column: span 2;
+  min-height: 0;
   flex-direction: row;
   align-items: center;
-  gap: 22px;
-  padding: 24px 26px;
+  gap: 18px;
+  padding: 22px 24px;
 }
-.qa-card--wide .qa-icon { margin-bottom: 0; }
-.qa-card--wide .qa-body { flex: 1; min-width: 0; margin-top: 0; gap: 4px; }
-.qa-card--wide .qa-go { margin-top: 0; flex-shrink: 0; }
-.qa-card--wide .qa-index { top: 14px; right: 18px; }
-.qa-tags { display: flex; flex-wrap: wrap; gap: 6px; flex-shrink: 0; }
-.qa-tags span {
-  padding: 5px 10px;
-  border-radius: 980px;
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 0.68rem;
-  letter-spacing: 0.04em;
-  color: var(--ink-muted);
-  background: var(--surface-sunken);
-  border: 1px solid var(--line);
-  transition: color .25s ease, border-color .25s ease, transform .4s var(--ease);
-}
-.qa-card--wide:hover .qa-tags span { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
-.qa-card--wide:hover .qa-tags span:nth-child(1) { transform: translateY(-2px); }
-.qa-card--wide:hover .qa-tags span:nth-child(2) { transform: translateY(-2px); transition-delay: .04s; }
-.qa-card--wide:hover .qa-tags span:nth-child(3) { transform: translateY(-2px); transition-delay: .08s; }
+.qa-grid > .qa-card:nth-child(n+6):not(.qa-card--danger) .qa-icon { margin-bottom: 0; }
+.qa-grid > .qa-card:nth-child(n+6):not(.qa-card--danger) .qa-body { flex: 1; min-width: 0; margin-top: 0; gap: 4px; }
+.qa-grid > .qa-card:nth-child(n+6):not(.qa-card--danger) .qa-go { margin-top: 0; flex-shrink: 0; }
+.qa-grid > .qa-card:nth-child(n+6):not(.qa-card--danger) .qa-index { top: 14px; right: 18px; }
+.qa-grid > .qa-card.qa-card--danger { grid-column: 1 / -1; min-height: 0; margin-top: 0; }
+.qa-grid > .qa-card:nth-child(n+6):nth-child(even):has(+ .qa-card--danger) { grid-column: 3 / 5; }
+.qa-grid > .qa-card:nth-child(n+6):nth-child(even) + .qa-card--danger { grid-column: 1 / 3; }
 @media (max-width: 900px) {
-  .qa-tags { display: none; }
+  .qa-grid > .qa-card:nth-child(n+6):nth-child(even):has(+ .qa-card--danger),
+  .qa-grid > .qa-card:nth-child(n+6):nth-child(even) + .qa-card--danger { grid-column: 1 / -1; }
 }
 @media (max-width: 560px) {
-  .qa-card--wide { flex-direction: column; align-items: flex-start; gap: 14px; }
+  .qa-grid > .qa-card:nth-child(n+6):not(.qa-card--danger) { flex-direction: column; align-items: flex-start; gap: 14px; }
+  .qa-grid > .qa-card:nth-child(n+6):not(.qa-card--danger) .qa-body { margin-top: 0; }
 }
