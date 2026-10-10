@@ -53,8 +53,9 @@
       <span class="qa-count" id="qa-count">Billing &amp; Purchases</span>
     </div>
 
-    <!-- Tiles number themselves in this order (see the script below). The
-         first five make the top block; any after that sit two to a row.
+    <!-- js/tool-order.js puts these tiles in the shared tool order and
+         numbers them, so the order here doesn't matter. The first five
+         make the top block; any after that sit two to a row.
          The Danger Zone tile stays last: beside an odd one out (on its
          left), otherwise across the whole row. -->
     <div class="qa-grid">
@@ -362,18 +363,6 @@ onAuthStateChanged(auth, function (user) {
   });
 });
 
-// Quick Actions number themselves in page order (01, 02...), stagger in
-// that order, and the heading counts them -- so adding or moving a tool
-// is only a matter of where its tile sits in .qa-grid.
-var qaTiles = document.querySelectorAll(".qa-grid > .qa-card:not(.qa-card--danger)");
-qaTiles.forEach(function (card, i) {
-  var index = card.querySelector(".qa-index");
-  if (index) index.textContent = String(i + 1).padStart(2, "0");
-  card.style.setProperty("--i", i);
-});
-document.querySelector(".qa-card--danger").style.setProperty("--i", qaTiles.length);
-document.getElementById("qa-count").textContent = String(qaTiles.length).padStart(2, "0") + " tools · Billing & Purchases";
-
 document.querySelectorAll(".qa-card").forEach(function (card) {
   card.addEventListener("pointermove", function (e) {
     var r = card.getBoundingClientRect();
@@ -386,6 +375,7 @@ document.getElementById("year").textContent = new Date().getFullYear();
 </script>
 <script src="js/datepicker.js?v=2" defer></script>
 <script src="js/nk-select.js?v=1" defer></script>
+<script src="js/tool-order.js?v=1" defer></script>
 <script src="js/ui-fx.js?v=2" defer></script>
 <script src="js/bot-widget.js?v=2" defer></script>
 </body>
