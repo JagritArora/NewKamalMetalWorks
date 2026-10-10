@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/main.css?v=84" />
+<link rel="stylesheet" href="css/main.css?v=86" />
 </head>
 <body class="login-page">
 <script src="js/page-transition.js?v=1"></script>
@@ -58,9 +58,36 @@
     </section>
   </div>
 
-  <div class="login-card login-enter login-loading-card" id="invoices-loading">
-    <div class="login-spinner" aria-hidden="true"><span></span><span></span><span></span></div>
-    <p class="login-sub">Loading&hellip;</p>
+  <div class="login-card login-enter login-loading-card" id="invoices-loading" role="status">
+    <div class="ldr" aria-hidden="true">
+      <svg class="ldr-press" viewBox="0 0 220 116" focusable="false">
+        <defs>
+          <linearGradient id="ldr-ram-grad" x1="0" y1="0" x2="0" y2="1"><stop class="ldr-stop-hi" offset="0"/><stop class="ldr-stop-lo" offset="1"/></linearGradient>
+          <radialGradient id="ldr-glow-grad"><stop class="ldr-stop-glow" offset="0"/><stop class="ldr-stop-glow" offset="1" stop-opacity="0"/></radialGradient>
+          <linearGradient id="ldr-fade" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".2" stop-color="#fff"/><stop offset=".8" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+          <mask id="ldr-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="220" height="116"><rect width="220" height="116" fill="url(#ldr-fade)"/></mask>
+        </defs>
+        <rect class="ldr-head" x="70" y="4" width="80" height="9" rx="4.5"/>
+        <path class="ldr-post" d="M78 13v89M142 13v89"/>
+        <ellipse class="ldr-glow" cx="110" cy="84" rx="46" ry="12" fill="url(#ldr-glow-grad)"/>
+        <g mask="url(#ldr-mask)">
+          <line class="ldr-strip" x1="0" y1="84" x2="220" y2="84"/>
+          <g class="ldr-belt">
+            <g class="ldr-holes"><circle cx="0" cy="84" r="1.1"/><circle cx="22" cy="84" r="1.1"/><circle cx="44" cy="84" r="1.1"/><circle cx="66" cy="84" r="1.1"/><circle cx="88" cy="84" r="1.1"/><circle cx="110" cy="84" r="1.1"/><circle cx="132" cy="84" r="1.1"/><circle cx="154" cy="84" r="1.1"/><circle cx="176" cy="84" r="1.1"/><circle cx="198" cy="84" r="1.1"/><circle cx="220" cy="84" r="1.1"/><circle cx="242" cy="84" r="1.1"/><circle cx="264" cy="84" r="1.1"/></g>
+            <g class="ldr-part"><rect x="-35" y="66" width="26" height="16" rx="3.5"/><circle cx="-22" cy="74" r="3"/></g>
+            <g class="ldr-part"><rect x="9" y="66" width="26" height="16" rx="3.5"/><circle cx="22" cy="74" r="3"/></g>
+            <g class="ldr-part"><rect x="53" y="66" width="26" height="16" rx="3.5"/><circle cx="66" cy="74" r="3"/></g>
+            <g class="ldr-part ldr-part--new"><rect x="97" y="66" width="26" height="16" rx="3.5"/><circle cx="110" cy="74" r="3"/></g>
+          </g>
+        </g>
+        <rect class="ldr-die" x="88" y="88" width="44" height="11" rx="3"/>
+        <rect class="ldr-bed" x="34" y="102" width="152" height="4" rx="2"/>
+        <g class="ldr-sparks"><circle cx="110" cy="82" r="1.4" style="--dx:-24px;--dy:-9px"/><circle cx="110" cy="82" r="1.1" style="--dx:-15px;--dy:-17px"/><circle cx="110" cy="82" r="1.1" style="--dx:16px;--dy:-16px"/><circle cx="110" cy="82" r="1.4" style="--dx:25px;--dy:-8px"/></g>
+        <g class="ldr-ram"><rect x="86" y="14" width="48" height="24" rx="6" fill="url(#ldr-ram-grad)"/><path class="ldr-ram-line" d="M94 26h32"/><rect class="ldr-tip" x="97" y="38" width="26" height="12" rx="2.5"/></g>
+      </svg>
+    </div>
+    <p class="login-sub ldr-label">Loading&hellip;</p>
+    <p class="ldr-status" aria-hidden="true"><span>Checking your access</span><span>Fetching your records</span><span>Preparing your page</span></p>
   </div>
 </main>
 
