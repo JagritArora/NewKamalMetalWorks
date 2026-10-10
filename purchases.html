@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/main.css?v=96" />
+<link rel="stylesheet" href="css/main.css?v=100" />
 </head>
 <body class="login-page">
 <script src="js/page-transition.js?v=1"></script>
@@ -66,13 +66,10 @@
               <label for="pur-date">Bill Date</label>
               <input type="date" id="pur-date" />
             </div>
-            <label class="pur-check pur-span-4" for="pur-adjust">
+            <label class="pur-check pur-check--compact pur-span-4" for="pur-adjust">
               <input type="checkbox" id="pur-adjust" />
               <span class="pur-check-box" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
-              <span class="pur-check-text">
-                <span class="pur-check-title">Adjustment bill</span>
-                <span class="pur-check-sub">Bought to balance sales against purchases &mdash; tracked separately in filters, charts and the register.</span>
-              </span>
+              <span class="pur-check-title">Adjustment</span>
             </label>
           </div>
 
@@ -276,6 +273,14 @@
           <h2 class="billing-card-title">Spend &amp; Rate Trend</h2>
         </div>
         <p class="stat-tile-sub" id="pur-trend-sub" style="margin-top: 4px;"></p>
+        <div class="pur-rate-bar" id="pur-rate-bar" hidden>
+          <div class="pur-rate-picks" id="pur-rate-picks" role="group" aria-label="Material for the ₹/kg line"></div>
+          <button type="button" class="pur-rate-edit" id="pur-rate-edit" aria-haspopup="true" aria-expanded="false" aria-controls="pur-rate-menu" title="Choose which materials show here">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
+            Edit
+          </button>
+          <div class="pur-rate-menu" id="pur-rate-menu" role="group" aria-label="Materials to show" hidden></div>
+        </div>
         <div class="chart-canvas-wrap">
           <canvas id="pur-trend-chart"></canvas>
         </div>
@@ -285,14 +290,19 @@
       <section class="billing-card">
         <div class="chart-card-head">
           <h2 class="billing-card-title" id="pur-split-title">By Supplier</h2>
-          <div class="chart-toggle-group" role="group" aria-label="Supplier chart metric">
-            <button type="button" class="chart-toggle-btn is-active" data-metric="value">Value</button>
-            <button type="button" class="chart-toggle-btn" data-metric="weight">Weight</button>
+          <div class="chart-toggle-group" role="group" aria-label="Bill type">
+            <button type="button" class="chart-toggle-btn is-active" data-kind="all">All</button>
+            <button type="button" class="chart-toggle-btn" data-kind="regular">Regular</button>
+            <button type="button" class="chart-toggle-btn" data-kind="adjustment">Adjustment</button>
           </div>
         </div>
         <p class="stat-tile-sub" id="pur-split-sub" style="margin-top: 4px;"></p>
-        <div class="chart-canvas-wrap">
-          <canvas id="pur-split-chart"></canvas>
+        <div class="pur-split-body" id="pur-split-body">
+          <div class="chart-canvas-wrap pur-donut-wrap">
+            <canvas id="pur-split-chart"></canvas>
+            <div class="pur-donut-center" aria-hidden="true"><span id="pur-split-center-label">Total</span><strong id="pur-split-center"></strong><em id="pur-split-center-sub"></em></div>
+          </div>
+          <ul class="pur-split-legend" id="pur-split-legend"></ul>
         </div>
         <p class="chart-empty" id="pur-split-empty" hidden>No purchases match these filters yet.</p>
       </section>
@@ -312,7 +322,7 @@
               <th>Supplier</th>
               <th>Bill No.</th>
               <th>Items</th>
-              <th class="pur-num">Weight</th>
+              <th class="pur-num">Weight / Qty</th>
               <th class="pur-num">Taxable</th>
               <th>GST</th>
               <th class="pur-num">Total</th>
@@ -1590,7 +1600,6 @@ saveBtn.addEventListener("click", function () {
 // =====================================================================
 var filterState = { gst: "all", shown: PAGE_SIZE };
 var highlightId = null;
-var splitMetric = "value";
 
 function loadPurchases() {
   return getDocs(collection(db, "purchases")).then(function (snap) {
@@ -1710,6 +1719,7 @@ function sumLines(lines) {
 }
 
 function applyFilters() {
+  syncKindButtons();
   if (!purchasesLoaded) return;
   var lines = filteredLines();
   var s = sumLines(lines);
@@ -1781,6 +1791,15 @@ function renderReturns(s) {
 var EDIT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>';
 var DELETE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"/><path d="M9 7V4h6v3"/></svg>';
 
+// Weight column: the bill's kg, with its pieces (machinery, fittings)
+// counted underneath -- or just the pieces when nothing was by weight.
+function weightQtyCell(p) {
+  var qty = round3((p.lines || []).reduce(function (n, l) { return n + (l.basis === "pcs" ? l.qty || 0 : 0); }, 0));
+  if (!p.weightKg) return qty ? '<span class="pur-cell-main">' + formatQty(qty) + "</span>" : "—";
+  return '<span class="pur-cell-main">' + formatKg(p.weightKg) + "</span>" +
+    (qty ? '<span class="pur-cell-sub">+ ' + formatQty(qty) + "</span>" : "");
+}
+
 function renderTable(rows) {
   var body = $("pur-table-body");
   var visible = rows.slice(0, filterState.shown);
@@ -1809,7 +1828,7 @@ function renderTable(rows) {
         (p.supplierGstin ? '<span class="pur-cell-sub mono">' + esc(p.supplierGstin) + "</span>" : "") + "</td>" +
       '<td><span class="mono">' + esc(p.billNo) + "</span>" + (p.isAdjustment ? '<span class="pur-adj-badge pur-adj-badge--row">Adjustment</span>' : "") + "</td>" +
       '<td class="pur-items-cell">' + items + "</td>" +
-      '<td class="pur-num mono">' + (p.weightKg ? formatKg(p.weightKg) : "—") + "</td>" +
+      '<td class="pur-num mono">' + weightQtyCell(p) + "</td>" +
       '<td class="pur-num">' + formatCurrency(p.taxableValue) + "</td>" +
       '<td><span class="pur-gst-badge ' + (inter ? "is-inter" : "is-intra") + '">' + (inter ? "IGST" : "CGST+SGST") + " " + formatPct(p.gstRate || 0) + "</span>" +
         '<span class="pur-cell-sub">' + formatCurrency(p.totalGst) + "</span></td>" +
@@ -1965,8 +1984,8 @@ function axisX(theme) {
 function axisY(theme, fmt, extra) {
   return Object.assign({
     beginAtZero: true,
-    grid: { color: theme.line },
-    ticks: { color: theme.inkMuted, font: { family: "IBM Plex Sans" }, callback: fmt },
+    grid: { color: theme.line + "99" },
+    ticks: { color: theme.inkMuted, font: { family: "IBM Plex Sans" }, callback: fmt, maxTicksLimit: 6 },
     border: { display: false }
   }, extra || {});
 }
@@ -2009,6 +2028,115 @@ function chartEmpty(canvas, empty, message) {
   canvas.style.display = "none";
 }
 
+// Which material the ₹/kg line follows: a pill for each material you've
+// chosen to keep here (Edit -> tick them; saved to the account, so every
+// device shows the same ones), or the five heaviest until you choose.
+// New materials (Brass) show up in the Edit list by themselves. The pill
+// last picked is remembered in this browser; with a Material filter set,
+// the line simply follows that material.
+var RATE_KEY = "nkmw.purchases.rateMaterial";
+var RATE_DEFAULT_COUNT = 5;
+var rateChoice = "";
+var rateShown = null; // material keys ticked under Edit; null = heaviest five
+try { rateChoice = localStorage.getItem(RATE_KEY) || ""; } catch (e) {}
+
+function chartPrefsRef() { return doc(db, "purchaseSettings", "charts"); }
+function loadChartPrefs() {
+  return getDoc(chartPrefsRef()).then(function (snap) {
+    var d = snap.exists() ? snap.data() : {};
+    rateShown = Array.isArray(d.rateMaterials) && d.rateMaterials.length ? d.rateMaterials : null;
+    if (purchasesLoaded) renderTrendChart(filteredLines());
+  }).catch(function (err) { console.error(err); });
+}
+function saveChartPrefs() {
+  return setDoc(chartPrefsRef(), { rateMaterials: rateShown || [], updatedAt: serverTimestamp() }, { merge: true })
+    .catch(function (err) { console.error(err); });
+}
+
+// Every material ever bought by weight, heaviest first.
+function rateMaterials() {
+  var weight = {}, names = {};
+  allLines.forEach(function (l) {
+    if (l.basis !== "kg" || !l.weightKg) return;
+    var k = normKey(l.material);
+    weight[k] = (weight[k] || 0) + l.weightKg;
+    names[k] = names[k] || l.material;
+  });
+  var keys = Object.keys(weight).sort(function (a, b) { return weight[b] - weight[a]; });
+  return { keys: keys, names: names, weight: weight };
+}
+function shownRateKeys(all) {
+  if (!rateShown) return all.keys.slice(0, RATE_DEFAULT_COUNT);
+  var picked = all.keys.filter(function (k) { return rateShown.indexOf(k) !== -1; });
+  return picked.length ? picked : all.keys.slice(0, RATE_DEFAULT_COUNT);
+}
+
+function renderRatePicks(all, shown, inView, active, locked) {
+  var bar = $("pur-rate-bar");
+  bar.hidden = locked || all.keys.length < 2;
+  if (bar.hidden) { closeRateMenu(); return; }
+  $("pur-rate-picks").innerHTML = '<span class="pur-rate-picks-label">₹/kg for</span>' + shown.map(function (k) {
+    var on = k === active, none = !inView[k];
+    return '<button type="button" class="pur-rate-pick' + (on ? " is-active" : "") + '" data-rate-mat="' + esc(k) + '" aria-pressed="' + on + '"' +
+      (none ? ' disabled title="No ' + esc(all.names[k]) + ' bought in this view"' : "") + ">" + esc(all.names[k]) + "</button>";
+  }).join("");
+  if (!$("pur-rate-menu").hidden) renderRateMenu();
+}
+$("pur-rate-picks").addEventListener("click", function (e) {
+  var b = e.target.closest("[data-rate-mat]");
+  if (!b || b.disabled || b.classList.contains("is-active")) return;
+  rateChoice = b.dataset.rateMat;
+  try { localStorage.setItem(RATE_KEY, rateChoice); } catch (err) {}
+  renderTrendChart(filteredLines());
+});
+
+// The Edit dropdown: a tick list of every material bought by weight.
+function fmtTonnes(kg) {
+  return kg >= 1000 ? (kg / 1000).toLocaleString("en-IN", { maximumFractionDigits: 2 }) + " t" : Math.round(kg).toLocaleString("en-IN") + " kg";
+}
+function renderRateMenu() {
+  var all = rateMaterials(), shown = shownRateKeys(all);
+  $("pur-rate-menu").innerHTML = '<p class="nks-group">Show on the ₹/kg line</p>' + all.keys.map(function (k) {
+    var on = shown.indexOf(k) !== -1;
+    return '<label class="pur-rate-opt"><input type="checkbox" value="' + esc(k) + '"' + (on ? " checked" : "") +
+      (on && shown.length === 1 ? " disabled" : "") + ' /><span class="pur-rate-box" aria-hidden="true"></span>' +
+      '<span class="pur-rate-opt-name">' + esc(all.names[k]) + "</span>" +
+      '<span class="pur-rate-opt-meta">' + fmtTonnes(all.weight[k]) + "</span></label>";
+  }).join("") + '<p class="pur-rate-menu-note">Bought by weight, heaviest first. Saved for every device.</p>';
+}
+function openRateMenu() {
+  renderRateMenu();
+  $("pur-rate-menu").hidden = false;
+  $("pur-rate-edit").setAttribute("aria-expanded", "true");
+  $("pur-rate-edit").classList.add("is-open");
+}
+function closeRateMenu() {
+  $("pur-rate-menu").hidden = true;
+  $("pur-rate-edit").setAttribute("aria-expanded", "false");
+  $("pur-rate-edit").classList.remove("is-open");
+}
+$("pur-rate-edit").addEventListener("click", function () {
+  if ($("pur-rate-menu").hidden) openRateMenu(); else closeRateMenu();
+});
+$("pur-rate-menu").addEventListener("change", function (e) {
+  if (!e.target.matches("input[type=checkbox]")) return;
+  var all = rateMaterials();
+  var shown = shownRateKeys(all).slice();
+  var k = e.target.value, i = shown.indexOf(k);
+  if (e.target.checked && i === -1) shown.push(k);
+  if (!e.target.checked && i !== -1) shown.splice(i, 1);
+  if (!shown.length) { e.target.checked = true; return; }
+  rateShown = shown;
+  saveChartPrefs();
+  renderTrendChart(filteredLines());
+});
+document.addEventListener("mousedown", function (e) {
+  if (!$("pur-rate-menu").hidden && !e.target.closest("#pur-rate-menu, #pur-rate-edit")) closeRateMenu();
+});
+document.addEventListener("keydown", function (e) {
+  if (e.key === "Escape" && !$("pur-rate-menu").hidden) { closeRateMenu(); $("pur-rate-edit").focus(); }
+});
+
 // Spend (bars, before GST) by month -- or bill by bill once a single
 // month is picked -- and the ₹/kg paid for one material (line): the one
 // picked in the filter, or whichever was bought most by weight. ₹/kg
@@ -2028,12 +2156,19 @@ function renderTrendChart(lines) {
   var byBill = c.month !== "all";
   var weightByMat = {}, matNames = {};
   lines.forEach(function (l) {
+    if (l.basis !== "kg" || !l.weightKg) return;
     var k = normKey(l.material);
     weightByMat[k] = (weightByMat[k] || 0) + l.weightKg;
     matNames[k] = matNames[k] || l.material;
   });
-  var rateMat = c.material !== "all" ? c.material : Object.keys(weightByMat).sort(function (a, b) { return weightByMat[b] - weightByMat[a]; })[0];
+  var rateMats = Object.keys(weightByMat).sort(function (a, b) { return weightByMat[b] - weightByMat[a]; });
+  var allRate = rateMaterials();
+  var shownRate = shownRateKeys(allRate);
+  var pickable = shownRate.filter(function (k) { return weightByMat[k]; });
+  var rateMat = c.material !== "all" ? c.material
+    : pickable.indexOf(rateChoice) !== -1 ? rateChoice : pickable[0] || rateMats[0];
   var rateName = matNames[rateMat] || "";
+  renderRatePicks(allRate, shownRate, weightByMat, rateMat, c.material !== "all");
   var groups = {};
   lines.forEach(function (l) {
     var p = l.row.data;
@@ -2052,13 +2187,15 @@ function renderTrendChart(lines) {
     return byBill ? "Bill " + (g.billNo || "—") + " · " + formatDisplayDate(g.date) + " · " + g.supplier : monthLabel(k);
   });
   var spend = keys.map(function (k) { return round2(groups[k].taxable); });
+  // Stacked bars: only the top piece of each stack gets the rounded cap,
+  // so regular and adjustment spend read as one column.
   var adjSpend = keys.map(function (k) { return round2(groups[k].adjTaxable); });
   var hasAdj = adjSpend.some(function (v) { return v > 0; });
   var rate = keys.map(function (k) { return groups[k].matWeight ? round2(groups[k].matTaxable / groups[k].matWeight) : null; });
   var shortName = rateName.length > 18 ? rateName.slice(0, 17) + "…" : rateName;
 
   var bits = filterSummaryText();
-  setText("pur-trend-sub", (byBill ? "Spend bill by bill" : "Monthly spend before GST") + ", and ₹/kg paid for " + rateName + (bits.length ? " · " + bits.join(" · ") : ""));
+  setText("pur-trend-sub", (byBill ? "Spend bill by bill" : "Monthly spend before GST") + (rateName ? ", and ₹/kg paid for " + rateName : "") + (bits.length ? " · " + bits.join(" · ") : ""));
 
   var theme = chartTheme();
   var config = {
@@ -2072,7 +2209,7 @@ function renderTrendChart(lines) {
         stack: "spend",
         backgroundColor: barFill(theme),
         hoverBackgroundColor: theme.accent,
-        borderRadius: 8,
+        borderRadius: function (ctx) { return adjSpend[ctx.dataIndex] > 0 ? 0 : { topLeft: 8, topRight: 8 }; },
         borderSkipped: false,
         maxBarThickness: 38,
         order: 2
@@ -2084,7 +2221,7 @@ function renderTrendChart(lines) {
         stack: "spend",
         backgroundColor: theme.inkMuted + "8C",
         hoverBackgroundColor: theme.inkMuted,
-        borderRadius: 8,
+        borderRadius: { topLeft: 8, topRight: 8 },
         borderSkipped: false,
         maxBarThickness: 38,
         order: 3
@@ -2100,9 +2237,10 @@ function renderTrendChart(lines) {
         pointBorderWidth: 2,
         pointHoverBackgroundColor: theme.success,
         pointHoverBorderColor: theme.surface,
-        pointRadius: 3.5,
+        pointRadius: 4,
         pointHoverRadius: 7,
         borderWidth: 2.5,
+        borderCapStyle: "round",
         tension: 0.35,
         spanGaps: true,
         order: 1
@@ -2114,7 +2252,7 @@ function renderTrendChart(lines) {
       interaction: { mode: "index", intersect: false },
       animation: { duration: 900, easing: "easeOutQuart", delay: staggerDelay(60) },
       plugins: {
-        legend: { display: true, position: "top", align: "end", labels: { usePointStyle: true, pointStyle: "circle", boxWidth: 8, boxHeight: 8, padding: 14, font: { family: "IBM Plex Sans" } } },
+        legend: { display: true, position: "top", align: "end", labels: { usePointStyle: true, pointStyle: "circle", boxWidth: 8, boxHeight: 8, padding: 16, font: { family: "IBM Plex Sans", size: 12 } } },
         tooltip: Object.assign(tooltipStyle(theme), {
           callbacks: {
             title: function (items) { return titles[items[0].dataIndex]; },
@@ -2128,8 +2266,8 @@ function renderTrendChart(lines) {
       },
       scales: {
         x: Object.assign(axisX(theme), { stacked: true }),
-        y: axisY(theme, function (v) { return formatCompactCurrency(v); }, { stacked: true }),
-        y1: axisY(theme, function (v) { return "₹" + v; }, { position: "right", beginAtZero: false, grid: { display: false } })
+        y: axisY(theme, function (v) { return formatCompactCurrency(v); }, { stacked: true, grace: "8%" }),
+        y1: axisY(theme, function (v) { return "₹" + v.toLocaleString("en-IN", { maximumFractionDigits: 1 }); }, { position: "right", beginAtZero: false, grace: "25%", grid: { display: false } })
       }
     }
   };
@@ -2143,97 +2281,173 @@ function renderTrendChart(lines) {
 }
 
 // Who the money (or the tonnage) goes to -- or, with one supplier picked,
-// which materials you buy from them.
+// which materials you buy from them. A doughnut of the top five, with
+// everything smaller folded into one slice, and a legend beside it with
+// each one's amount and share.
+var SPLIT_TOP = 5;
+function splitPalette(theme) {
+  return [theme.accent, "#E9A23B", "#2BA59B", "#5B8DEF", "#A77BDB"];
+}
 function renderSplitChart(lines) {
-  var canvas = $("pur-split-chart"), empty = $("pur-split-empty");
+  var canvas = $("pur-split-chart"), empty = $("pur-split-empty"), body = $("pur-split-body");
   var c = currentFilters();
   var bySupplier = c.supplier === "all";
   setText("pur-split-title", bySupplier ? "By Supplier" : "By Material");
-  if (!ChartLib) { chartEmpty(canvas, empty, "Loading chart…"); return; }
-  if (!lines.length) {
-    chartEmpty(canvas, empty, allPurchases.length ? "No purchases match these filters yet." : "Your top suppliers will show up here.");
-    if (splitChart) { splitChart.destroy(); splitChart = null; }
-    return;
+  function showEmpty(msg) {
+    body.hidden = true;
+    empty.textContent = msg;
+    empty.hidden = false;
   }
-  empty.hidden = true;
-  canvas.style.display = "block";
-
+  if (!ChartLib) { showEmpty("Loading chart…"); return; }
   var groups = {};
   lines.forEach(function (l) {
     var p = l.row.data;
     var key = bySupplier ? normKey(p.supplierName) : normKey(l.material);
-    var g = groups[key] || (groups[key] = { label: bySupplier ? p.supplierName : l.material, value: 0, weight: 0 });
+    var g = groups[key] || (groups[key] = { label: bySupplier ? p.supplierName : l.material, value: 0 });
     g.value += l.amount;
-    g.weight += l.weightKg;
   });
   var ranked = Object.keys(groups).map(function (k) { return groups[k]; })
-    .filter(function (g) { return splitMetric !== "weight" || g.weight > 0; })
-    .sort(function (a, b) { return splitMetric === "weight" ? b.weight - a.weight : b.value - a.value; })
-    .slice(0, 8);
-  var total = ranked.reduce(function (n, g) { return n + (splitMetric === "weight" ? g.weight : g.value); }, 0);
-  var labels = ranked.map(function (g) { return g.label.length > 22 ? g.label.slice(0, 21) + "…" : g.label; });
-  var values = ranked.map(function (g) { return splitMetric === "weight" ? round3(g.weight) : round2(g.value); });
+    .filter(function (g) { return g.value > 0; })
+    .sort(function (a, b) { return b.value - a.value; });
+  if (!ranked.length) {
+    showEmpty(allPurchases.length ? "No purchases match these filters yet." : "Your top suppliers will show up here.");
+    if (splitChart) { splitChart.destroy(); splitChart = null; }
+    return;
+  }
+  body.hidden = false;
+  empty.hidden = true;
+
+  var noun = bySupplier ? "supplier" : "material";
+  // Top five by name; the rest share one slice -- unless only one is left
+  // over, which might as well be named.
+  var slices = ranked.length > SPLIT_TOP + 1 ? ranked.slice(0, SPLIT_TOP) : ranked.slice();
+  var rest = ranked.slice(slices.length);
+  if (rest.length) {
+    slices.push({
+      label: "Other " + plural(rest.length, noun),
+      names: rest.map(function (g) { return g.label; }),
+      value: rest.reduce(function (n, g) { return n + g.value; }, 0),
+      isRest: true
+    });
+  }
+  var total = slices.reduce(function (n, g) { return n + g.value; }, 0);
+  var theme = chartTheme();
+  var palette = splitPalette(theme);
+  var colors = slices.map(function (g, i) { return g.isRest ? theme.inkMuted + "73" : palette[i % palette.length]; });
+  var fmtShort = formatCompactCurrency;
+  var pct = function (v) {
+    var p = total ? v / total * 100 : 0;
+    return p > 0 && p < 1 ? "<1%" : Math.round(p) + "%";
+  };
 
   setText("pur-split-sub", (bySupplier ? "Top suppliers" : "Materials from " + $("pur-filter-supplier").selectedOptions[0].textContent) +
-    " by " + (splitMetric === "weight" ? "weight bought" : "spend before GST"));
+    " by spend before GST" + (c.kind !== "all" ? ", " + c.kind + " bills" : "") +
+    (ranked.length > slices.length ? " · " + ranked.length + " in all" : ""));
+  splitView = {
+    label: c.kind === "adjustment" ? "Adjustment spend" : c.kind === "regular" ? "Regular spend" : "Total spend",
+    total: fmtShort(total),
+    slices: slices.map(function (g) { return { label: g.label, value: fmtShort(g.value), pct: pct(g.value) }; })
+  };
+  showSliceInCenter(null);
 
-  var theme = chartTheme();
-  var fmt = splitMetric === "weight"
-    ? function (v) { return v >= 1000 ? (v / 1000).toLocaleString("en-IN", { maximumFractionDigits: 1 }) + "t" : v.toLocaleString("en-IN") + " kg"; }
-    : function (v) { return formatCompactCurrency(v); };
+  var legend = $("pur-split-legend");
+  legend.innerHTML = slices.map(function (g, i) {
+    var v = g.value;
+    return '<li data-i="' + i + '"' + (g.isRest ? ' class="is-rest" title="' + esc(g.names.join(", ")) + '"' : "") + ' style="--c:' + colors[i] + ';--n:' + i + '">' +
+      '<span class="pur-leg-dot" aria-hidden="true"></span>' +
+      '<span class="pur-leg-name">' + esc(g.label) + "</span>" +
+      '<span class="pur-leg-pct">' + pct(v) + "</span>" +
+      '<span class="pur-leg-bar" aria-hidden="true"><i style="width:' + (total ? Math.max(v / total * 100, 1.5) : 0).toFixed(1) + '%"></i></span>' +
+      '<span class="pur-leg-val">' + fmtShort(v) + "</span>" +
+      "</li>";
+  }).join("");
+
   var config = {
-    type: "bar",
+    type: "doughnut",
     data: {
-      labels: labels,
+      labels: slices.map(function (g) { return g.label; }),
       datasets: [{
-        label: splitMetric === "weight" ? "Weight" : "Spend",
-        data: values,
-        backgroundColor: barFill(theme, true),
-        hoverBackgroundColor: theme.accent,
-        borderRadius: 8,
-        borderSkipped: false,
-        maxBarThickness: 26
+        data: slices.map(function (g) { return round2(g.value); }),
+        backgroundColor: colors,
+        hoverBackgroundColor: colors,
+        borderColor: theme.surface,
+        borderWidth: 2,
+        borderRadius: 4,
+        hoverOffset: 8
       }]
     },
     options: {
-      indexAxis: "y",
       responsive: true,
       maintainAspectRatio: false,
-      animation: { duration: 900, easing: "easeOutQuart", delay: staggerDelay(70) },
+      cutout: "70%",
+      layout: { padding: 10 },
+      animation: { duration: 900, easing: "easeOutQuart", animateRotate: true },
+      // No tooltip -- the hole in the middle shows whichever slice is
+      // pointed at, so nothing covers the ring.
+      onHover: function (e, els) { markSlice(els.length ? els[0].index : null); },
       plugins: {
         legend: { display: false },
-        tooltip: Object.assign(tooltipStyle(theme), {
-          callbacks: {
-            title: function (items) { return ranked[items[0].dataIndex].label; },
-            label: function (ctx) {
-              var share = total ? " · " + Math.round(ctx.parsed.x / total * 100) + "%" : "";
-              return (splitMetric === "weight" ? formatKg(ctx.parsed.x) : formatCurrency(ctx.parsed.x)) + share;
-            }
-          }
-        })
-      },
-      scales: {
-        x: axisY(theme, fmt, { ticks: { color: theme.inkMuted, font: { family: "IBM Plex Sans" }, callback: fmt, maxRotation: 0, maxTicksLimit: 5 } }),
-        y: { grid: { display: false }, ticks: { color: theme.ink, font: { family: "IBM Plex Sans" } }, border: { color: theme.line } }
+        tooltip: { enabled: false }
       }
     }
   };
-  if (splitChart) {
+  if (splitChart && splitChart.config.type === "doughnut") {
     splitChart.data = config.data;
     splitChart.options = config.options;
     splitChart.update();
   } else {
+    if (splitChart) splitChart.destroy();
     splitChart = new ChartLib(canvas.getContext("2d"), config);
   }
 }
 
-var metricBtns = document.querySelectorAll("[data-metric]");
-metricBtns.forEach(function (b) {
+var splitView = null;
+function showSliceInCenter(i) {
+  if (!splitView) return;
+  var g = i == null ? null : splitView.slices[i];
+  setText("pur-split-center-label", g ? g.label : splitView.label);
+  setText("pur-split-center", g ? g.value : splitView.total);
+  setText("pur-split-center-sub", g ? g.pct + " of total" : "");
+  $("pur-split-center").parentNode.classList.toggle("is-slice", !!g);
+}
+// Pointing at a slice or its legend row lights up both, and puts that
+// one's figures in the middle of the ring.
+function markSlice(i) {
+  showSliceInCenter(i);
+  var legend = $("pur-split-legend");
+  legend.classList.toggle("has-focus", i != null);
+  Array.prototype.forEach.call(legend.children, function (li) { li.classList.toggle("is-focus", +li.dataset.i === i); });
+}
+function focusSlice(i) {
+  if (!splitChart) return;
+  splitChart.setActiveElements(i == null ? [] : [{ datasetIndex: 0, index: i }]);
+  splitChart.update();
+  markSlice(i);
+}
+$("pur-split-legend").addEventListener("mouseover", function (e) {
+  var li = e.target.closest("li");
+  if (li) focusSlice(+li.dataset.i);
+});
+$("pur-split-legend").addEventListener("mouseleave", function () { focusSlice(null); });
+$("pur-split-chart").addEventListener("mouseleave", function () { markSlice(null); });
+
+// The chart's All / Regular / Adjustment toggle is the Bill Type filter
+// above, worked from here: either one moves the other.
+var kindBtns = document.querySelectorAll("[data-kind]");
+function syncKindButtons() {
+  var v = $("pur-filter-kind").value;
+  kindBtns.forEach(function (b) {
+    var on = b.dataset.kind === v;
+    b.classList.toggle("is-active", on);
+    b.setAttribute("aria-pressed", on ? "true" : "false");
+  });
+}
+kindBtns.forEach(function (b) {
   b.addEventListener("click", function () {
-    if (splitMetric === b.dataset.metric) return;
-    splitMetric = b.dataset.metric;
-    metricBtns.forEach(function (x) { x.classList.toggle("is-active", x === b); });
-    renderSplitChart(filteredLines());
+    var sel = $("pur-filter-kind");
+    if (sel.value === b.dataset.kind) return;
+    sel.value = b.dataset.kind;
+    sel.dispatchEvent(new Event("change", { bubbles: true }));
   });
 });
 
@@ -2272,6 +2486,7 @@ onAuthStateChanged(auth, function (user) {
     loadSuppliers();
     loadPurchases();
     loadHidden();
+    loadChartPrefs();
 
     import("https://cdn.jsdelivr.net/npm/chart.js@4.4.4/+esm").then(function (mod) {
       ChartLib = mod.Chart;
