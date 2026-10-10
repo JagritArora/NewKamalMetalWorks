@@ -131,6 +131,20 @@ service cloud.firestore {
       allow read, write: if isMaster();
     }
 
+    // Purchase register (purchases.html) -- one doc per supplier bill:
+    // its item lines (item, material, weight, rate per kg), the CGST/SGST
+    // or IGST on it with any rounding, and whether it's an adjustment
+    // bill. Kept for GST input credit and cost analysis. Master only.
+    match /purchases/{purchaseId} {
+      allow read, write: if isMaster();
+    }
+
+    // Supplier directory behind the purchase form's dropdown -- name,
+    // GSTIN and the state it implies. Master only.
+    match /suppliers/{supplierId} {
+      allow read, write: if isMaster();
+    }
+
     // Queued by billing.html, sent by the sendMail Cloud Function (which
     // uses the Admin SDK and bypasses these rules entirely). Clients only
     // ever create here -- never read/update/delete -- so nobody but the

@@ -1,0 +1,2080 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Purchases | New Kamal Metal Works</title>
+<meta name="description" content="Purchase register for New Kamal Metal Works." />
+<meta name="robots" content="noindex" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/main.css?v=93" />
+</head>
+<body class="login-page">
+<script src="js/page-transition.js?v=1"></script>
+
+<nav class="site-nav">
+  <a href="index.html#hero" class="brand">New Kamal <span>Metal Works</span></a>
+  <a href="welcome.html" class="nav-icon-btn" aria-label="Back to Welcome">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1H9.5a1 1 0 0 0 1-1v-4a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v4a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-9"/></svg>
+  </a>
+</nav>
+
+<main class="login-shell billing-shell">
+  <div class="billing-wrap" id="purchases-wrap" hidden>
+    <header class="page-hero">
+      <svg class="page-hero-art" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2.5 3.5h3l2.4 11.2a1.5 1.5 0 0 0 1.5 1.2h8.4a1.5 1.5 0 0 0 1.5-1.1l1.6-6.8H6.6"/></svg>
+      <a href="welcome.html" class="billing-back-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6"/></svg><span>Dashboard</span></a>
+      <span class="page-hero-kicker"><span class="page-hero-index">06</span>Purchases</span>
+      <h1 class="welcome-heading page-hero-title">Purchases.</h1>
+      <p class="welcome-sub page-hero-sub">Record every bill you buy against &mdash; supplier, weight, rate and GST &mdash; so your input credit is ready for returns and your costs are easy to read.</p>
+    </header>
+
+    <!-- 01 Record a purchase -->
+    <section class="billing-card" id="pur-form-card">
+      <div class="billing-card-head">
+        <h2 class="billing-card-title billing-card-title--accent" id="pur-form-title">Record a Purchase</h2>
+        <button type="button" class="pay-action-btn pay-action-btn--ghost pur-cancel-edit" id="pur-cancel-edit" hidden>Cancel edit</button>
+      </div>
+
+      <div class="pur-form">
+        <div class="pur-fields">
+          <p class="pur-group-label"><span>A</span>Supplier &amp; bill</p>
+          <div class="billing-grid pur-grid">
+            <div class="login-field pur-span-2">
+              <div class="pur-label-row">
+                <label for="pur-supplier">Supplier</label>
+                <button type="button" class="pur-link-btn" id="pur-sup-new">+ New supplier</button>
+              </div>
+              <select id="pur-supplier">
+                <option value="">Choose a supplier</option>
+              </select>
+            </div>
+            <div class="login-field pur-span-2">
+              <span class="pur-field-label">GSTIN &amp; State</span>
+              <div class="pur-sup-card" id="pur-sup-card" aria-live="polite"><span class="pur-sup-empty">Pick a supplier to see their GSTIN and state.</span></div>
+            </div>
+            <div class="login-field pur-span-2">
+              <label for="pur-bill-no">Supplier Bill No.</label>
+              <input type="text" id="pur-bill-no" autocomplete="off" placeholder="As printed on their bill" />
+            </div>
+            <div class="login-field pur-span-2">
+              <label for="pur-date">Bill Date</label>
+              <input type="date" id="pur-date" />
+            </div>
+            <label class="pur-check pur-span-4" for="pur-adjust">
+              <input type="checkbox" id="pur-adjust" />
+              <span class="pur-check-box" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+              <span class="pur-check-text">
+                <span class="pur-check-title">Adjustment bill</span>
+                <span class="pur-check-sub">Bought to balance sales against purchases &mdash; tracked separately in filters, charts and the register.</span>
+              </span>
+            </label>
+          </div>
+
+          <p class="pur-group-label"><span>B</span>Items on this bill</p>
+          <div class="pur-lines-head" aria-hidden="true">
+            <span>Item</span><span>Material</span><span>Weight</span><span>Rate / kg</span><span class="pur-num">Amount</span><span></span>
+          </div>
+          <div class="pur-lines" id="pur-lines"></div>
+          <button type="button" class="pur-add-line" id="pur-add-line">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+            Add item
+          </button>
+
+          <p class="pur-group-label"><span>C</span>GST</p>
+          <div class="pur-gst-row">
+            <div class="pur-gst-types" role="radiogroup" aria-label="GST type">
+              <button type="button" class="pur-gst-opt is-active" role="radio" aria-checked="true" data-type="intra">
+                <span class="pur-gst-dot" aria-hidden="true"></span>
+                <span class="pur-gst-opt-text"><span class="pur-gst-opt-title">CGST + SGST</span><span class="pur-gst-opt-sub">Supplier in Haryana</span></span>
+              </button>
+              <button type="button" class="pur-gst-opt" role="radio" aria-checked="false" data-type="inter">
+                <span class="pur-gst-dot" aria-hidden="true"></span>
+                <span class="pur-gst-opt-text"><span class="pur-gst-opt-title">IGST</span><span class="pur-gst-opt-sub">Supplier in another state</span></span>
+              </button>
+            </div>
+            <div class="login-field pur-gst-rate">
+              <label for="pur-gst-rate">GST Rate</label>
+              <select id="pur-gst-rate">
+                <option value="18" selected>18%</option>
+                <option value="12">12%</option>
+                <option value="5">5%</option>
+                <option value="28">28%</option>
+                <option value="0">0% (exempt)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="billing-grid pur-grid pur-grid--notes">
+            <div class="login-field pur-span-4">
+              <label for="pur-notes">Notes <span class="billing-optional">(optional)</span></label>
+              <input type="text" id="pur-notes" autocomplete="off" placeholder="Transport, lot no., anything worth remembering" />
+            </div>
+          </div>
+        </div>
+
+        <aside class="pur-receipt" aria-label="Bill summary">
+          <div class="pur-receipt-head">
+            <span class="pur-receipt-kicker">Bill summary</span>
+            <span class="pur-receipt-type" id="pur-r-type">CGST + SGST</span>
+          </div>
+          <p class="pur-receipt-calc" id="pur-r-calc">Add weight and rate</p>
+          <dl class="pur-receipt-rows">
+            <div class="pur-r-row"><dt>Taxable value</dt><dd id="pur-r-taxable">₹0.00</dd></div>
+            <div class="pur-r-row" id="pur-r-cgst-row"><dt>CGST <span class="pur-r-rate" id="pur-r-cgst-rate">9%</span></dt><dd id="pur-r-cgst">₹0.00</dd></div>
+            <div class="pur-r-row" id="pur-r-sgst-row"><dt>SGST <span class="pur-r-rate" id="pur-r-sgst-rate">9%</span></dt><dd id="pur-r-sgst">₹0.00</dd></div>
+            <div class="pur-r-row" id="pur-r-igst-row" hidden><dt>IGST <span class="pur-r-rate" id="pur-r-igst-rate">18%</span></dt><dd id="pur-r-igst">₹0.00</dd></div>
+            <div class="pur-r-row pur-r-row--gst"><dt>Total GST</dt><dd id="pur-r-gst">₹0.00</dd></div>
+            <div class="pur-r-row" id="pur-r-roundoff-row" hidden><dt>Round off</dt><dd id="pur-r-roundoff">₹0.00</dd></div>
+          </dl>
+          <div class="pur-round">
+            <div class="pur-round-row">
+              <span class="pur-round-label">Round GST</span>
+              <div class="chart-toggle-group pur-seg" role="group" aria-label="Round each GST amount" data-round="gst">
+                <button type="button" class="chart-toggle-btn is-active" data-mode="exact">Exact</button>
+                <button type="button" class="chart-toggle-btn" data-mode="nearest">Nearest</button>
+                <button type="button" class="chart-toggle-btn" data-mode="up">Up</button>
+                <button type="button" class="chart-toggle-btn" data-mode="down">Down</button>
+              </div>
+            </div>
+            <div class="pur-round-row">
+              <span class="pur-round-label">Round total</span>
+              <div class="chart-toggle-group pur-seg" role="group" aria-label="Round the bill total" data-round="total">
+                <button type="button" class="chart-toggle-btn is-active" data-mode="exact">Exact</button>
+                <button type="button" class="chart-toggle-btn" data-mode="nearest">Nearest</button>
+                <button type="button" class="chart-toggle-btn" data-mode="up">Up</button>
+                <button type="button" class="chart-toggle-btn" data-mode="down">Down</button>
+              </div>
+            </div>
+          </div>
+          <div class="pur-receipt-total">
+            <span>Bill total</span>
+            <strong id="pur-r-total">₹0.00</strong>
+          </div>
+          <button type="button" class="btn btn-primary pur-save" id="pur-save">Save purchase</button>
+          <p class="login-status" id="pur-form-status" role="status" aria-live="polite"></p>
+        </aside>
+      </div>
+    </section>
+
+    <!-- 02 Overview -->
+    <section class="billing-card">
+      <div class="chart-card-head">
+        <h2 class="billing-card-title">Overview</h2>
+        <div class="pay-head-actions">
+          <div class="chart-toggle-group" role="group" aria-label="Filter by GST type">
+            <button type="button" class="chart-toggle-btn is-active" data-gst="all">All</button>
+            <button type="button" class="chart-toggle-btn" data-gst="intra">CGST + SGST</button>
+            <button type="button" class="chart-toggle-btn" data-gst="inter">IGST</button>
+          </div>
+          <div class="chart-toggle-group" role="group" aria-label="Reset filters">
+            <button type="button" class="chart-toggle-btn" id="pur-reset">Reset Filters</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="supply-filter-row">
+        <div class="login-field">
+          <label for="pur-filter-supplier">Supplier</label>
+          <select id="pur-filter-supplier">
+            <option value="all">All Suppliers</option>
+          </select>
+        </div>
+        <div class="login-field">
+          <label for="pur-filter-item">Material</label>
+          <select id="pur-filter-item">
+            <option value="all">All Materials</option>
+          </select>
+        </div>
+        <div class="login-field">
+          <label for="pur-filter-fy">Financial Year</label>
+          <select id="pur-filter-fy">
+            <option value="all">All Years</option>
+          </select>
+        </div>
+        <div class="login-field">
+          <label for="pur-filter-month">Month</label>
+          <select id="pur-filter-month">
+            <option value="all">All Months</option>
+          </select>
+        </div>
+        <div class="login-field">
+          <label for="pur-filter-kind">Bill Type</label>
+          <select id="pur-filter-kind">
+            <option value="all">All Bills</option>
+            <option value="regular">Regular</option>
+            <option value="adjustment">Adjustment</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="supply-stats-grid pur-stats-grid">
+        <div class="stat-tile stat-tile--accent">
+          <span class="stat-tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2.5 3.5h3l2.4 11.2a1.5 1.5 0 0 0 1.5 1.2h8.4a1.5 1.5 0 0 0 1.5-1.1l1.6-6.8H6.6"/></svg></span>
+          <span class="stat-tile-label">Total Purchases</span>
+          <span class="stat-tile-value" id="pur-stat-total">—</span>
+          <span class="stat-tile-sub" id="pur-stat-total-sub">&nbsp;</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 5 5 19"/><circle cx="7" cy="7" r="2.5"/><circle cx="17" cy="17" r="2.5"/></svg></span>
+          <span class="stat-tile-label">Input GST</span>
+          <span class="stat-tile-value" id="pur-stat-gst">—</span>
+          <span class="stat-tile-sub" id="pur-stat-gst-sub">&nbsp;</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h12l2 12H4z"/><path d="M9 8a3 3 0 0 1 6 0"/></svg></span>
+          <span class="stat-tile-label">Weight Bought</span>
+          <span class="stat-tile-value mono" id="pur-stat-weight">—</span>
+          <span class="stat-tile-sub" id="pur-stat-weight-sub">&nbsp;</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></span>
+          <span class="stat-tile-label">Avg. Rate / kg</span>
+          <span class="stat-tile-value mono" id="pur-stat-rate">—</span>
+          <span class="stat-tile-sub" id="pur-stat-rate-sub">&nbsp;</span>
+        </div>
+      </div>
+
+      <p class="pur-adj-summary" id="pur-adj-summary"></p>
+
+      <div class="pur-returns">
+        <div class="pur-returns-head">
+          <div>
+            <p class="pur-returns-title">For your GST returns</p>
+            <p class="pur-returns-note" id="pur-returns-note">Input tax credit for everything in this view.</p>
+          </div>
+          <button type="button" class="pur-export-btn" id="pur-export">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M5 20h14"/></svg>
+            Export CSV
+          </button>
+        </div>
+        <div class="pur-returns-grid">
+          <div class="pur-returns-cell"><span>Taxable value</span><strong id="pur-ret-taxable">₹0.00</strong></div>
+          <div class="pur-returns-cell"><span>CGST</span><strong id="pur-ret-cgst">₹0.00</strong></div>
+          <div class="pur-returns-cell"><span>SGST</span><strong id="pur-ret-sgst">₹0.00</strong></div>
+          <div class="pur-returns-cell"><span>IGST</span><strong id="pur-ret-igst">₹0.00</strong></div>
+          <div class="pur-returns-cell pur-returns-cell--total"><span>Total ITC</span><strong id="pur-ret-total">₹0.00</strong></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 03 / 04 Analysis -->
+    <div class="chart-grid">
+      <section class="billing-card">
+        <div class="chart-card-head">
+          <h2 class="billing-card-title">Spend &amp; Rate Trend</h2>
+        </div>
+        <p class="stat-tile-sub" id="pur-trend-sub" style="margin-top: 4px;"></p>
+        <div class="chart-canvas-wrap">
+          <canvas id="pur-trend-chart"></canvas>
+        </div>
+        <p class="chart-empty" id="pur-trend-empty" hidden>No purchases match these filters yet.</p>
+      </section>
+
+      <section class="billing-card">
+        <div class="chart-card-head">
+          <h2 class="billing-card-title" id="pur-split-title">By Supplier</h2>
+          <div class="chart-toggle-group" role="group" aria-label="Supplier chart metric">
+            <button type="button" class="chart-toggle-btn is-active" data-metric="value">Value</button>
+            <button type="button" class="chart-toggle-btn" data-metric="weight">Weight</button>
+          </div>
+        </div>
+        <p class="stat-tile-sub" id="pur-split-sub" style="margin-top: 4px;"></p>
+        <div class="chart-canvas-wrap">
+          <canvas id="pur-split-chart"></canvas>
+        </div>
+        <p class="chart-empty" id="pur-split-empty" hidden>No purchases match these filters yet.</p>
+      </section>
+    </div>
+
+    <!-- 05 Register -->
+    <section class="billing-card">
+      <div class="chart-card-head">
+        <h2 class="billing-card-title">Purchase Register</h2>
+        <span class="pay-result-count" id="pur-result-count"></span>
+      </div>
+      <div class="billing-history-wrap">
+        <table class="billing-history-table pur-table" id="pur-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Supplier</th>
+              <th>Bill No.</th>
+              <th>Items</th>
+              <th class="pur-num">Weight</th>
+              <th class="pur-num">Taxable</th>
+              <th>GST</th>
+              <th class="pur-num">Total</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="pur-table-body">
+            <tr><td colspan="9" class="billing-history-empty">Loading&hellip;</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pay-more-row">
+        <button type="button" class="pay-more-btn" id="pur-more" hidden>Show more</button>
+      </div>
+    </section>
+  </div>
+
+  <div class="login-card login-enter login-loading-card" id="purchases-loading" role="status">
+    <div class="ldr" aria-hidden="true">
+      <svg class="ldr-press" viewBox="0 0 220 116" focusable="false">
+        <defs>
+          <linearGradient id="ldr-ram-grad" x1="0" y1="0" x2="0" y2="1"><stop class="ldr-stop-hi" offset="0"/><stop class="ldr-stop-lo" offset="1"/></linearGradient>
+          <radialGradient id="ldr-glow-grad"><stop class="ldr-stop-glow" offset="0"/><stop class="ldr-stop-glow" offset="1" stop-opacity="0"/></radialGradient>
+          <linearGradient id="ldr-fade" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".2" stop-color="#fff"/><stop offset=".8" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+          <mask id="ldr-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="220" height="116"><rect width="220" height="116" fill="url(#ldr-fade)"/></mask>
+        </defs>
+        <rect class="ldr-head" x="70" y="4" width="80" height="9" rx="4.5"/>
+        <path class="ldr-post" d="M78 13v89M142 13v89"/>
+        <ellipse class="ldr-glow" cx="110" cy="84" rx="46" ry="12" fill="url(#ldr-glow-grad)"/>
+        <g mask="url(#ldr-mask)">
+          <line class="ldr-strip" x1="0" y1="84" x2="220" y2="84"/>
+          <g class="ldr-belt">
+            <g class="ldr-holes"><circle cx="0" cy="84" r="1.1"/><circle cx="22" cy="84" r="1.1"/><circle cx="44" cy="84" r="1.1"/><circle cx="66" cy="84" r="1.1"/><circle cx="88" cy="84" r="1.1"/><circle cx="110" cy="84" r="1.1"/><circle cx="132" cy="84" r="1.1"/><circle cx="154" cy="84" r="1.1"/><circle cx="176" cy="84" r="1.1"/><circle cx="198" cy="84" r="1.1"/><circle cx="220" cy="84" r="1.1"/><circle cx="242" cy="84" r="1.1"/><circle cx="264" cy="84" r="1.1"/></g>
+            <g class="ldr-part"><rect x="-35" y="66" width="26" height="16" rx="3.5"/><circle cx="-22" cy="74" r="3"/></g>
+            <g class="ldr-part"><rect x="9" y="66" width="26" height="16" rx="3.5"/><circle cx="22" cy="74" r="3"/></g>
+            <g class="ldr-part"><rect x="53" y="66" width="26" height="16" rx="3.5"/><circle cx="66" cy="74" r="3"/></g>
+            <g class="ldr-part ldr-part--new"><rect x="97" y="66" width="26" height="16" rx="3.5"/><circle cx="110" cy="74" r="3"/></g>
+          </g>
+        </g>
+        <rect class="ldr-die" x="88" y="88" width="44" height="11" rx="3"/>
+        <rect class="ldr-bed" x="34" y="102" width="152" height="4" rx="2"/>
+        <g class="ldr-sparks"><circle cx="110" cy="82" r="1.4" style="--dx:-24px;--dy:-9px"/><circle cx="110" cy="82" r="1.1" style="--dx:-15px;--dy:-17px"/><circle cx="110" cy="82" r="1.1" style="--dx:16px;--dy:-16px"/><circle cx="110" cy="82" r="1.4" style="--dx:25px;--dy:-8px"/></g>
+        <g class="ldr-ram"><rect x="86" y="14" width="48" height="24" rx="6" fill="url(#ldr-ram-grad)"/><path class="ldr-ram-line" d="M94 26h32"/><rect class="ldr-tip" x="97" y="38" width="26" height="12" rx="2.5"/></g>
+      </svg>
+    </div>
+    <p class="login-sub ldr-label">Loading your purchases&hellip;</p>
+    <p class="ldr-status" aria-hidden="true"><span>Checking your access</span><span>Fetching your records</span><span>Preparing your page</span></p>
+  </div>
+</main>
+
+<div class="confirm-overlay pur-modal" id="pur-sup-modal" hidden>
+  <div class="confirm-dialog pur-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="pur-sup-modal-title">
+    <div class="pur-modal-head">
+      <div>
+        <span class="pur-modal-kicker">Supplier directory</span>
+        <p class="confirm-dialog-title" id="pur-sup-modal-title">New supplier</p>
+      </div>
+      <button type="button" class="billing-ratecard-close" id="pur-sup-close" aria-label="Close">&times;</button>
+    </div>
+    <p class="confirm-dialog-body" id="pur-sup-modal-sub">Saved to your directory, so next time they're one pick away.</p>
+    <div class="pur-modal-fields">
+      <div class="login-field">
+        <label for="pur-sup-name">Supplier name</label>
+        <input type="text" id="pur-sup-name" autocomplete="off" placeholder="As printed on their bill" />
+      </div>
+      <div class="login-field">
+        <label for="pur-sup-gstin">GSTIN</label>
+        <input type="text" id="pur-sup-gstin" class="mono" autocomplete="off" spellcheck="false" maxlength="15" placeholder="06ABCDE1234F1Z5" />
+        <p class="pur-hint" id="pur-sup-gstin-hint">Its state code decides CGST + SGST or IGST.</p>
+      </div>
+    </div>
+    <p class="login-status" id="pur-sup-status" role="status" aria-live="polite"></p>
+    <div class="confirm-dialog-actions">
+      <button type="button" class="confirm-dialog-cancel" id="pur-sup-cancel">Cancel</button>
+      <button type="button" class="confirm-dialog-confirm" id="pur-sup-save">Add supplier</button>
+    </div>
+  </div>
+</div>
+
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <div class="footer-top">
+      <a href="index.html#hero" class="footer-brand">New Kamal <span>Metal Works</span></a>
+      <ul class="footer-links">
+        <li><a href="index.html#operations">Operations</a></li>
+        <li><a href="index.html#capabilities">Capabilities</a></li>
+        <li><a href="index.html#materials">Materials</a></li>
+        <li><a href="index.html#tooling">Tooling</a></li>
+        <li><a href="index.html#quality">Quality</a></li>
+        <li><a href="index.html#about">About</a></li>
+        <li><a href="index.html#contact">Contact</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-bottom">
+      <p class="footer-legal">&copy; <span id="year"></span> New Kamal Metal Works, Faridabad. All rights reserved.</p>
+      <p class="footer-meta">ISO 9001:2015 certified &middot; GSTIN 06AGQPA5950R1ZR</p>
+      <div class="footer-credit">
+        <p class="footer-credit-name">Designed by <span class="footer-credit-highlight">Jagrit Arora</span></p>
+        <p class="footer-credit-links">
+          <a href="mailto:jagrit.arora007@icloud.com">jagrit.arora007@icloud.com</a>
+          <span class="footer-credit-dot" aria-hidden="true">&middot;</span>
+          <a href="tel:+919599030400">+91 95990 30400</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import {
+  initializeFirestore,
+  doc,
+  getDoc,
+  setDoc,
+  getDocs,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  collection,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { enforceSessionTimeout } from "./js/session-guard.js";
+
+var firebaseConfig = {
+  apiKey: "AIzaSyDkEyDAOah5XzAOVjUux9SLhH60To2oTKs",
+  authDomain: "new-kamal-metal-works.firebaseapp.com",
+  projectId: "new-kamal-metal-works",
+  storageBucket: "new-kamal-metal-works.firebasestorage.app",
+  messagingSenderId: "595817400572",
+  appId: "1:595817400572:web:8617eb7419e5049524af79"
+};
+
+var app = initializeApp(firebaseConfig);
+var auth = getAuth(app);
+var db = initializeFirestore(app, { experimentalForceLongPolling: true });
+
+document.getElementById("year").textContent = new Date().getFullYear();
+
+// ---------------------------------------------------------------------
+// Purchases -- one /purchases doc per supplier bill: the supplier (picked
+// from the /suppliers directory), bill no./date, the GST type and rate,
+// and one or more item lines, each with its own item description (e.g.
+// "CR Coil 8 mm"), material (e.g. "CRCA"), weight and rate per kg. The
+// line amounts, taxable value and tax are worked out here and stored
+// alongside, so the register, the CSV export and any later report all
+// read the same frozen numbers.
+//
+// GST is CGST + SGST when the supplier is in Haryana (state code 06, the
+// same as our own GSTIN 06AGQPA5950R1ZR) and IGST when they're in any
+// other state -- picked automatically from the supplier's GSTIN, and
+// still changeable by hand.
+// ---------------------------------------------------------------------
+var HOME_STATE = "06";
+var STATES = {
+  "01": "Jammu & Kashmir", "02": "Himachal Pradesh", "03": "Punjab", "04": "Chandigarh",
+  "05": "Uttarakhand", "06": "Haryana", "07": "Delhi", "08": "Rajasthan", "09": "Uttar Pradesh",
+  "10": "Bihar", "11": "Sikkim", "12": "Arunachal Pradesh", "13": "Nagaland", "14": "Manipur",
+  "15": "Mizoram", "16": "Tripura", "17": "Meghalaya", "18": "Assam", "19": "West Bengal",
+  "20": "Jharkhand", "21": "Odisha", "22": "Chhattisgarh", "23": "Madhya Pradesh", "24": "Gujarat",
+  "25": "Daman & Diu", "26": "Dadra & Nagar Haveli and Daman & Diu", "27": "Maharashtra",
+  "28": "Andhra Pradesh", "29": "Karnataka", "30": "Goa", "31": "Lakshadweep", "32": "Kerala",
+  "33": "Tamil Nadu", "34": "Puducherry", "35": "Andaman & Nicobar Islands", "36": "Telangana",
+  "37": "Andhra Pradesh", "38": "Ladakh", "97": "Other Territory"
+};
+var GSTIN_RE = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
+var PAGE_SIZE = 50;
+
+function esc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+  });
+}
+function round2(n) { return Math.round((n + Number.EPSILON) * 100) / 100; }
+function round3(n) { return Math.round((n + Number.EPSILON) * 1000) / 1000; }
+function toNum(v) { var n = parseFloat(v); return isFinite(n) ? n : 0; }
+function formatCurrency(n) {
+  return "₹" + (n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function formatCompactCurrency(n) {
+  n = n || 0;
+  if (n >= 10000000) return "₹" + (n / 10000000).toFixed(2) + "Cr";
+  if (n >= 100000) return "₹" + (n / 100000).toFixed(2) + "L";
+  if (n >= 1000) return "₹" + (n / 1000).toFixed(1) + "k";
+  return "₹" + n.toFixed(0);
+}
+function formatKg(n) { return (n || 0).toLocaleString("en-IN", { maximumFractionDigits: 3 }) + " kg"; }
+function formatRate(n) { return "₹" + (n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function formatPct(n) { return (Math.round(n * 100) / 100) + "%"; }
+function formatDisplayDate(dateStr) {
+  if (!dateStr) return "—";
+  return new Date(dateStr + "T00:00:00").toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+}
+function pad2(n) { return (n < 10 ? "0" : "") + n; }
+function todayKey() { var d = new Date(); return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()); }
+function monthKey(dateStr) { return dateStr ? dateStr.slice(0, 7) : ""; }
+function monthLabel(key) {
+  var parts = key.split("-");
+  return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, 1).toLocaleDateString("en-IN", { month: "short", year: "2-digit" });
+}
+function financialYearFor(dateStr) {
+  if (!dateStr) return "";
+  var parts = dateStr.split("-");
+  var y = parseInt(parts[0], 10), m = parseInt(parts[1], 10);
+  if (!y || !m) return "";
+  var startY = m >= 4 ? y : y - 1;
+  var endY = (startY + 1) % 100;
+  return startY + "-" + (endY < 10 ? "0" + endY : "" + endY);
+}
+function plural(n, word) { return n.toLocaleString("en-IN") + " " + word + (n === 1 ? "" : "s"); }
+// Case- and spacing-insensitive key, so "CRCA", "crca" and "CRCA " are one.
+function normKey(s) { return (s || "").trim().toLowerCase().replace(/\s+/g, " "); }
+function tidy(s) { return (s || "").trim().replace(/\s+/g, " "); }
+function createdMillis(p) { return p.createdAt && p.createdAt.toMillis ? p.createdAt.toMillis() : 0; }
+
+// Round to whole rupees the way a supplier's bill might: to the nearest
+// rupee, always up, always down -- or leave it exact to the paisa.
+// (The tiny nudges keep 6040.0000001 from rounding up to 6041.)
+function roundMode(n, mode) {
+  if (mode === "nearest") return Math.round(n);
+  if (mode === "up") return Math.ceil(n - 1e-9);
+  if (mode === "down") return Math.floor(n + 1e-9);
+  return round2(n);
+}
+
+// Tax on a bill's taxable value: CGST and SGST as equal halves of the
+// rate (or IGST in full), each head rounded per gstRounding; then the
+// bill total rounded per totalRounding, with the difference kept as a
+// separate round-off, like a printed bill.
+function computeTax(taxable, gstRate, gstType, gstRounding, totalRounding) {
+  var cgst = 0, sgst = 0, igst = 0;
+  if (gstType === "inter") {
+    igst = roundMode(round2(taxable * gstRate / 100), gstRounding);
+  } else {
+    cgst = roundMode(round2(taxable * gstRate / 200), gstRounding);
+    sgst = cgst;
+  }
+  var totalGst = round2(cgst + sgst + igst);
+  var exact = round2(taxable + totalGst);
+  var total = roundMode(exact, totalRounding);
+  return {
+    taxableValue: round2(taxable), cgst: cgst, sgst: sgst, igst: igst, totalGst: totalGst,
+    roundOff: round2(total - exact), total: total
+  };
+}
+
+// ---------------------------------------------------------------------
+// Themed confirm dialog -- same pattern as payments.html.
+// ---------------------------------------------------------------------
+function showConfirmDialog(title, body, confirmLabel, danger) {
+  return new Promise(function (resolve) {
+    var overlay = document.createElement("div");
+    overlay.className = "confirm-overlay";
+
+    var dialog = document.createElement("div");
+    dialog.className = "confirm-dialog";
+
+    var titleEl = document.createElement("p");
+    titleEl.className = "confirm-dialog-title";
+    titleEl.textContent = title;
+
+    var bodyEl = document.createElement("p");
+    bodyEl.className = "confirm-dialog-body";
+    bodyEl.textContent = body;
+
+    var actions = document.createElement("div");
+    actions.className = "confirm-dialog-actions";
+
+    var cancelBtn = document.createElement("button");
+    cancelBtn.type = "button";
+    cancelBtn.className = "confirm-dialog-cancel";
+    cancelBtn.textContent = "Cancel";
+
+    var confirmBtn = document.createElement("button");
+    confirmBtn.type = "button";
+    confirmBtn.className = "confirm-dialog-confirm" + (danger ? " pur-confirm-danger" : "");
+    confirmBtn.textContent = confirmLabel;
+
+    function close(result) {
+      document.removeEventListener("keydown", onKeydown);
+      overlay.classList.remove("is-visible");
+      overlay.remove();
+      resolve(result);
+    }
+    function onKeydown(e) { if (e.key === "Escape") close(false); }
+
+    cancelBtn.addEventListener("click", function () { close(false); });
+    confirmBtn.addEventListener("click", function () { close(true); });
+    overlay.addEventListener("click", function (e) { if (e.target === overlay) close(false); });
+    document.addEventListener("keydown", onKeydown);
+
+    actions.appendChild(cancelBtn);
+    actions.appendChild(confirmBtn);
+    dialog.appendChild(titleEl);
+    dialog.appendChild(bodyEl);
+    dialog.appendChild(actions);
+    overlay.appendChild(dialog);
+    document.body.appendChild(overlay);
+    requestAnimationFrame(function () { overlay.classList.add("is-visible"); });
+  });
+}
+
+// =====================================================================
+// Data: bills, and every item line across them
+// =====================================================================
+var $ = function (id) { return document.getElementById(id); };
+var allPurchases = [];   // { id, data } per bill, newest first
+var allLines = [];       // one per item line, newest bill first
+var purchasesLoaded = false;
+
+// Each line carries its share of the bill's tax (by amount), so totals
+// for, say, just the CRCA lines still add up to real money.
+function buildLines() {
+  allLines = [];
+  allPurchases.forEach(function (row) {
+    var p = row.data;
+    var lines = p.lines || [];
+    var base = lines.reduce(function (n, l) { return n + (l.amount || 0); }, 0);
+    lines.forEach(function (l) {
+      var share = base ? (l.amount || 0) / base : 1 / lines.length;
+      allLines.push({
+        row: row,
+        item: l.item || "",
+        material: l.material || "",
+        weightKg: l.weightKg || 0,
+        ratePerKg: l.ratePerKg || 0,
+        amount: l.amount || 0,
+        cgst: (p.cgst || 0) * share,
+        sgst: (p.sgst || 0) * share,
+        igst: (p.igst || 0) * share,
+        gst: (p.totalGst || 0) * share,
+        total: (p.total || 0) * share
+      });
+    });
+  });
+}
+
+// =====================================================================
+// Entry form
+// =====================================================================
+var f = {
+  supplier: $("pur-supplier"),
+  billNo: $("pur-bill-no"),
+  date: $("pur-date"),
+  gstRate: $("pur-gst-rate"),
+  notes: $("pur-notes"),
+  adjust: $("pur-adjust")
+};
+var linesEl = $("pur-lines");
+var gstType = "intra";
+var editingId = null;
+var formStatus = $("pur-form-status");
+var saveBtn = $("pur-save");
+
+f.date.value = todayKey();
+f.date.max = todayKey();
+
+function showStatusIn(el, message, isError) {
+  el.textContent = message;
+  el.classList.toggle("is-error", !!isError);
+  el.classList.remove("is-visible");
+  void el.offsetWidth;
+  el.classList.add("is-visible");
+}
+function showFormStatus(message, isError) { showStatusIn(formStatus, message, isError); }
+function hideFormStatus() { formStatus.classList.remove("is-visible", "is-error"); }
+function markError(input, on) {
+  var field = input.closest(".login-field");
+  if (field) field.classList.toggle("has-error", !!on);
+}
+// The themed dropdown and date picker keep the native control hidden
+// behind their own trigger button -- focus that instead.
+function focusField(input) {
+  var wrap = input.closest(".nks, .dp");
+  var target = wrap ? wrap.querySelector(".nks-trigger, .dp-trigger") : input;
+  if (target) target.focus();
+}
+
+var gstOpts = document.querySelectorAll(".pur-gst-opt");
+function setGstType(type) {
+  gstType = type;
+  gstOpts.forEach(function (b) {
+    var on = b.dataset.type === type;
+    b.classList.toggle("is-active", on);
+    b.setAttribute("aria-checked", on ? "true" : "false");
+  });
+  renderSupplierCard();
+  renderReceipt();
+}
+gstOpts.forEach(function (b) {
+  b.addEventListener("click", function () { if (gstType !== b.dataset.type) setGstType(b.dataset.type); });
+});
+
+var rounding = { gst: "exact", total: "exact" };
+function setRounding(which, mode) {
+  rounding[which] = mode || "exact";
+  document.querySelectorAll('[data-round="' + which + '"] [data-mode]').forEach(function (b) {
+    var on = b.dataset.mode === rounding[which];
+    b.classList.toggle("is-active", on);
+    b.setAttribute("aria-pressed", on ? "true" : "false");
+  });
+  renderReceipt();
+}
+document.querySelectorAll("[data-round]").forEach(function (group) {
+  group.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-mode]");
+    if (b) setRounding(group.dataset.round, b.dataset.mode);
+  });
+});
+
+// ---------------------------------------------------------------------
+// Item lines -- Item, Material, Weight and Rate on one row, with the line
+// amount worked out beside it. "Add item" appends another row.
+// ---------------------------------------------------------------------
+function lineTemplate() {
+  return '<div class="login-field pur-line-item"><label>Item</label>' +
+      '<input type="text" data-f="item" data-combo="item" autocomplete="off" spellcheck="false" placeholder="e.g. CR Coil 8 mm" aria-label="Item" /></div>' +
+    '<div class="login-field pur-line-mat"><label>Material</label>' +
+      '<input type="text" data-f="material" data-combo="material" autocomplete="off" spellcheck="false" placeholder="e.g. CRCA" aria-label="Material" /></div>' +
+    '<div class="login-field pur-line-wt"><label>Weight</label>' +
+      '<div class="pur-unit-input"><input type="number" data-f="weight" inputmode="decimal" min="0" step="0.001" placeholder="0" aria-label="Weight in kg" /><span>kg</span></div></div>' +
+    '<div class="login-field pur-line-rate"><label>Rate / kg</label>' +
+      '<div class="pur-unit-input pur-unit-input--pre"><span>₹</span><input type="number" data-f="rate" inputmode="decimal" min="0" step="0.01" placeholder="0.00" aria-label="Rate per kg" /></div></div>' +
+    '<div class="pur-line-amt"><span class="pur-line-amt-label">Amount</span><strong data-amt>₹0.00</strong></div>' +
+    '<button type="button" class="pur-line-remove" data-remove aria-label="Remove this item">' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>';
+}
+function lineRows() { return Array.prototype.slice.call(linesEl.querySelectorAll(".pur-line")); }
+function lineInput(row, name) { return row.querySelector('[data-f="' + name + '"]'); }
+function addLine(values, focus) {
+  var row = document.createElement("div");
+  row.className = "pur-line";
+  row.innerHTML = lineTemplate();
+  if (values) {
+    lineInput(row, "item").value = values.item || "";
+    lineInput(row, "material").value = values.material || "";
+    lineInput(row, "weight").value = values.weightKg != null ? values.weightKg : "";
+    lineInput(row, "rate").value = values.ratePerKg != null ? values.ratePerKg : "";
+  }
+  linesEl.appendChild(row);
+  syncLines();
+  if (focus) lineInput(row, "item").focus();
+  return row;
+}
+function syncLines() {
+  var rows = lineRows();
+  rows.forEach(function (row, i) {
+    row.querySelector("[data-remove]").hidden = rows.length === 1;
+    row.style.setProperty("--n", i);
+  });
+  renderReceipt();
+}
+function readLines() {
+  return lineRows().map(function (row) {
+    var weight = round3(toNum(lineInput(row, "weight").value));
+    var rate = round2(toNum(lineInput(row, "rate").value));
+    return {
+      row: row,
+      item: tidy(lineInput(row, "item").value),
+      material: tidy(lineInput(row, "material").value),
+      weightKg: weight,
+      ratePerKg: rate,
+      amount: round2(weight * rate)
+    };
+  });
+}
+function isBlankLine(l) { return !l.item && !l.material && !l.weightKg && !l.ratePerKg; }
+
+$("pur-add-line").addEventListener("click", function () { addLine(null, true); });
+linesEl.addEventListener("click", function (e) {
+  var btn = e.target.closest("[data-remove]");
+  if (!btn) return;
+  var row = btn.closest(".pur-line");
+  row.classList.add("is-leaving");
+  setTimeout(function () { row.remove(); syncLines(); }, 180);
+});
+linesEl.addEventListener("input", function (e) {
+  if (e.target.dataset.f) markError(e.target, false);
+  if (e.target.dataset.f === "weight" || e.target.dataset.f === "rate") renderReceipt();
+});
+
+// Live bill summary. Values that change get a brief highlight so it's
+// obvious what moved as you type.
+var receiptCache = {};
+function setReceiptValue(id, text) {
+  var el = $(id);
+  if (receiptCache[id] === text) return;
+  receiptCache[id] = text;
+  el.textContent = text;
+  el.classList.remove("is-bump");
+  void el.offsetWidth;
+  el.classList.add("is-bump");
+}
+function renderReceipt() {
+  var lines = readLines();
+  var taxable = 0, weight = 0, counted = 0;
+  lines.forEach(function (l) {
+    var amt = l.row.querySelector("[data-amt]");
+    var text = formatCurrency(l.amount);
+    if (amt.textContent !== text) amt.textContent = text;
+    taxable += l.amount;
+    weight += l.weightKg;
+    if (l.amount) counted++;
+  });
+  var gstRate = toNum(f.gstRate.value);
+  var t = computeTax(taxable, gstRate, gstType, rounding.gst, rounding.total);
+  var half = formatPct(gstRate / 2);
+
+  $("pur-r-type").textContent = gstType === "inter" ? "IGST" : "CGST + SGST";
+  $("pur-r-calc").textContent = counted ? plural(counted, "item") + " · " + formatKg(round3(weight)) : "Add weight and rate";
+  $("pur-r-cgst-row").hidden = gstType === "inter";
+  $("pur-r-sgst-row").hidden = gstType === "inter";
+  $("pur-r-igst-row").hidden = gstType !== "inter";
+  $("pur-r-cgst-rate").textContent = half;
+  $("pur-r-sgst-rate").textContent = half;
+  $("pur-r-igst-rate").textContent = formatPct(gstRate);
+
+  setReceiptValue("pur-r-taxable", formatCurrency(t.taxableValue));
+  setReceiptValue("pur-r-cgst", formatCurrency(t.cgst));
+  setReceiptValue("pur-r-sgst", formatCurrency(t.sgst));
+  setReceiptValue("pur-r-igst", formatCurrency(t.igst));
+  setReceiptValue("pur-r-gst", formatCurrency(t.totalGst));
+  $("pur-r-roundoff-row").hidden = !t.roundOff;
+  setReceiptValue("pur-r-roundoff", (t.roundOff > 0 ? "+" : t.roundOff < 0 ? "−" : "") + formatCurrency(Math.abs(t.roundOff)));
+  setReceiptValue("pur-r-total", formatCurrency(t.total));
+}
+f.gstRate.addEventListener("change", renderReceipt);
+[f.billNo].forEach(function (input) {
+  input.addEventListener("input", function () { markError(input, false); });
+});
+f.date.addEventListener("change", function () { markError(f.date, false); });
+
+// ---------------------------------------------------------------------
+// Item / Material dropdowns -- what you've bought before, remembered per
+// supplier. Type anything new, or pick a past one; picking a past item
+// also fills in its material and shows its last rate as a hint.
+// ---------------------------------------------------------------------
+var combo = { pop: null, input: null, list: [], active: -1 };
+
+function comboOptions(input) {
+  var kind = input.dataset.combo;
+  var q = normKey(input.value);
+  var sup = selectedSupplier();
+  var mine = [], others = [], seen = {};
+  allLines.forEach(function (l) {
+    var value = kind === "item" ? l.item : l.material;
+    var key = normKey(value);
+    if (!key || seen[key]) return;
+    if (q && key.indexOf(q) === -1) return;
+    var fromThem = sup && l.row.data.supplierId === sup.id;
+    // Items are remembered per supplier; materials are shared categories,
+    // so other suppliers' materials are offered too, after this one's.
+    if (kind === "item" && sup && !fromThem) return;
+    seen[key] = true;
+    var opt = {
+      value: value,
+      material: l.material,
+      rate: l.ratePerKg,
+      meta: kind === "item"
+        ? [l.material, l.ratePerKg ? "last " + formatRate(l.ratePerKg) + "/kg" : ""].filter(Boolean).join(" · ")
+        : (fromThem ? "Bought from " + sup.data.name : "")
+    };
+    (fromThem || !sup ? mine : others).push(opt);
+  });
+  var groups = [];
+  if (mine.length) groups.push({ label: sup ? (kind === "item" ? "Bought from " + sup.data.name : "From " + sup.data.name) : (kind === "item" ? "Past items" : "Past materials"), opts: mine.slice(0, 10) });
+  if (others.length) groups.push({ label: "Other materials", opts: others.slice(0, 8) });
+  return groups;
+}
+
+function closeCombo() {
+  if (!combo.pop) return;
+  var p = combo.pop;
+  if (combo.input) combo.input.setAttribute("aria-expanded", "false");
+  combo.pop = null;
+  combo.input = null;
+  combo.active = -1;
+  p.classList.remove("is-open");
+  setTimeout(function () { p.remove(); }, 180);
+}
+function positionCombo() {
+  if (!combo.pop || !combo.input) return;
+  var r = combo.input.closest(".pur-unit-input, input").getBoundingClientRect();
+  var w = Math.max(r.width, 250);
+  combo.pop.style.left = Math.max(12, Math.min(r.left, window.innerWidth - w - 12)) + "px";
+  combo.pop.style.top = (r.bottom + 6) + "px";
+  combo.pop.style.width = w + "px";
+}
+function openCombo(input) {
+  var groups = comboOptions(input);
+  combo.list = [];
+  groups.forEach(function (g) { combo.list = combo.list.concat(g.opts); });
+  if (!combo.list.length) { closeCombo(); return; }
+  if (combo.pop && combo.input !== input) closeCombo();
+  var fresh = !combo.pop;
+  if (fresh) {
+    combo.pop = document.createElement("div");
+    combo.pop.className = "nks-pop pur-combo";
+    combo.pop.setAttribute("role", "listbox");
+    combo.pop.addEventListener("mousedown", function (e) { e.preventDefault(); });
+    combo.pop.addEventListener("click", function (e) {
+      var opt = e.target.closest(".nks-opt");
+      if (opt) pickCombo(combo.list[+opt.dataset.i]);
+    });
+    document.body.appendChild(combo.pop);
+  }
+  combo.input = input;
+  combo.active = -1;
+  input.setAttribute("aria-expanded", "true");
+  var i = 0;
+  combo.pop.innerHTML = '<div class="nks-list">' + groups.map(function (g) {
+    return '<p class="nks-group">' + esc(g.label) + "</p>" + g.opts.map(function (o) {
+      return '<div class="nks-opt" role="option" data-i="' + (i++) + '"><span class="nks-opt-text">' +
+        '<span class="pur-combo-name">' + esc(o.value) + "</span>" +
+        (o.meta ? '<span class="pur-combo-meta">' + esc(o.meta) + "</span>" : "") +
+        "</span></div>";
+    }).join("");
+  }).join("") + "</div>";
+  positionCombo();
+  if (fresh) requestAnimationFrame(function () { if (combo.pop) combo.pop.classList.add("is-open"); });
+}
+function moveCombo(delta) {
+  if (!combo.pop) return;
+  var opts = combo.pop.querySelectorAll(".nks-opt");
+  combo.active = (combo.active + delta + opts.length) % opts.length;
+  opts.forEach(function (o, i) { o.classList.toggle("is-active", i === combo.active); });
+  opts[combo.active].scrollIntoView({ block: "nearest" });
+}
+function pickCombo(opt) {
+  var input = combo.input;
+  if (!opt || !input) return;
+  var row = input.closest(".pur-line");
+  input.value = opt.value;
+  markError(input, false);
+  if (input.dataset.combo === "item") {
+    var mat = lineInput(row, "material");
+    if (opt.material) { mat.value = opt.material; markError(mat, false); }
+    if (opt.rate) lineInput(row, "rate").placeholder = "Last " + opt.rate.toFixed(2);
+    closeCombo();
+    (lineInput(row, "weight")).focus();
+  } else {
+    closeCombo();
+    lineInput(row, "weight").focus();
+  }
+}
+linesEl.addEventListener("focusin", function (e) { if (e.target.dataset.combo) openCombo(e.target); });
+linesEl.addEventListener("input", function (e) { if (e.target.dataset.combo) openCombo(e.target); });
+linesEl.addEventListener("focusout", function (e) {
+  if (e.target.dataset.combo) setTimeout(function () { if (combo.input === e.target && document.activeElement !== e.target) closeCombo(); }, 120);
+});
+linesEl.addEventListener("keydown", function (e) {
+  if (!e.target.dataset.combo || !combo.pop) return;
+  if (e.key === "ArrowDown") { e.preventDefault(); moveCombo(1); }
+  else if (e.key === "ArrowUp") { e.preventDefault(); moveCombo(-1); }
+  else if (e.key === "Enter" && combo.active >= 0) { e.preventDefault(); pickCombo(combo.list[combo.active]); }
+  else if (e.key === "Escape") closeCombo();
+});
+window.addEventListener("scroll", positionCombo, true);
+window.addEventListener("resize", positionCombo);
+
+// =====================================================================
+// Supplier directory -- /suppliers, one doc per supplier: name and GSTIN
+// (whose state code decides CGST + SGST vs IGST). Picked from the
+// dropdown; "+ New supplier" (or the last option in the dropdown) opens
+// the pop-up to add one.
+// =====================================================================
+var suppliers = [];
+var NEW_SUPPLIER = "__new__";
+var lastSupplierValue = "";
+
+function gstinInfo(v) {
+  v = (v || "").trim().toUpperCase();
+  if (!GSTIN_RE.test(v)) return null;
+  var code = v.slice(0, 2);
+  return { state: STATES[code] || "State " + code, type: code === HOME_STATE ? "intra" : "inter" };
+}
+function supplierById(id) { return suppliers.find(function (x) { return x.id === id; }) || null; }
+function selectedSupplier() { return supplierById(f.supplier.value); }
+function lastBillFrom(sup) {
+  return allPurchases.find(function (r) { return r.data.supplierId === sup.id; }) || null;
+}
+
+function loadSuppliers() {
+  return getDocs(collection(db, "suppliers")).then(function (snap) {
+    var rows = [];
+    snap.forEach(function (d) { rows.push({ id: d.id, data: d.data() }); });
+    suppliers = rows;
+    populateSupplierSelect();
+  }).catch(function (err) {
+    console.error(err);
+    showFormStatus(err && err.code === "permission-denied"
+      ? "Couldn’t open your supplier directory — this account isn’t allowed to read it yet."
+      : "Couldn’t load your supplier directory. Check your connection and reload.", true);
+  });
+}
+
+function populateSupplierSelect(selectId) {
+  var keep = selectId != null ? selectId : f.supplier.value;
+  suppliers.sort(function (a, b) { return (a.data.name || "").localeCompare(b.data.name || ""); });
+  f.supplier.innerHTML =
+    '<option value="">' + (suppliers.length ? "Choose a supplier" : "No suppliers yet") + "</option>" +
+    suppliers.map(function (x) { return '<option value="' + x.id + '">' + esc(x.data.name) + "</option>"; }).join("") +
+    '<option value="' + NEW_SUPPLIER + '">+ Add a new supplier…</option>';
+  f.supplier.value = supplierById(keep) ? keep : "";
+  lastSupplierValue = f.supplier.value;
+  renderSupplierCard();
+}
+
+function renderSupplierCard() {
+  var card = $("pur-sup-card");
+  var sup = selectedSupplier();
+  if (!sup) {
+    card.classList.remove("has-supplier");
+    card.innerHTML = '<span class="pur-sup-empty">' +
+      (suppliers.length ? "Pick a supplier to see their GSTIN and state." : "Your directory is empty — add your first supplier.") + "</span>";
+    return;
+  }
+  var info = gstinInfo(sup.data.gstin);
+  var mismatch = info && info.type !== gstType;
+  card.classList.add("has-supplier");
+  card.innerHTML =
+    '<span class="pur-sup-meta">' +
+      '<span class="pur-sup-gstin mono">' + esc(sup.data.gstin || "No GSTIN on file") + "</span>" +
+      '<span class="pur-sup-state' + (mismatch ? " is-warn" : "") + '">' +
+        (info ? esc(info.state) + " · " + (mismatch ? "usually " : "") + (info.type === "intra" ? "CGST + SGST" : "IGST") : "Choose the GST type below") +
+      "</span>" +
+    "</span>" +
+    '<button type="button" class="pur-link-btn" data-sup-edit>Edit</button>';
+}
+$("pur-sup-card").addEventListener("click", function (e) {
+  if (e.target.closest("[data-sup-edit]")) openSupplierModal(selectedSupplier());
+});
+
+// Picking a supplier sets the GST type from their GSTIN, and their last
+// bill's GST rate on a fresh entry.
+function applySupplier(sup) {
+  if (sup) {
+    var last = lastBillFrom(sup);
+    if (!editingId && last) {
+      if (last.data.gstRate != null) f.gstRate.value = String(last.data.gstRate);
+      setRounding("gst", last.data.gstRounding);
+      setRounding("total", last.data.totalRounding);
+    }
+    var info = gstinInfo(sup.data.gstin);
+    if (info) { setGstType(info.type); return; }
+  }
+  renderSupplierCard();
+  renderReceipt();
+}
+
+f.supplier.addEventListener("change", function () {
+  if (f.supplier.value === NEW_SUPPLIER) {
+    f.supplier.value = lastSupplierValue;
+    openSupplierModal(null);
+    return;
+  }
+  lastSupplierValue = f.supplier.value;
+  markError(f.supplier, false);
+  applySupplier(selectedSupplier());
+});
+$("pur-sup-new").addEventListener("click", function () { openSupplierModal(null); });
+
+// ---- The add / edit pop-up: name and GSTIN, both required.
+var supModal = $("pur-sup-modal");
+var sf = { name: $("pur-sup-name"), gstin: $("pur-sup-gstin") };
+var supStatus = $("pur-sup-status");
+var supSaveBtn = $("pur-sup-save");
+var supEditingId = null;
+var supReturnFocus = null;
+var supSaving = false;
+
+function renderSupGstinHint() {
+  var hint = $("pur-sup-gstin-hint");
+  var v = sf.gstin.value.trim();
+  hint.classList.remove("is-ok", "is-error");
+  if (!v) { hint.textContent = "Its state code decides CGST + SGST or IGST."; return; }
+  if (v.length < 15) { hint.textContent = (15 - v.length) + " more character" + (v.length === 14 ? "" : "s") + "…"; return; }
+  var info = gstinInfo(v);
+  if (!info) { hint.textContent = "That doesn’t look like a valid GSTIN."; hint.classList.add("is-error"); return; }
+  hint.textContent = info.state + " · " + (info.type === "intra" ? "CGST + SGST" : "IGST") + " on their bills";
+  hint.classList.add("is-ok");
+}
+sf.gstin.addEventListener("input", function () {
+  var pos = sf.gstin.selectionStart;
+  var up = sf.gstin.value.toUpperCase().replace(/\s+/g, "");
+  if (up !== sf.gstin.value) {
+    sf.gstin.value = up;
+    try { sf.gstin.setSelectionRange(pos, pos); } catch (e) {}
+  }
+  markError(sf.gstin, false);
+  renderSupGstinHint();
+});
+sf.name.addEventListener("input", function () { markError(sf.name, false); });
+
+function onSupKeydown(e) {
+  if (e.key === "Escape") closeSupplierModal();
+  else if (e.key === "Enter" && e.target.tagName === "INPUT") { e.preventDefault(); supSaveBtn.click(); }
+}
+function openSupplierModal(existing) {
+  supEditingId = existing ? existing.id : null;
+  var d = existing ? existing.data : {};
+  sf.name.value = d.name || "";
+  sf.gstin.value = d.gstin || "";
+  supModal.querySelectorAll(".has-error").forEach(function (el) { el.classList.remove("has-error"); });
+  supStatus.classList.remove("is-visible", "is-error");
+  $("pur-sup-modal-title").textContent = existing ? "Edit supplier" : "New supplier";
+  $("pur-sup-modal-sub").textContent = existing
+    ? "Changes apply from your next entry — bills already recorded keep the details they were saved with."
+    : "Saved to your directory, so next time they’re one pick away.";
+  supSaveBtn.textContent = existing ? "Save changes" : "Add supplier";
+  renderSupGstinHint();
+  supReturnFocus = document.activeElement;
+  supModal.hidden = false;
+  document.addEventListener("keydown", onSupKeydown);
+  requestAnimationFrame(function () {
+    supModal.classList.add("is-visible");
+    sf.name.focus();
+  });
+}
+function closeSupplierModal() {
+  supModal.classList.remove("is-visible");
+  document.removeEventListener("keydown", onSupKeydown);
+  setTimeout(function () { if (!supModal.classList.contains("is-visible")) supModal.hidden = true; }, 220);
+  if (supReturnFocus && supReturnFocus.focus && document.body.contains(supReturnFocus)) supReturnFocus.focus();
+}
+supModal.addEventListener("mousedown", function (e) { if (e.target === supModal) closeSupplierModal(); });
+$("pur-sup-close").addEventListener("click", closeSupplierModal);
+$("pur-sup-cancel").addEventListener("click", closeSupplierModal);
+
+supSaveBtn.addEventListener("click", function () {
+  if (supSaving) return;
+  var name = tidy(sf.name.value);
+  var gstin = sf.gstin.value.trim().toUpperCase();
+  var info = gstinInfo(gstin);
+  var key = normKey(name);
+  var problem = null, bad = null;
+  markError(sf.name, false);
+  markError(sf.gstin, false);
+  if (!name) { problem = "Add the supplier’s name."; bad = sf.name; }
+  else if (!gstin) { problem = "Add the supplier’s GSTIN."; bad = sf.gstin; }
+  else if (!info) { problem = "Check the GSTIN — it should be 15 characters, like 06ABCDE1234F1Z5."; bad = sf.gstin; }
+  else {
+    var sameName = suppliers.find(function (x) { return x.id !== supEditingId && normKey(x.data.name) === key; });
+    var sameGstin = suppliers.find(function (x) { return x.id !== supEditingId && x.data.gstin === gstin; });
+    if (sameName) { problem = sameName.data.name + " is already in your directory."; bad = sf.name; }
+    else if (sameGstin) { problem = "That GSTIN already belongs to " + sameGstin.data.name + "."; bad = sf.gstin; }
+  }
+  if (problem) {
+    markError(bad, true);
+    bad.focus();
+    showStatusIn(supStatus, problem, true);
+    return;
+  }
+
+  var data = { name: name, nameKey: key, gstin: gstin, state: info.state, updatedAt: serverTimestamp() };
+  supSaving = true;
+  supSaveBtn.disabled = true;
+  supSaveBtn.textContent = "Saving…";
+  var editing = supEditingId;
+  var write = editing
+    ? updateDoc(doc(db, "suppliers", editing), data).then(function () { return editing; })
+    : addDoc(collection(db, "suppliers"), Object.assign({ createdAt: serverTimestamp() }, data)).then(function (ref) { return ref.id; });
+  write.then(function (id) {
+    var existing = supplierById(id);
+    if (existing) Object.assign(existing.data, data);
+    else suppliers.push({ id: id, data: data });
+    closeSupplierModal();
+    populateSupplierSelect(editing ? null : id);
+    markError(f.supplier, false);
+    if (editing) {
+      if (f.supplier.value === id) setGstType(info.type); else renderSupplierCard();
+      showFormStatus("Updated " + data.name + " in your directory.");
+    } else {
+      applySupplier(supplierById(id));
+      showFormStatus("Added " + data.name + " to your suppliers.");
+      f.billNo.focus();
+    }
+  }).catch(function (err) {
+    console.error(err);
+    showStatusIn(supStatus, err && err.code === "permission-denied"
+      ? "Couldn’t save — this account isn’t allowed to edit the supplier directory yet."
+      : "Couldn’t save the supplier. Check your connection and try again.", true);
+  }).then(function () {
+    supSaving = false;
+    supSaveBtn.disabled = false;
+    supSaveBtn.textContent = supEditingId ? "Save changes" : "Add supplier";
+  });
+});
+
+// ---------------------------------------------------------------------
+// Read, check, save
+// ---------------------------------------------------------------------
+function readForm() {
+  var sup = selectedSupplier();
+  var lines = readLines();
+  var kept = lines.filter(function (l) { return !isBlankLine(l); });
+  var taxable = kept.reduce(function (n, l) { return n + l.amount; }, 0);
+  var weight = kept.reduce(function (n, l) { return n + l.weightKg; }, 0);
+  var gstRate = toNum(f.gstRate.value);
+  var data = {
+    supplierId: sup ? sup.id : "",
+    supplierName: sup ? sup.data.name : "",
+    supplierGstin: sup ? sup.data.gstin || "" : "",
+    supplierState: sup ? sup.data.state || "" : "",
+    billNo: f.billNo.value.trim(),
+    date: f.date.value,
+    financialYear: financialYearFor(f.date.value),
+    lines: kept.map(function (l) {
+      return { item: l.item, material: l.material, weightKg: l.weightKg, ratePerKg: l.ratePerKg, amount: l.amount };
+    }),
+    materials: kept.map(function (l) { return normKey(l.material); }).filter(function (k, i, a) { return k && a.indexOf(k) === i; }),
+    weightKg: round3(weight),
+    isAdjustment: f.adjust.checked,
+    gstType: gstType,
+    gstRate: gstRate,
+    notes: f.notes.value.trim()
+  };
+  data.gstRounding = rounding.gst;
+  data.totalRounding = rounding.total;
+  var t = computeTax(taxable, gstRate, gstType, rounding.gst, rounding.total);
+  Object.keys(t).forEach(function (k) { data[k] = t[k]; });
+  return { data: data, lines: lines };
+}
+
+function validate(form) {
+  var data = form.data;
+  var problems = [];
+  function need(ok, input, msg) {
+    markError(input, !ok);
+    if (!ok) problems.push({ input: input, msg: msg });
+  }
+  need(!!data.supplierId, f.supplier, "Pick a supplier, or add a new one.");
+  need(!!data.billNo, f.billNo, "Add the supplier's bill number.");
+  need(!!data.date, f.date, "Pick the bill date.");
+  var filled = form.lines.filter(function (l) { return !isBlankLine(l); });
+  if (!filled.length) {
+    var first = form.lines[0];
+    need(false, lineInput(first.row, "item"), "Add at least one item.");
+  }
+  form.lines.forEach(function (l) {
+    if (isBlankLine(l)) {
+      ["item", "material", "weight", "rate"].forEach(function (k) { if (filled.length) markError(lineInput(l.row, k), false); });
+      return;
+    }
+    need(!!l.item, lineInput(l.row, "item"), "Say what the item is.");
+    need(!!l.material, lineInput(l.row, "material"), "Add the material for each item.");
+    need(l.weightKg > 0, lineInput(l.row, "weight"), "Enter the weight in kg for each item.");
+    need(l.ratePerKg > 0, lineInput(l.row, "rate"), "Enter the rate per kg for each item.");
+  });
+  if (problems.length) {
+    showFormStatus(problems.length === 1 ? problems[0].msg : problems[0].msg + " (" + (problems.length - 1) + " more field" + (problems.length > 2 ? "s" : "") + " need a look.)", true);
+    focusField(problems[0].input);
+    return false;
+  }
+  return true;
+}
+
+function resetForm(keepStatus) {
+  editingId = null;
+  f.billNo.value = "";
+  f.notes.value = "";
+  f.adjust.checked = false;
+  rounding = { gst: "exact", total: "exact" };
+  f.supplier.value = "";
+  lastSupplierValue = "";
+  f.date.value = todayKey();
+  f.gstRate.value = "18";
+  linesEl.innerHTML = "";
+  addLine();
+  document.querySelectorAll("#pur-form-card .has-error").forEach(function (el) { el.classList.remove("has-error"); });
+  $("pur-form-title").textContent = "Record a Purchase";
+  $("pur-cancel-edit").hidden = true;
+  $("pur-form-card").classList.remove("is-editing");
+  saveBtn.textContent = "Save purchase";
+  setRounding("gst", rounding.gst);
+  setRounding("total", rounding.total);
+  setGstType("intra");
+  if (!keepStatus) hideFormStatus();
+}
+$("pur-cancel-edit").addEventListener("click", function () { resetForm(); });
+
+function startEdit(row) {
+  var p = row.data;
+  editingId = row.id;
+  var sup = supplierById(p.supplierId) || suppliers.find(function (x) { return normKey(x.data.name) === normKey(p.supplierName); });
+  f.supplier.value = sup ? sup.id : "";
+  lastSupplierValue = f.supplier.value;
+  f.billNo.value = p.billNo || "";
+  f.date.value = p.date || todayKey();
+  f.gstRate.value = String(p.gstRate != null ? p.gstRate : 18);
+  f.notes.value = p.notes || "";
+  f.adjust.checked = !!p.isAdjustment;
+  rounding = { gst: p.gstRounding || "exact", total: p.totalRounding || "exact" };
+  linesEl.innerHTML = "";
+  (p.lines && p.lines.length ? p.lines : [null]).forEach(function (l) { addLine(l); });
+  document.querySelectorAll("#pur-form-card .has-error").forEach(function (el) { el.classList.remove("has-error"); });
+  $("pur-form-title").textContent = "Edit Purchase";
+  $("pur-cancel-edit").hidden = false;
+  $("pur-form-card").classList.add("is-editing");
+  saveBtn.textContent = "Save changes";
+  hideFormStatus();
+  setRounding("gst", rounding.gst);
+  setRounding("total", rounding.total);
+  setGstType(p.gstType === "inter" ? "inter" : "intra");
+  if (!sup) showFormStatus((p.supplierName || "This supplier") + " isn’t in your directory — pick them again or add them with + New supplier.", true);
+  $("pur-form-card").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+var saving = false;
+saveBtn.addEventListener("click", function () {
+  if (saving) return;
+  hideFormStatus();
+  closeCombo();
+  var form = readForm();
+  if (!validate(form)) return;
+  var data = form.data;
+
+  // Same supplier + bill no. already in the register is almost always a
+  // double entry -- ask before saving it again.
+  var dupe = allPurchases.find(function (r) {
+    return r.id !== editingId && r.data.supplierId === data.supplierId &&
+      (r.data.billNo || "").toLowerCase() === data.billNo.toLowerCase();
+  });
+  var check = dupe
+    ? showConfirmDialog(
+        "Bill already recorded?",
+        "Bill " + data.billNo + " from " + data.supplierName + " is already in the register (" + formatDisplayDate(dupe.data.date) + ", " + formatCurrency(dupe.data.total) + "). Save it again anyway?",
+        "Save anyway"
+      )
+    : Promise.resolve(true);
+
+  check.then(function (ok) {
+    if (!ok) return;
+    saving = true;
+    saveBtn.disabled = true;
+    saveBtn.textContent = editingId ? "Saving changes…" : "Saving…";
+    data.updatedAt = serverTimestamp();
+    var wasEditing = editingId;
+    var write;
+    if (editingId) {
+      write = updateDoc(doc(db, "purchases", editingId), data).then(function () { return editingId; });
+    } else {
+      data.createdAt = serverTimestamp();
+      data.createdBy = auth.currentUser ? auth.currentUser.uid : "";
+      write = addDoc(collection(db, "purchases"), data).then(function (ref) { return ref.id; });
+    }
+    write.then(function (id) {
+      highlightId = id;
+      resetForm(true);
+      showFormStatus((wasEditing ? "Updated — " : "Saved — ") + (data.isAdjustment ? "adjustment bill · " : "") + data.supplierName + " · Bill " + data.billNo + " · " +
+        plural(data.lines.length, "item") + " · " + formatCurrency(data.total));
+      return loadPurchases();
+    }).catch(function (err) {
+      console.error(err);
+      showFormStatus(err && err.code === "permission-denied"
+        ? "Couldn’t save — this account isn’t allowed to write purchases yet."
+        : "Couldn’t save that purchase. Check your connection and try again.", true);
+    }).then(function () {
+      saving = false;
+      saveBtn.disabled = false;
+      saveBtn.textContent = editingId ? "Save changes" : "Save purchase";
+    });
+  });
+});
+
+// =====================================================================
+// Register, filters, summary
+// =====================================================================
+var filterState = { gst: "all", shown: PAGE_SIZE };
+var highlightId = null;
+var splitMetric = "value";
+
+function loadPurchases() {
+  return getDocs(collection(db, "purchases")).then(function (snap) {
+    var rows = [];
+    snap.forEach(function (d) { rows.push({ id: d.id, data: d.data() }); });
+    rows.sort(function (a, b) {
+      return (b.data.date || "").localeCompare(a.data.date || "") || createdMillis(b.data) - createdMillis(a.data);
+    });
+    var firstLoad = !purchasesLoaded;
+    allPurchases = rows;
+    buildLines();
+    purchasesLoaded = true;
+    populateFilters(firstLoad);
+    applyFilters();
+  }).catch(function (err) {
+    console.error(err);
+    $("pur-table-body").innerHTML = '<tr><td colspan="9" class="billing-history-empty">' +
+      (err && err.code === "permission-denied"
+        ? "This account can’t read purchases yet."
+        : "Couldn’t load purchases. Check your connection and reload.") + "</td></tr>";
+  });
+}
+
+function fillSelect(sel, allLabel, entries, keepValue) {
+  var prev = sel.value;
+  sel.innerHTML = '<option value="all">' + allLabel + "</option>" + entries.map(function (e) {
+    return '<option value="' + esc(e.value) + '">' + esc(e.label) + "</option>";
+  }).join("");
+  sel.value = keepValue && entries.some(function (e) { return e.value === prev; }) ? prev : "all";
+}
+
+function populateFilters(firstLoad) {
+  var sups = {}, mats = {}, years = {};
+  allPurchases.forEach(function (r) {
+    var key = normKey(r.data.supplierName);
+    if (key && !sups[key]) sups[key] = r.data.supplierName;
+    if (r.data.financialYear) years[r.data.financialYear] = true;
+  });
+  allLines.forEach(function (l) {
+    var k = normKey(l.material);
+    if (k && !mats[k]) mats[k] = l.material;
+  });
+  fillSelect($("pur-filter-supplier"), "All Suppliers", Object.keys(sups)
+    .sort(function (a, b) { return sups[a].localeCompare(sups[b]); })
+    .map(function (k) { return { value: k, label: sups[k] }; }), true);
+  fillSelect($("pur-filter-item"), "All Materials", Object.keys(mats)
+    .sort(function (a, b) { return mats[a].localeCompare(mats[b]); })
+    .map(function (k) { return { value: k, label: mats[k] }; }), true);
+
+  var fySel = $("pur-filter-fy");
+  var yearsSorted = Object.keys(years).sort().reverse();
+  fillSelect(fySel, "All Years", yearsSorted.map(function (y) { return { value: y, label: "FY " + y }; }), !firstLoad);
+  // Like Supply Overview: open on the latest financial year with entries.
+  if (firstLoad && yearsSorted.length) fySel.value = yearsSorted[0];
+  populateMonths(fySel.value);
+}
+
+function populateMonths(fy) {
+  var months = {};
+  allPurchases.forEach(function (r) {
+    if (fy !== "all" && r.data.financialYear !== fy) return;
+    var k = monthKey(r.data.date);
+    if (k) months[k] = true;
+  });
+  fillSelect($("pur-filter-month"), "All Months", Object.keys(months).sort().map(function (k) {
+    return { value: k, label: monthLabel(k) };
+  }), true);
+}
+
+function currentFilters() {
+  return {
+    supplier: $("pur-filter-supplier").value,
+    material: $("pur-filter-item").value,
+    fy: $("pur-filter-fy").value,
+    month: $("pur-filter-month").value,
+    kind: $("pur-filter-kind").value,
+    gst: filterState.gst
+  };
+}
+function filteredLines() {
+  var c = currentFilters();
+  return allLines.filter(function (l) {
+    var p = l.row.data;
+    if (c.supplier !== "all" && normKey(p.supplierName) !== c.supplier) return false;
+    if (c.material !== "all" && normKey(l.material) !== c.material) return false;
+    if (c.fy !== "all" && p.financialYear !== c.fy) return false;
+    if (c.month !== "all" && monthKey(p.date) !== c.month) return false;
+    if (c.gst !== "all" && (p.gstType === "inter" ? "inter" : "intra") !== c.gst) return false;
+    if (c.kind !== "all" && (p.isAdjustment ? "adjustment" : "regular") !== c.kind) return false;
+    return true;
+  });
+}
+function billsOf(lines) {
+  var seen = {}, rows = [];
+  lines.forEach(function (l) { if (!seen[l.row.id]) { seen[l.row.id] = true; rows.push(l.row); } });
+  return rows;
+}
+
+function sumLines(lines) {
+  var s = { taxable: 0, cgst: 0, sgst: 0, igst: 0, gst: 0, total: 0, weight: 0, materials: {} };
+  lines.forEach(function (l) {
+    s.taxable += l.amount;
+    s.cgst += l.cgst;
+    s.sgst += l.sgst;
+    s.igst += l.igst;
+    s.gst += l.gst;
+    s.total += l.total;
+    s.weight += l.weightKg;
+    s.materials[normKey(l.material)] = true;
+  });
+  ["taxable", "cgst", "sgst", "igst", "gst", "total"].forEach(function (k) { s[k] = round2(s[k]); });
+  s.weight = round3(s.weight);
+  s.billCount = billsOf(lines).length;
+  s.materialCount = Object.keys(s.materials).length;
+  return s;
+}
+
+function applyFilters() {
+  if (!purchasesLoaded) return;
+  var lines = filteredLines();
+  var s = sumLines(lines);
+  renderStats(s);
+  renderAdjustments(lines, s);
+  renderReturns(s);
+  renderTable(billsOf(lines));
+  renderTrendChart(lines);
+  renderSplitChart(lines);
+}
+
+function setText(id, text) { $(id).textContent = text; }
+
+function renderStats(s) {
+  setText("pur-stat-total", formatCurrency(s.total));
+  setText("pur-stat-total-sub", s.billCount ? formatCurrency(s.taxable) + " before GST" : "Nothing recorded in this view");
+  setText("pur-stat-gst", formatCurrency(s.gst));
+  var heads = [];
+  if (s.cgst || s.sgst) heads.push("CGST+SGST " + formatCompactCurrency(s.cgst + s.sgst));
+  if (s.igst) heads.push("IGST " + formatCompactCurrency(s.igst));
+  setText("pur-stat-gst-sub", heads.length ? heads.join(" · ") : "No GST in this view");
+  setText("pur-stat-weight", formatKg(s.weight));
+  setText("pur-stat-weight-sub", s.weight >= 1000
+    ? "≈ " + (s.weight / 1000).toLocaleString("en-IN", { maximumFractionDigits: 2 }) + " tonnes · " + plural(s.billCount, "bill")
+    : plural(s.billCount, "bill"));
+  setText("pur-stat-rate", s.weight ? formatRate(s.taxable / s.weight) : "—");
+  setText("pur-stat-rate-sub", !s.weight ? "No weight in this view"
+    : s.materialCount > 1 ? "Mixed · " + s.materialCount + " materials"
+    : "Weighted, before GST");
+}
+
+// How much of this view is adjustment bills -- bought each month to
+// balance sales against purchases, so worth seeing at a glance.
+function renderAdjustments(lines, s) {
+  var el = $("pur-adj-summary");
+  var adj = lines.filter(function (l) { return l.row.data.isAdjustment; });
+  var bills = billsOf(adj).length;
+  var total = round2(adj.reduce(function (n, l) { return n + l.total; }, 0));
+  var weight = round3(adj.reduce(function (n, l) { return n + l.weightKg; }, 0));
+  el.classList.toggle("is-empty", !bills);
+  el.innerHTML = bills
+    ? '<span class="pur-adj-badge">Adjustment</span>' + plural(bills, "bill") + " · " + formatCurrency(total) + " · " + formatKg(weight) +
+      (s.total && $("pur-filter-kind").value !== "adjustment" ? ' <span class="pur-adj-share">' + Math.round(total / s.total * 100) + "% of purchases in this view</span>" : "")
+    : '<span class="pur-adj-badge">Adjustment</span>No adjustment bills in this view.';
+}
+
+function filterSummaryText() {
+  var c = currentFilters();
+  var bits = [];
+  if (c.supplier !== "all") bits.push($("pur-filter-supplier").selectedOptions[0].textContent);
+  if (c.material !== "all") bits.push($("pur-filter-item").selectedOptions[0].textContent);
+  if (c.month !== "all") bits.push($("pur-filter-month").selectedOptions[0].textContent);
+  else if (c.fy !== "all") bits.push("FY " + c.fy);
+  if (c.gst !== "all") bits.push(c.gst === "inter" ? "IGST bills" : "CGST + SGST bills");
+  if (c.kind !== "all") bits.push(c.kind === "adjustment" ? "adjustment bills" : "regular bills");
+  return bits;
+}
+
+function renderReturns(s) {
+  setText("pur-ret-taxable", formatCurrency(s.taxable));
+  setText("pur-ret-cgst", formatCurrency(s.cgst));
+  setText("pur-ret-sgst", formatCurrency(s.sgst));
+  setText("pur-ret-igst", formatCurrency(s.igst));
+  setText("pur-ret-total", formatCurrency(s.gst));
+  var bits = filterSummaryText();
+  setText("pur-returns-note", "Input tax credit for " + (bits.length ? bits.join(" · ") : "every purchase recorded") + ".");
+}
+
+var EDIT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>';
+var DELETE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"/><path d="M9 7V4h6v3"/></svg>';
+
+function renderTable(rows) {
+  var body = $("pur-table-body");
+  var visible = rows.slice(0, filterState.shown);
+  setText("pur-result-count", rows.length ? "Showing " + visible.length.toLocaleString("en-IN") + " of " + plural(rows.length, "bill") : "");
+  var moreBtn = $("pur-more");
+  moreBtn.hidden = rows.length <= visible.length;
+  moreBtn.textContent = "Show more (" + (rows.length - visible.length).toLocaleString("en-IN") + " left)";
+
+  if (!rows.length) {
+    body.innerHTML = '<tr><td colspan="9" class="billing-history-empty">' +
+      (allPurchases.length ? "No purchases match these filters." : "No purchases yet — record your first bill above.") + "</td></tr>";
+    return;
+  }
+  body.innerHTML = visible.map(function (r) {
+    var p = r.data;
+    var inter = p.gstType === "inter";
+    var items = (p.lines || []).map(function (l) {
+      return '<span class="pur-item-line"><span class="pur-cell-main">' + esc(l.item) + ' <span class="pur-mat-tag">' + esc(l.material) + "</span></span>" +
+        '<span class="pur-cell-sub">' + formatKg(l.weightKg) + " @ " + formatRate(l.ratePerKg) + "/kg</span></span>";
+    }).join("");
+    return '<tr data-id="' + r.id + '"' + (r.id === highlightId ? ' class="is-new"' : "") + ">" +
+      '<td class="pur-nowrap">' + formatDisplayDate(p.date) + "</td>" +
+      '<td><span class="pur-cell-main">' + esc(p.supplierName) + "</span>" +
+        (p.supplierGstin ? '<span class="pur-cell-sub mono">' + esc(p.supplierGstin) + "</span>" : "") + "</td>" +
+      '<td><span class="mono">' + esc(p.billNo) + "</span>" + (p.isAdjustment ? '<span class="pur-adj-badge pur-adj-badge--row">Adjustment</span>' : "") + "</td>" +
+      '<td class="pur-items-cell">' + items + "</td>" +
+      '<td class="pur-num mono">' + formatKg(p.weightKg) + "</td>" +
+      '<td class="pur-num">' + formatCurrency(p.taxableValue) + "</td>" +
+      '<td><span class="pur-gst-badge ' + (inter ? "is-inter" : "is-intra") + '">' + (inter ? "IGST" : "CGST+SGST") + " " + formatPct(p.gstRate || 0) + "</span>" +
+        '<span class="pur-cell-sub">' + formatCurrency(p.totalGst) + "</span></td>" +
+      '<td class="pur-num pur-cell-total">' + formatCurrency(p.total) + "</td>" +
+      '<td class="pur-row-actions">' +
+        '<button type="button" class="pur-row-btn" data-act="edit" aria-label="Edit this purchase" title="Edit">' + EDIT_ICON + "</button>" +
+        '<button type="button" class="pur-row-btn pur-row-btn--danger" data-act="delete" aria-label="Delete this purchase" title="Delete">' + DELETE_ICON + "</button>" +
+      "</td></tr>";
+  }).join("");
+  highlightId = null;
+}
+
+$("pur-table-body").addEventListener("click", function (e) {
+  var btn = e.target.closest(".pur-row-btn");
+  if (!btn) return;
+  var id = btn.closest("tr").dataset.id;
+  var row = allPurchases.find(function (r) { return r.id === id; });
+  if (!row) return;
+  if (btn.dataset.act === "edit") { startEdit(row); return; }
+  showConfirmDialog(
+    "Delete this purchase?",
+    "Bill " + (row.data.billNo || "") + " from " + (row.data.supplierName || "") + " (" + formatCurrency(row.data.total) + ") will be removed from the register for good.",
+    "Delete",
+    true
+  ).then(function (ok) {
+    if (!ok) return;
+    btn.disabled = true;
+    deleteDoc(doc(db, "purchases", id)).then(function () {
+      if (editingId === id) resetForm();
+      return loadPurchases();
+    }).catch(function (err) {
+      btn.disabled = false;
+      console.error(err);
+      showFormStatus("Couldn’t delete that purchase. Try again.", true);
+    });
+  });
+});
+
+$("pur-more").addEventListener("click", function () {
+  filterState.shown += PAGE_SIZE;
+  renderTable(billsOf(filteredLines()));
+});
+
+["pur-filter-supplier", "pur-filter-item", "pur-filter-month", "pur-filter-kind"].forEach(function (id) {
+  $(id).addEventListener("change", function () { filterState.shown = PAGE_SIZE; applyFilters(); });
+});
+$("pur-filter-fy").addEventListener("change", function () {
+  populateMonths(this.value);
+  filterState.shown = PAGE_SIZE;
+  applyFilters();
+});
+var gstFilterBtns = document.querySelectorAll("[data-gst]");
+function setGstFilter(v) {
+  filterState.gst = v;
+  gstFilterBtns.forEach(function (b) { b.classList.toggle("is-active", b.dataset.gst === v); });
+  filterState.shown = PAGE_SIZE;
+  applyFilters();
+}
+gstFilterBtns.forEach(function (b) {
+  b.addEventListener("click", function () { if (filterState.gst !== b.dataset.gst) setGstFilter(b.dataset.gst); });
+});
+$("pur-reset").addEventListener("click", function () {
+  $("pur-filter-supplier").value = "all";
+  $("pur-filter-item").value = "all";
+  var fySel = $("pur-filter-fy");
+  fySel.value = fySel.options.length > 1 ? fySel.options[1].value : "all";
+  populateMonths(fySel.value);
+  $("pur-filter-month").value = "all";
+  $("pur-filter-kind").value = "all";
+  setGstFilter("all");
+});
+
+// ---- CSV export: one row per bill (what the returns are filed on),
+// with its items listed, for everything in the current view.
+function csvCell(v) {
+  var s = v == null ? "" : String(v);
+  return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+$("pur-export").addEventListener("click", function () {
+  var rows = billsOf(filteredLines()).slice().reverse();
+  if (!rows.length) { showFormStatus("Nothing to export — no purchases match these filters.", true); return; }
+  var header = ["Bill Date", "Financial Year", "Supplier", "Supplier GSTIN", "Supplier State", "Bill No.", "Adjustment Bill", "Items", "Materials",
+    "Weight (kg)", "Taxable Value", "GST Type", "GST Rate %", "CGST", "SGST", "IGST", "Total GST", "Round Off", "Bill Total", "Notes"];
+  var out = [header.map(csvCell).join(",")];
+  var tot = { weight: 0, taxable: 0, cgst: 0, sgst: 0, igst: 0, gst: 0, roundOff: 0, total: 0 };
+  rows.forEach(function (r) {
+    var p = r.data;
+    var lines = p.lines || [];
+    out.push([
+      p.date, p.financialYear, p.supplierName, p.supplierGstin, p.supplierState, p.billNo, p.isAdjustment ? "Yes" : "No",
+      lines.map(function (l) { return l.item + " (" + l.material + ") " + l.weightKg + " kg @ " + (l.ratePerKg || 0).toFixed(2); }).join("; "),
+      lines.map(function (l) { return l.material; }).filter(function (m, i, a) { return a.indexOf(m) === i; }).join(", "),
+      p.weightKg, (p.taxableValue || 0).toFixed(2), p.gstType === "inter" ? "IGST" : "CGST + SGST", p.gstRate,
+      (p.cgst || 0).toFixed(2), (p.sgst || 0).toFixed(2), (p.igst || 0).toFixed(2),
+      (p.totalGst || 0).toFixed(2), (p.roundOff || 0).toFixed(2), (p.total || 0).toFixed(2), p.notes
+    ].map(csvCell).join(","));
+    tot.weight += p.weightKg || 0;
+    tot.taxable += p.taxableValue || 0;
+    tot.cgst += p.cgst || 0;
+    tot.sgst += p.sgst || 0;
+    tot.igst += p.igst || 0;
+    tot.gst += p.totalGst || 0;
+    tot.roundOff += p.roundOff || 0;
+    tot.total += p.total || 0;
+  });
+  out.push("");
+  out.push(["Totals", "", "", "", "", "", "", "", "", round3(tot.weight), tot.taxable.toFixed(2), "", "",
+    tot.cgst.toFixed(2), tot.sgst.toFixed(2), tot.igst.toFixed(2), tot.gst.toFixed(2), tot.roundOff.toFixed(2), tot.total.toFixed(2), ""].map(csvCell).join(","));
+
+  var c = currentFilters();
+  var name = "NKMW-purchases" +
+    (c.month !== "all" ? "-" + c.month : c.fy !== "all" ? "-FY" + c.fy : "") +
+    (c.supplier !== "all" ? "-" + c.supplier.replace(/[^a-z0-9]+/g, "-") : "") +
+    (c.material !== "all" ? "-" + c.material.replace(/[^a-z0-9]+/g, "-") : "") +
+    (c.kind !== "all" ? "-" + c.kind : "") + ".csv";
+  var blob = new Blob(["﻿" + out.join("\r\n")], { type: "text/csv;charset=utf-8" });
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+});
+
+// =====================================================================
+// Charts -- same look as Supply Overview (Chart.js, themed tooltips,
+// gradient bars, staggered entrance).
+// =====================================================================
+var ChartLib = null;
+var trendChart = null;
+var splitChart = null;
+
+function chartTheme() {
+  var cs = getComputedStyle(document.documentElement);
+  return {
+    accent: cs.getPropertyValue("--accent").trim(),
+    success: cs.getPropertyValue("--success").trim(),
+    ink: cs.getPropertyValue("--ink").trim(),
+    inkMuted: cs.getPropertyValue("--ink-muted").trim(),
+    line: cs.getPropertyValue("--line").trim(),
+    surface: cs.getPropertyValue("--surface").trim()
+  };
+}
+function axisX(theme) {
+  return { grid: { display: false }, ticks: { color: theme.inkMuted, font: { family: "IBM Plex Sans" } }, border: { color: theme.line } };
+}
+function axisY(theme, fmt, extra) {
+  return Object.assign({
+    beginAtZero: true,
+    grid: { color: theme.line },
+    ticks: { color: theme.inkMuted, font: { family: "IBM Plex Sans" }, callback: fmt },
+    border: { display: false }
+  }, extra || {});
+}
+function barFill(theme, horizontal) {
+  return function (ctx) {
+    var area = ctx.chart.chartArea;
+    if (!area) return theme.accent;
+    var g = horizontal
+      ? ctx.chart.ctx.createLinearGradient(area.left, 0, area.right, 0)
+      : ctx.chart.ctx.createLinearGradient(0, area.bottom, 0, area.top);
+    g.addColorStop(0, theme.accent + "4D");
+    g.addColorStop(1, theme.accent);
+    return g;
+  };
+}
+function staggerDelay(step) {
+  return function (ctx) {
+    return ctx.type === "data" && ctx.mode === "default" ? ctx.dataIndex * step + ctx.datasetIndex * 160 : 0;
+  };
+}
+function tooltipStyle(theme) {
+  return {
+    backgroundColor: theme.surface,
+    borderColor: theme.line,
+    borderWidth: 1,
+    titleColor: theme.ink,
+    bodyColor: theme.ink,
+    padding: 12,
+    cornerRadius: 12,
+    caretSize: 6,
+    boxPadding: 6,
+    usePointStyle: true,
+    titleFont: { family: "Space Grotesk", weight: "600", size: 13 },
+    bodyFont: { family: "IBM Plex Sans", size: 12 }
+  };
+}
+function chartEmpty(canvas, empty, message) {
+  empty.textContent = message;
+  empty.hidden = false;
+  canvas.style.display = "none";
+}
+
+// Spend (bars, before GST) by month -- or bill by bill once a single
+// month is picked -- and the ₹/kg paid for one material (line): the one
+// picked in the filter, or whichever was bought most by weight. ₹/kg
+// across copper and CRCA together would mean nothing.
+function renderTrendChart(lines) {
+  var canvas = $("pur-trend-chart"), empty = $("pur-trend-empty");
+  if (!ChartLib) { chartEmpty(canvas, empty, "Loading chart…"); return; }
+  if (!lines.length) {
+    chartEmpty(canvas, empty, allPurchases.length ? "No purchases match these filters yet." : "Your spend and rate trend will show up here.");
+    if (trendChart) { trendChart.destroy(); trendChart = null; }
+    return;
+  }
+  empty.hidden = true;
+  canvas.style.display = "block";
+
+  var c = currentFilters();
+  var byBill = c.month !== "all";
+  var weightByMat = {}, matNames = {};
+  lines.forEach(function (l) {
+    var k = normKey(l.material);
+    weightByMat[k] = (weightByMat[k] || 0) + l.weightKg;
+    matNames[k] = matNames[k] || l.material;
+  });
+  var rateMat = c.material !== "all" ? c.material : Object.keys(weightByMat).sort(function (a, b) { return weightByMat[b] - weightByMat[a]; })[0];
+  var rateName = matNames[rateMat] || "";
+  var groups = {};
+  lines.forEach(function (l) {
+    var p = l.row.data;
+    var key = byBill ? (p.date || "") + "|" + l.row.id : monthKey(p.date);
+    var g = groups[key] || (groups[key] = { taxable: 0, adjTaxable: 0, matTaxable: 0, matWeight: 0, date: p.date, billNo: p.billNo, supplier: p.supplierName });
+    if (p.isAdjustment) g.adjTaxable += l.amount; else g.taxable += l.amount;
+    if (normKey(l.material) === rateMat) {
+      g.matTaxable += l.amount;
+      g.matWeight += l.weightKg;
+    }
+  });
+  var keys = Object.keys(groups).sort();
+  var labels = keys.map(function (k) { return byBill ? (groups[k].billNo || "—") : monthLabel(k); });
+  var titles = keys.map(function (k) {
+    var g = groups[k];
+    return byBill ? "Bill " + (g.billNo || "—") + " · " + formatDisplayDate(g.date) + " · " + g.supplier : monthLabel(k);
+  });
+  var spend = keys.map(function (k) { return round2(groups[k].taxable); });
+  var adjSpend = keys.map(function (k) { return round2(groups[k].adjTaxable); });
+  var hasAdj = adjSpend.some(function (v) { return v > 0; });
+  var rate = keys.map(function (k) { return groups[k].matWeight ? round2(groups[k].matTaxable / groups[k].matWeight) : null; });
+  var shortName = rateName.length > 18 ? rateName.slice(0, 17) + "…" : rateName;
+
+  var bits = filterSummaryText();
+  setText("pur-trend-sub", (byBill ? "Spend bill by bill" : "Monthly spend before GST") + ", and ₹/kg paid for " + rateName + (bits.length ? " · " + bits.join(" · ") : ""));
+
+  var theme = chartTheme();
+  var config = {
+    data: {
+      labels: labels,
+      datasets: [{
+        type: "bar",
+        label: hasAdj ? "Regular spend" : "Spend (before GST)",
+        data: spend,
+        yAxisID: "y",
+        stack: "spend",
+        backgroundColor: barFill(theme),
+        hoverBackgroundColor: theme.accent,
+        borderRadius: 8,
+        borderSkipped: false,
+        maxBarThickness: 38,
+        order: 2
+      }].concat(hasAdj ? [{
+        type: "bar",
+        label: "Adjustment",
+        data: adjSpend,
+        yAxisID: "y",
+        stack: "spend",
+        backgroundColor: theme.inkMuted + "8C",
+        hoverBackgroundColor: theme.inkMuted,
+        borderRadius: 8,
+        borderSkipped: false,
+        maxBarThickness: 38,
+        order: 3
+      }] : []).concat([{
+        type: "line",
+        label: "₹/kg · " + shortName,
+        data: rate,
+        yAxisID: "y1",
+        borderColor: theme.success,
+        backgroundColor: theme.success,
+        pointBackgroundColor: theme.surface,
+        pointBorderColor: theme.success,
+        pointBorderWidth: 2,
+        pointHoverBackgroundColor: theme.success,
+        pointHoverBorderColor: theme.surface,
+        pointRadius: 3.5,
+        pointHoverRadius: 7,
+        borderWidth: 2.5,
+        tension: 0.35,
+        spanGaps: true,
+        order: 1
+      }])
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: "index", intersect: false },
+      animation: { duration: 900, easing: "easeOutQuart", delay: staggerDelay(60) },
+      plugins: {
+        legend: { display: true, position: "top", align: "end", labels: { usePointStyle: true, pointStyle: "circle", boxWidth: 8, boxHeight: 8, padding: 14, font: { family: "IBM Plex Sans" } } },
+        tooltip: Object.assign(tooltipStyle(theme), {
+          callbacks: {
+            title: function (items) { return titles[items[0].dataIndex]; },
+            label: function (ctx) {
+              return ctx.dataset.yAxisID === "y1"
+                ? rateName + ": " + formatRate(ctx.parsed.y) + "/kg"
+                : ctx.dataset.label + ": " + formatCurrency(ctx.parsed.y);
+            }
+          }
+        })
+      },
+      scales: {
+        x: Object.assign(axisX(theme), { stacked: true }),
+        y: axisY(theme, function (v) { return formatCompactCurrency(v); }, { stacked: true }),
+        y1: axisY(theme, function (v) { return "₹" + v; }, { position: "right", beginAtZero: false, grid: { display: false } })
+      }
+    }
+  };
+  if (trendChart) {
+    trendChart.data = config.data;
+    trendChart.options = config.options;
+    trendChart.update();
+  } else {
+    trendChart = new ChartLib(canvas.getContext("2d"), config);
+  }
+}
+
+// Who the money (or the tonnage) goes to -- or, with one supplier picked,
+// which materials you buy from them.
+function renderSplitChart(lines) {
+  var canvas = $("pur-split-chart"), empty = $("pur-split-empty");
+  var c = currentFilters();
+  var bySupplier = c.supplier === "all";
+  setText("pur-split-title", bySupplier ? "By Supplier" : "By Material");
+  if (!ChartLib) { chartEmpty(canvas, empty, "Loading chart…"); return; }
+  if (!lines.length) {
+    chartEmpty(canvas, empty, allPurchases.length ? "No purchases match these filters yet." : "Your top suppliers will show up here.");
+    if (splitChart) { splitChart.destroy(); splitChart = null; }
+    return;
+  }
+  empty.hidden = true;
+  canvas.style.display = "block";
+
+  var groups = {};
+  lines.forEach(function (l) {
+    var p = l.row.data;
+    var key = bySupplier ? normKey(p.supplierName) : normKey(l.material);
+    var g = groups[key] || (groups[key] = { label: bySupplier ? p.supplierName : l.material, value: 0, weight: 0 });
+    g.value += l.amount;
+    g.weight += l.weightKg;
+  });
+  var ranked = Object.keys(groups).map(function (k) { return groups[k]; })
+    .sort(function (a, b) { return splitMetric === "weight" ? b.weight - a.weight : b.value - a.value; })
+    .slice(0, 8);
+  var total = ranked.reduce(function (n, g) { return n + (splitMetric === "weight" ? g.weight : g.value); }, 0);
+  var labels = ranked.map(function (g) { return g.label.length > 22 ? g.label.slice(0, 21) + "…" : g.label; });
+  var values = ranked.map(function (g) { return splitMetric === "weight" ? round3(g.weight) : round2(g.value); });
+
+  setText("pur-split-sub", (bySupplier ? "Top suppliers" : "Materials from " + $("pur-filter-supplier").selectedOptions[0].textContent) +
+    " by " + (splitMetric === "weight" ? "weight bought" : "spend before GST"));
+
+  var theme = chartTheme();
+  var fmt = splitMetric === "weight"
+    ? function (v) { return v >= 1000 ? (v / 1000).toLocaleString("en-IN", { maximumFractionDigits: 1 }) + "t" : v.toLocaleString("en-IN") + " kg"; }
+    : function (v) { return formatCompactCurrency(v); };
+  var config = {
+    type: "bar",
+    data: {
+      labels: labels,
+      datasets: [{
+        label: splitMetric === "weight" ? "Weight" : "Spend",
+        data: values,
+        backgroundColor: barFill(theme, true),
+        hoverBackgroundColor: theme.accent,
+        borderRadius: 8,
+        borderSkipped: false,
+        maxBarThickness: 26
+      }]
+    },
+    options: {
+      indexAxis: "y",
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 900, easing: "easeOutQuart", delay: staggerDelay(70) },
+      plugins: {
+        legend: { display: false },
+        tooltip: Object.assign(tooltipStyle(theme), {
+          callbacks: {
+            title: function (items) { return ranked[items[0].dataIndex].label; },
+            label: function (ctx) {
+              var share = total ? " · " + Math.round(ctx.parsed.x / total * 100) + "%" : "";
+              return (splitMetric === "weight" ? formatKg(ctx.parsed.x) : formatCurrency(ctx.parsed.x)) + share;
+            }
+          }
+        })
+      },
+      scales: {
+        x: axisY(theme, fmt, { ticks: { color: theme.inkMuted, font: { family: "IBM Plex Sans" }, callback: fmt, maxRotation: 0, maxTicksLimit: 5 } }),
+        y: { grid: { display: false }, ticks: { color: theme.ink, font: { family: "IBM Plex Sans" } }, border: { color: theme.line } }
+      }
+    }
+  };
+  if (splitChart) {
+    splitChart.data = config.data;
+    splitChart.options = config.options;
+    splitChart.update();
+  } else {
+    splitChart = new ChartLib(canvas.getContext("2d"), config);
+  }
+}
+
+var metricBtns = document.querySelectorAll("[data-metric]");
+metricBtns.forEach(function (b) {
+  b.addEventListener("click", function () {
+    if (splitMetric === b.dataset.metric) return;
+    splitMetric = b.dataset.metric;
+    metricBtns.forEach(function (x) { x.classList.toggle("is-active", x === b); });
+    renderSplitChart(filteredLines());
+  });
+});
+
+if (window.matchMedia) {
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () {
+    if (!ChartLib) return;
+    ChartLib.defaults.color = chartTheme().inkMuted;
+    if (trendChart) { trendChart.destroy(); trendChart = null; }
+    if (splitChart) { splitChart.destroy(); splitChart = null; }
+    applyFilters();
+  });
+}
+
+addLine();
+
+// ---------------------------------------------------------------------
+// Auth + role guard
+// ---------------------------------------------------------------------
+onAuthStateChanged(auth, function (user) {
+  if (!user) { window.location.replace("login.html"); return; }
+  if (!user.emailVerified) {
+    signOut(auth).then(function () { window.location.replace("login.html?unverified=1"); });
+    return;
+  }
+  if (enforceSessionTimeout(auth, signOut)) return;
+
+  getDoc(doc(db, "profiles", user.uid)).then(function (snap) {
+    var data = snap.exists() ? snap.data() : {};
+    if (data.role !== "master") { window.location.replace("welcome.html"); return; }
+    if (data.email !== user.email) {
+      setDoc(doc(db, "profiles", user.uid), { email: user.email }, { merge: true }).catch(function () {});
+    }
+
+    $("purchases-loading").hidden = true;
+    $("purchases-wrap").hidden = false;
+    loadSuppliers();
+    loadPurchases();
+
+    import("https://cdn.jsdelivr.net/npm/chart.js@4.4.4/+esm").then(function (mod) {
+      ChartLib = mod.Chart;
+      ChartLib.register.apply(ChartLib, mod.registerables);
+      ChartLib.defaults.font.family = "IBM Plex Sans";
+      ChartLib.defaults.color = chartTheme().inkMuted;
+      applyFilters();
+    }).catch(function (err) {
+      console.error(err);
+      ["pur-trend-empty", "pur-split-empty"].forEach(function (id) {
+        var el = $(id);
+        el.textContent = "Charts couldn't load — check your connection and reload the page.";
+        el.hidden = false;
+      });
+    });
+  }).catch(function () {
+    window.location.replace("welcome.html");
+  });
+});
+</script>
+
+<script src="js/datepicker.js?v=2" defer></script>
+<script src="js/nk-select.js?v=1" defer></script>
+<script src="js/ui-fx.js?v=2" defer></script>
+<script src="js/bot-widget.js?v=2" defer></script>
+</body>
+</html>
