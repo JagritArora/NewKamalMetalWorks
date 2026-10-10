@@ -1679,7 +1679,27 @@ function startEdit(row) {
   setRounding("total", rounding.total);
   setGstType(p.gstType === "inter" ? "inter" : "intra");
   if (!sup) showFormStatus((p.supplierName || "This supplier") + " isn’t in your directory — pick them again or add them with + New supplier.", true);
-  $("pur-form-card").scrollIntoView({ behavior: "smooth", block: "start" });
+  scrollToForm();
+}
+
+// Bring the form to the top of the screen. Safari can drop a smooth
+// scroll partway when the page changes under it (as loading a bill into
+// the form does), so check once it should have arrived and jump the rest
+// of the way if it didn't. On a computer the cursor lands in Bill No.,
+// ready to edit (not on a phone, where it would pop the keyboard up).
+function scrollToForm() {
+  var card = $("pur-form-card");
+  var offset = 96; // clears the fixed header (matches scroll-padding-top)
+  function target() { return Math.max(0, window.pageYOffset + card.getBoundingClientRect().top - offset); }
+  if (window.matchMedia && window.matchMedia("(pointer: fine)").matches) f.billNo.focus({ preventScroll: true });
+  window.scrollTo({ top: target(), behavior: "smooth" });
+  setTimeout(function () {
+    if (Math.abs(card.getBoundingClientRect().top - offset) <= 40) return;
+    var root = document.documentElement;
+    root.style.scrollBehavior = "auto";
+    window.scrollTo(0, target());
+    root.style.scrollBehavior = "";
+  }, 900);
 }
 
 var saving = false;
