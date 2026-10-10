@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/main.css?v=95" />
+<link rel="stylesheet" href="css/main.css?v=96" />
 </head>
 <body class="login-page">
 <script src="js/page-transition.js?v=1"></script>
@@ -78,7 +78,7 @@
 
           <p class="pur-group-label"><span>B</span>Items on this bill</p>
           <div class="pur-lines-head" aria-hidden="true">
-            <span>Item</span><span>Material</span><span>Weight</span><span>Rate / kg</span><span class="pur-num">Amount</span><span></span>
+            <span>Item</span><span>Material</span><span id="pur-head-wt">Weight</span><span id="pur-head-rate">Rate / kg</span><span class="pur-num">Amount</span><span></span>
           </div>
           <div class="pur-lines" id="pur-lines"></div>
           <div class="pur-add-row">
@@ -503,6 +503,7 @@ function formatCompactCurrency(n) {
   return "₹" + n.toFixed(0);
 }
 function formatKg(n) { return (n || 0).toLocaleString("en-IN", { maximumFractionDigits: 3 }) + " kg"; }
+function formatQty(n) { return (n || 0).toLocaleString("en-IN", { maximumFractionDigits: 3 }) + (n === 1 ? " pc" : " pcs"); }
 function formatRate(n) { return "₹" + (n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 function formatPct(n) { return (Math.round(n * 100) / 100) + "%"; }
 function formatDisplayDate(dateStr) {
@@ -640,9 +641,11 @@ function buildLines() {
         row: row,
         item: l.item || "",
         material: l.material || "",
-        basis: l.basis === "lump" ? "lump" : "kg",
+        basis: l.basis === "lump" || l.basis === "pcs" ? l.basis : "kg",
         weightKg: l.weightKg || 0,
         ratePerKg: l.ratePerKg || 0,
+        qty: l.qty || 0,
+        ratePerPc: l.ratePerPc || 0,
         amount: l.amount || 0,
         cgst: (p.cgst || 0) * share,
         sgst: (p.sgst || 0) * share,
@@ -729,9 +732,11 @@ document.querySelectorAll("[data-round]").forEach(function (group) {
 
 // ---------------------------------------------------------------------
 // Item lines -- Item, Material, Weight and Rate on one row, with the line
-// amount worked out beside it. "Add item" appends another row. A line can
-// instead be a lump sum (cutting, freight, loading): no weight, just an
-// amount, and it stays out of every weight and ₹/kg figure.
+// amount worked out beside it. "Add item" appends another row. The unit
+// beside the weight can switch a line to pieces (machinery, tools: qty x
+// rate per piece) or to a lump sum (cutting, freight, loading: just an
+// amount). Neither has a weight, so both stay out of every kg and ₹/kg
+// figure.
 // ---------------------------------------------------------------------
 var SWAP_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4 3 8l4 4"/><path d="M3 8h14"/><path d="m17 20 4-4-4-4"/><path d="M21 16H7"/></svg>';
 function lineTemplate() {
@@ -741,7 +746,8 @@ function lineTemplate() {
       '<input type="text" data-f="material" data-combo="material" autocomplete="off" spellcheck="false" placeholder="e.g. CRCA" aria-label="Material" /></div>' +
     '<div class="login-field pur-line-wt"><label>Weight</label>' +
       '<div class="pur-unit-input pur-wt-box"><input type="number" data-f="weight" inputmode="decimal" min="0" step="0.001" placeholder="0" aria-label="Weight in kg" />' +
-        '<button type="button" class="pur-basis-chip" data-set-basis="lump" title="No weight on this line? Make it a lump sum" aria-label="Switch to lump sum, no weight">kg' + SWAP_ICON + '</button></div>' +
+        '<select class="pur-basis-chip" data-basis-select title="Bought by weight, by the piece, or as one amount" aria-label="Unit">' +
+          '<option value="kg">kg</option><option value="pcs">pcs</option><option value="lump">Lump sum</option></select></div>' +
       '<button type="button" class="pur-lump-pill" data-set-basis="kg" title="Switch back to weight × rate" aria-label="Lump sum, switch back to weight times rate">Lump sum' + SWAP_ICON + '</button></div>' +
     '<div class="login-field pur-line-rate"><label>Rate / kg</label>' +
       '<div class="pur-unit-input pur-unit-input--pre"><span>₹</span><input type="number" data-f="rate" inputmode="decimal" min="0" step="0.01" placeholder="0.00" aria-label="Rate per kg" /></div></div>' +
@@ -752,24 +758,36 @@ function lineTemplate() {
 function lineRows() { return Array.prototype.slice.call(linesEl.querySelectorAll(".pur-line")); }
 function lineInput(row, name) { return row.querySelector('[data-f="' + name + '"]'); }
 function setBasis(row, basis) {
-  var lump = basis === "lump";
-  var rate = lineInput(row, "rate");
-  row.dataset.basis = lump ? "lump" : "kg";
+  basis = basis === "lump" || basis === "pcs" ? basis : "kg";
+  var lump = basis === "lump", pcs = basis === "pcs";
+  var rate = lineInput(row, "rate"), qty = lineInput(row, "weight");
+  row.dataset.basis = basis;
   row.classList.toggle("is-lump", lump);
+  row.querySelector("[data-basis-select]").value = basis;
   rate.placeholder = lump ? "Amount" : "0.00";
-  rate.setAttribute("aria-label", lump ? "Lump-sum amount" : "Rate per kg");
-  row.querySelector(".pur-line-rate > label").textContent = lump ? "Amount" : "Rate / kg";
+  rate.setAttribute("aria-label", lump ? "Lump-sum amount" : pcs ? "Rate per piece" : "Rate per kg");
+  row.querySelector(".pur-line-rate > label").textContent = lump ? "Amount" : pcs ? "Rate / pc" : "Rate / kg";
+  qty.setAttribute("aria-label", pcs ? "Quantity in pieces" : "Weight in kg");
+  row.querySelector(".pur-line-wt > label").textContent = pcs ? "Qty" : "Weight";
   // On a lump sum, the Item says what the charge was (cutting cost) and
   // Material becomes its Category -- Overhead unless you say otherwise.
   var item = lineInput(row, "item"), mat = lineInput(row, "material");
-  item.placeholder = lump ? "e.g. Cutting cost" : "e.g. CR Coil 8 mm";
-  mat.placeholder = lump ? "e.g. Overhead" : "e.g. CRCA";
+  item.placeholder = lump ? "e.g. Cutting cost" : pcs ? "e.g. Power press" : "e.g. CR Coil 8 mm";
+  mat.placeholder = lump ? "e.g. Overhead" : pcs ? "e.g. Machinery" : "e.g. CRCA";
   mat.setAttribute("aria-label", lump ? "Category" : "Material");
   row.querySelector(".pur-line-mat > label").textContent = lump ? "Category" : "Material";
   if (lump && !mat.value.trim()) { mat.value = "Overhead"; row.dataset.autoCat = "1"; }
   else if (!lump && row.dataset.autoCat === "1" && mat.value === "Overhead") mat.value = "";
   if (!lump) delete row.dataset.autoCat;
-  markError(lineInput(row, "weight"), false);
+  markError(qty, false);
+  syncHead();
+}
+// The column headings follow the lines: plain Weight / Rate per kg unless
+// some line is bought by the piece.
+function syncHead() {
+  var anyPcs = lineRows().some(function (r) { return r.dataset.basis === "pcs"; });
+  $("pur-head-wt").textContent = anyPcs ? "Weight / Qty" : "Weight";
+  $("pur-head-rate").textContent = anyPcs ? "Rate" : "Rate / kg";
 }
 function addLine(values, focus) {
   var row = document.createElement("div");
@@ -777,11 +795,11 @@ function addLine(values, focus) {
   row.innerHTML = lineTemplate();
   setBasis(row, values && values.basis);
   if (values) {
-    var lump = values.basis === "lump";
+    var lump = values.basis === "lump", pcs = values.basis === "pcs";
     lineInput(row, "item").value = values.item || "";
     if (values.material != null) { lineInput(row, "material").value = values.material; delete row.dataset.autoCat; }
-    lineInput(row, "weight").value = !lump && values.weightKg != null ? values.weightKg : "";
-    lineInput(row, "rate").value = lump ? (values.amount || "") : values.ratePerKg != null ? values.ratePerKg : "";
+    lineInput(row, "weight").value = pcs ? (values.qty || "") : !lump && values.weightKg != null ? values.weightKg : "";
+    lineInput(row, "rate").value = lump ? (values.amount || "") : pcs ? (values.ratePerPc || "") : values.ratePerKg != null ? values.ratePerKg : "";
   }
   linesEl.appendChild(row);
   syncLines();
@@ -794,25 +812,28 @@ function syncLines() {
     row.querySelector("[data-remove]").hidden = rows.length === 1;
     row.style.setProperty("--n", i);
   });
+  syncHead();
   renderReceipt();
 }
 function readLines() {
   return lineRows().map(function (row) {
-    var lump = row.dataset.basis === "lump";
-    var weight = lump ? 0 : round3(toNum(lineInput(row, "weight").value));
+    var basis = row.dataset.basis;
+    var n = basis === "lump" ? 0 : round3(toNum(lineInput(row, "weight").value));
     var rate = round2(toNum(lineInput(row, "rate").value));
     return {
       row: row,
       item: tidy(lineInput(row, "item").value),
       material: tidy(lineInput(row, "material").value),
-      basis: lump ? "lump" : "kg",
-      weightKg: weight,
-      ratePerKg: lump ? 0 : rate,
-      amount: lump ? rate : round2(weight * rate)
+      basis: basis,
+      weightKg: basis === "kg" ? n : 0,
+      ratePerKg: basis === "kg" ? rate : 0,
+      qty: basis === "pcs" ? n : 0,
+      ratePerPc: basis === "pcs" ? rate : 0,
+      amount: basis === "lump" ? rate : round2(n * rate)
     };
   });
 }
-function isBlankLine(l) { return !l.item && !l.material && !l.weightKg && !l.ratePerKg && !l.amount; }
+function isBlankLine(l) { return !l.item && !l.material && !l.weightKg && !l.ratePerKg && !l.qty && !l.ratePerPc && !l.amount; }
 
 $("pur-add-line").addEventListener("click", function () { addLine(null, true); });
 $("pur-add-charge").addEventListener("click", function () { addLine({ basis: "lump" }, true); });
@@ -830,6 +851,13 @@ linesEl.addEventListener("click", function (e) {
   var row = btn.closest(".pur-line");
   row.classList.add("is-leaving");
   setTimeout(function () { row.remove(); syncLines(); }, 180);
+});
+linesEl.addEventListener("change", function (e) {
+  if (!e.target.matches("[data-basis-select]")) return;
+  var line = e.target.closest(".pur-line");
+  setBasis(line, e.target.value);
+  renderReceipt();
+  lineInput(line, line.dataset.basis === "lump" ? "rate" : "weight").focus();
 });
 linesEl.addEventListener("input", function (e) {
   if (e.target.dataset.f) markError(e.target, false);
@@ -850,13 +878,14 @@ function setReceiptValue(id, text) {
 }
 function renderReceipt() {
   var lines = readLines();
-  var taxable = 0, weight = 0, counted = 0;
+  var taxable = 0, weight = 0, qty = 0, counted = 0;
   lines.forEach(function (l) {
     var amt = l.row.querySelector("[data-amt]");
     var text = formatCurrency(l.amount);
     if (amt.textContent !== text) amt.textContent = text;
     taxable += l.amount;
     weight += l.weightKg;
+    qty += l.qty;
     if (l.amount) counted++;
   });
   var gstRate = toNum(f.gstRate.value);
@@ -864,7 +893,9 @@ function renderReceipt() {
   var half = formatPct(gstRate / 2);
 
   $("pur-r-type").textContent = gstType === "inter" ? "IGST" : "CGST + SGST";
-  $("pur-r-calc").textContent = counted ? plural(counted, "item") + " · " + formatKg(round3(weight)) : "Add weight and rate";
+  $("pur-r-calc").textContent = counted
+    ? [plural(counted, "item"), weight || !qty ? formatKg(round3(weight)) : "", qty ? formatQty(round3(qty)) : ""].filter(Boolean).join(" · ")
+    : "Add weight and rate";
   $("pur-r-cgst-row").hidden = gstType === "inter";
   $("pur-r-sgst-row").hidden = gstType === "inter";
   $("pur-r-igst-row").hidden = gstType !== "inter";
@@ -965,15 +996,16 @@ function comboOptions(input) {
     var hideKey = kind === "item" ? itemHideKey(l.row.data.supplierId, value) : key;
     if ((kind === "item" ? hidden.items : hidden.materials)[hideKey]) return;
     seen[key] = true;
-    var lump = l.basis === "lump";
+    var lump = l.basis === "lump", pcs = l.basis === "pcs";
     var opt = {
       value: value,
       material: l.material,
       basis: l.basis,
       hide: { kind: kind === "item" ? "items" : "materials", key: hideKey },
-      rate: lump ? l.amount : l.ratePerKg,
+      rate: lump ? l.amount : pcs ? l.ratePerPc : l.ratePerKg,
       meta: kind === "item"
         ? [l.material, lump ? "lump sum" + (l.amount ? ", last " + formatCurrency(l.amount) : "")
+            : pcs ? (l.ratePerPc ? "last " + formatRate(l.ratePerPc) + "/pc" : "by the piece")
             : l.ratePerKg ? "last " + formatRate(l.ratePerKg) + "/kg" : ""].filter(Boolean).join(" · ")
         : (fromThem ? "Bought from " + sup.data.name : "")
     };
@@ -1384,7 +1416,9 @@ function readForm() {
     date: f.date.value,
     financialYear: financialYearFor(f.date.value),
     lines: kept.map(function (l) {
-      return { item: l.item, material: l.material, basis: l.basis, weightKg: l.weightKg, ratePerKg: l.ratePerKg, amount: l.amount };
+      var line = { item: l.item, material: l.material, basis: l.basis, weightKg: l.weightKg, ratePerKg: l.ratePerKg, amount: l.amount };
+      if (l.basis === "pcs") { line.qty = l.qty; line.ratePerPc = l.ratePerPc; }
+      return line;
     }),
     materials: kept.map(function (l) { return normKey(l.material); }).filter(function (k, i, a) { return k && a.indexOf(k) === i; }),
     weightKg: round3(weight),
@@ -1424,6 +1458,11 @@ function validate(form) {
     need(!!l.material, lineInput(l.row, "material"), l.basis === "lump" ? "Add a category (e.g. Overhead) for each lump-sum charge." : "Add the material for each item.");
     if (l.basis === "lump") {
       need(l.amount > 0, lineInput(l.row, "rate"), "Enter the amount for each lump-sum line.");
+      return;
+    }
+    if (l.basis === "pcs") {
+      need(l.qty > 0, lineInput(l.row, "weight"), "Enter how many pieces for each item bought by the piece.");
+      need(l.ratePerPc > 0, lineInput(l.row, "rate"), "Enter the rate per piece for each item bought by the piece.");
       return;
     }
     need(l.weightKg > 0, lineInput(l.row, "weight"), "Enter the weight in kg for each item.");
@@ -1654,7 +1693,7 @@ function sumLines(lines) {
   var s = { taxable: 0, kgTaxable: 0, cgst: 0, sgst: 0, igst: 0, gst: 0, total: 0, weight: 0, materials: {} };
   lines.forEach(function (l) {
     s.taxable += l.amount;
-    if (l.basis !== "lump") s.kgTaxable += l.amount;
+    if (l.basis === "kg") s.kgTaxable += l.amount;
     s.cgst += l.cgst;
     s.sgst += l.sgst;
     s.igst += l.igst;
@@ -1761,6 +1800,7 @@ function renderTable(rows) {
     var items = (p.lines || []).map(function (l) {
       return '<span class="pur-item-line"><span class="pur-cell-main">' + esc(l.item) + ' <span class="pur-mat-tag' + (l.basis === "lump" ? " pur-mat-tag--charge" : "") + '">' + esc(l.material) + "</span></span>" +
         '<span class="pur-cell-sub">' + (l.basis === "lump" ? "Lump sum · " + formatCurrency(l.amount)
+          : l.basis === "pcs" ? formatQty(l.qty) + " @ " + formatRate(l.ratePerPc) + "/pc"
           : formatKg(l.weightKg) + " @ " + formatRate(l.ratePerKg) + "/kg") + "</span></span>";
     }).join("");
     return '<tr data-id="' + r.id + '"' + (r.id === highlightId ? ' class="is-new"' : "") + ">" +
@@ -1769,7 +1809,7 @@ function renderTable(rows) {
         (p.supplierGstin ? '<span class="pur-cell-sub mono">' + esc(p.supplierGstin) + "</span>" : "") + "</td>" +
       '<td><span class="mono">' + esc(p.billNo) + "</span>" + (p.isAdjustment ? '<span class="pur-adj-badge pur-adj-badge--row">Adjustment</span>' : "") + "</td>" +
       '<td class="pur-items-cell">' + items + "</td>" +
-      '<td class="pur-num mono">' + formatKg(p.weightKg) + "</td>" +
+      '<td class="pur-num mono">' + (p.weightKg ? formatKg(p.weightKg) : "—") + "</td>" +
       '<td class="pur-num">' + formatCurrency(p.taxableValue) + "</td>" +
       '<td><span class="pur-gst-badge ' + (inter ? "is-inter" : "is-intra") + '">' + (inter ? "IGST" : "CGST+SGST") + " " + formatPct(p.gstRate || 0) + "</span>" +
         '<span class="pur-cell-sub">' + formatCurrency(p.totalGst) + "</span></td>" +
@@ -1863,6 +1903,7 @@ $("pur-export").addEventListener("click", function () {
       lines.map(function (l) {
         return l.item + " (" + l.material + ") " + (l.basis === "lump"
           ? "lump sum " + (l.amount || 0).toFixed(2)
+          : l.basis === "pcs" ? l.qty + " pcs @ " + (l.ratePerPc || 0).toFixed(2)
           : l.weightKg + " kg @ " + (l.ratePerKg || 0).toFixed(2));
       }).join("; "),
       lines.map(function (l) { return l.material; }).filter(function (m, i, a) { return a.indexOf(m) === i; }).join(", "),
@@ -1999,7 +2040,7 @@ function renderTrendChart(lines) {
     var key = byBill ? (p.date || "") + "|" + l.row.id : monthKey(p.date);
     var g = groups[key] || (groups[key] = { taxable: 0, adjTaxable: 0, matTaxable: 0, matWeight: 0, date: p.date, billNo: p.billNo, supplier: p.supplierName });
     if (p.isAdjustment) g.adjTaxable += l.amount; else g.taxable += l.amount;
-    if (normKey(l.material) === rateMat && l.basis !== "lump") {
+    if (normKey(l.material) === rateMat && l.basis === "kg") {
       g.matTaxable += l.amount;
       g.matWeight += l.weightKg;
     }
