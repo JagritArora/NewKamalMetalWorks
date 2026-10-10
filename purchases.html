@@ -740,8 +740,8 @@ function lineTemplate() {
       '<input type="text" data-f="material" data-combo="material" autocomplete="off" spellcheck="false" placeholder="e.g. CRCA" aria-label="Material" /></div>' +
     '<div class="login-field pur-line-wt"><label>Weight</label>' +
       '<div class="pur-unit-input pur-wt-box"><input type="number" data-f="weight" inputmode="decimal" min="0" step="0.001" placeholder="0" aria-label="Weight in kg" />' +
-        '<button type="button" class="pur-basis-chip" data-basis="lump" title="No weight on this line? Make it a lump sum" aria-label="Switch to lump sum, no weight">kg' + SWAP_ICON + '</button></div>' +
-      '<button type="button" class="pur-lump-pill" data-basis="kg" title="Switch back to weight × rate" aria-label="Lump sum, switch back to weight times rate">Lump sum' + SWAP_ICON + '</button></div>' +
+        '<button type="button" class="pur-basis-chip" data-set-basis="lump" title="No weight on this line? Make it a lump sum" aria-label="Switch to lump sum, no weight">kg' + SWAP_ICON + '</button></div>' +
+      '<button type="button" class="pur-lump-pill" data-set-basis="kg" title="Switch back to weight × rate" aria-label="Lump sum, switch back to weight times rate">Lump sum' + SWAP_ICON + '</button></div>' +
     '<div class="login-field pur-line-rate"><label>Rate / kg</label>' +
       '<div class="pur-unit-input pur-unit-input--pre"><span>₹</span><input type="number" data-f="rate" inputmode="decimal" min="0" step="0.01" placeholder="0.00" aria-label="Rate per kg" /></div></div>' +
     '<div class="pur-line-amt"><span class="pur-line-amt-label">Amount</span><strong data-amt>₹0.00</strong></div>' +
@@ -816,10 +816,10 @@ function isBlankLine(l) { return !l.item && !l.material && !l.weightKg && !l.rat
 $("pur-add-line").addEventListener("click", function () { addLine(null, true); });
 $("pur-add-charge").addEventListener("click", function () { addLine({ basis: "lump" }, true); });
 linesEl.addEventListener("click", function (e) {
-  var basisBtn = e.target.closest("[data-basis]");
+  var basisBtn = e.target.closest("[data-set-basis]");
   if (basisBtn) {
     var line = basisBtn.closest(".pur-line");
-    setBasis(line, basisBtn.dataset.basis);
+    setBasis(line, basisBtn.dataset.setBasis);
     renderReceipt();
     lineInput(line, line.dataset.basis === "lump" ? "rate" : "weight").focus();
     return;
