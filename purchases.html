@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/main.css?v=94" />
+<link rel="stylesheet" href="css/main.css?v=95" />
 </head>
 <body class="login-page">
 <script src="js/page-transition.js?v=1"></script>
@@ -386,6 +386,7 @@
     </div>
     <p class="login-status" id="pur-sup-status" role="status" aria-live="polite"></p>
     <div class="confirm-dialog-actions">
+      <button type="button" class="pur-sup-delete" id="pur-sup-delete" hidden>Delete supplier</button>
       <button type="button" class="confirm-dialog-cancel" id="pur-sup-cancel">Cancel</button>
       <button type="button" class="confirm-dialog-confirm" id="pur-sup-save">Add supplier</button>
     </div>
@@ -893,6 +894,56 @@ f.date.addEventListener("change", function () { markError(f.date, false); });
 // ---------------------------------------------------------------------
 var combo = { pop: null, input: null, list: [], active: -1 };
 
+// Suggestions removed with the × in the list. Past bills keep them -- they
+// just stop being offered -- and saving a bill that uses one again brings
+// it back. Items are per supplier ("supplierId|item"), materials and
+// categories are shared.
+var hidden = { items: {}, materials: {} };
+function hiddenRef() { return doc(db, "purchaseSettings", "suggestions"); }
+function itemHideKey(supplierId, value) { return (supplierId || "") + "|" + normKey(value); }
+function loadHidden() {
+  return getDoc(hiddenRef()).then(function (snap) {
+    var d = snap.exists() ? snap.data() : {};
+    hidden = { items: {}, materials: {} };
+    (d.hiddenItems || []).forEach(function (k) { hidden.items[k] = true; });
+    (d.hiddenMaterials || []).forEach(function (k) { hidden.materials[k] = true; });
+  }).catch(function (err) { console.error(err); });
+}
+function saveHidden() {
+  return setDoc(hiddenRef(), {
+    hiddenItems: Object.keys(hidden.items),
+    hiddenMaterials: Object.keys(hidden.materials),
+    updatedAt: serverTimestamp()
+  });
+}
+function removeSuggestion(opt) {
+  var input = combo.input;
+  if (!opt || !opt.hide) return;
+  var what = opt.hide.kind === "items" ? "Item"
+    : input && input.closest(".pur-line").dataset.basis === "lump" ? "Category" : "Material";
+  hidden[opt.hide.kind][opt.hide.key] = true;
+  if (input) openCombo(input);
+  saveHidden().then(function () {
+    showFormStatus("Removed “" + opt.value + "” from " + what + " suggestions. Bills that used it are unchanged.");
+  }).catch(function (err) {
+    console.error(err);
+    delete hidden[opt.hide.kind][opt.hide.key];
+    showFormStatus(err && err.code === "permission-denied"
+      ? "Couldn’t remove that suggestion — this account isn’t allowed to yet."
+      : "Couldn’t remove that suggestion. Check your connection and try again.", true);
+  });
+}
+// A bill saved with a removed item or material puts it back in the list.
+function reviveHidden(data) {
+  var changed = false;
+  (data.lines || []).forEach(function (l) {
+    var ik = itemHideKey(data.supplierId, l.item), mk = normKey(l.material);
+    if (hidden.items[ik]) { delete hidden.items[ik]; changed = true; }
+    if (hidden.materials[mk]) { delete hidden.materials[mk]; changed = true; }
+  });
+  if (changed) saveHidden().catch(function (err) { console.error(err); });
+}
+
 function comboOptions(input) {
   var kind = input.dataset.combo;
   var q = normKey(input.value);
@@ -911,12 +962,15 @@ function comboOptions(input) {
     // Items are remembered per supplier; materials are shared categories,
     // so other suppliers' materials are offered too, after this one's.
     if (kind === "item" && sup && !fromThem) return;
+    var hideKey = kind === "item" ? itemHideKey(l.row.data.supplierId, value) : key;
+    if ((kind === "item" ? hidden.items : hidden.materials)[hideKey]) return;
     seen[key] = true;
     var lump = l.basis === "lump";
     var opt = {
       value: value,
       material: l.material,
       basis: l.basis,
+      hide: { kind: kind === "item" ? "items" : "materials", key: hideKey },
       rate: lump ? l.amount : l.ratePerKg,
       meta: kind === "item"
         ? [l.material, lump ? "lump sum" + (l.amount ? ", last " + formatCurrency(l.amount) : "")
@@ -925,8 +979,8 @@ function comboOptions(input) {
     };
     (fromThem || !sup ? mine : others).push(opt);
   });
-  if (kind === "material" && lumpRow && !seen.overhead && (!q || "overhead".indexOf(q) !== -1)) {
-    others.push({ value: "Overhead", meta: "Cutting, freight, loading and the like" });
+  if (kind === "material" && lumpRow && !seen.overhead && !hidden.materials.overhead && (!q || "overhead".indexOf(q) !== -1)) {
+    others.push({ value: "Overhead", meta: "Cutting, freight, loading and the like", hide: { kind: "materials", key: "overhead" } });
   }
   var groups = [];
   var noun = kind === "item" ? "items" : lumpRow ? "categories" : "materials";
@@ -935,6 +989,7 @@ function comboOptions(input) {
   return groups;
 }
 
+var X_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>';
 function closeCombo() {
   if (!combo.pop) return;
   var p = combo.pop;
@@ -966,6 +1021,8 @@ function openCombo(input) {
     combo.pop.setAttribute("role", "listbox");
     combo.pop.addEventListener("mousedown", function (e) { e.preventDefault(); });
     combo.pop.addEventListener("click", function (e) {
+      var del = e.target.closest("[data-del]");
+      if (del) { removeSuggestion(combo.list[+del.dataset.del]); return; }
       var opt = e.target.closest(".nks-opt");
       if (opt) pickCombo(combo.list[+opt.dataset.i]);
     });
@@ -977,10 +1034,13 @@ function openCombo(input) {
   var i = 0;
   combo.pop.innerHTML = '<div class="nks-list">' + groups.map(function (g) {
     return '<p class="nks-group">' + esc(g.label) + "</p>" + g.opts.map(function (o) {
-      return '<div class="nks-opt" role="option" data-i="' + (i++) + '"><span class="nks-opt-text">' +
+      var idx = i++;
+      return '<div class="nks-opt" role="option" data-i="' + idx + '"><span class="nks-opt-text">' +
         '<span class="pur-combo-name">' + esc(o.value) + "</span>" +
         (o.meta ? '<span class="pur-combo-meta">' + esc(o.meta) + "</span>" : "") +
-        "</span></div>";
+        "</span>" +
+        (o.hide ? '<button type="button" class="pur-combo-del" data-del="' + idx + '" tabindex="-1" title="Remove from suggestions" aria-label="Remove ' + esc(o.value) + ' from suggestions">' + X_ICON + "</button>" : "") +
+        "</div>";
     }).join("");
   }).join("") + "</div>";
   positionCombo();
@@ -1175,6 +1235,8 @@ function openSupplierModal(existing) {
     ? "Changes apply from your next entry — bills already recorded keep the details they were saved with."
     : "Saved to your directory, so next time they’re one pick away.";
   supSaveBtn.textContent = existing ? "Save changes" : "Add supplier";
+  supDeleteBtn.hidden = !existing;
+  resetSupDelete();
   renderSupGstinHint();
   supReturnFocus = document.activeElement;
   supModal.hidden = false;
@@ -1192,6 +1254,55 @@ function closeSupplierModal() {
 }
 supModal.addEventListener("mousedown", function (e) { if (e.target === supModal) closeSupplierModal(); });
 $("pur-sup-close").addEventListener("click", closeSupplierModal);
+
+// Delete a supplier from the directory -- only one with no bills against
+// it (a typo or a duplicate), so no bill is left pointing at nobody.
+// Asks for a second click before it goes.
+var supDeleteBtn = $("pur-sup-delete");
+var supDeleteArmed = false;
+function resetSupDelete() {
+  supDeleteArmed = false;
+  supDeleteBtn.classList.remove("is-armed");
+  supDeleteBtn.textContent = "Delete supplier";
+}
+supDeleteBtn.addEventListener("click", function () {
+  var sup = supplierById(supEditingId);
+  if (!sup || supSaving) return;
+  if (!purchasesLoaded) {
+    showStatusIn(supStatus, "Still loading your bills — try again in a moment.", true);
+    return;
+  }
+  var bills = allPurchases.filter(function (r) { return r.data.supplierId === sup.id; }).length;
+  if (bills) {
+    showStatusIn(supStatus, sup.data.name + " has " + plural(bills, "bill") + " in the register, so they can’t be deleted. Delete or move those bills first.", true);
+    return;
+  }
+  if (!supDeleteArmed) {
+    supDeleteArmed = true;
+    supDeleteBtn.classList.add("is-armed");
+    supDeleteBtn.textContent = "Click again to delete";
+    showStatusIn(supStatus, "This removes " + sup.data.name + " from your supplier directory.", true);
+    return;
+  }
+  supSaving = true;
+  supDeleteBtn.disabled = true;
+  supDeleteBtn.textContent = "Deleting…";
+  deleteDoc(doc(db, "suppliers", sup.id)).then(function () {
+    suppliers = suppliers.filter(function (x) { return x.id !== sup.id; });
+    closeSupplierModal();
+    populateSupplierSelect();
+    showFormStatus("Removed " + sup.data.name + " from your suppliers.");
+  }).catch(function (err) {
+    console.error(err);
+    showStatusIn(supStatus, err && err.code === "permission-denied"
+      ? "Couldn’t delete — this account isn’t allowed to edit the supplier directory."
+      : "Couldn’t delete the supplier. Check your connection and try again.", true);
+  }).then(function () {
+    supSaving = false;
+    supDeleteBtn.disabled = false;
+    resetSupDelete();
+  });
+});
 $("pur-sup-cancel").addEventListener("click", closeSupplierModal);
 
 supSaveBtn.addEventListener("click", function () {
@@ -1417,6 +1528,7 @@ saveBtn.addEventListener("click", function () {
     }
     write.then(function (id) {
       highlightId = id;
+      reviveHidden(data);
       resetForm(true);
       showFormStatus((wasEditing ? "Updated — " : "Saved — ") + (data.isAdjustment ? "adjustment bill · " : "") + data.supplierName + " · Bill " + data.billNo + " · " +
         plural(data.lines.length, "item") + " · " + formatCurrency(data.total));
@@ -2118,6 +2230,7 @@ onAuthStateChanged(auth, function (user) {
     $("purchases-wrap").hidden = false;
     loadSuppliers();
     loadPurchases();
+    loadHidden();
 
     import("https://cdn.jsdelivr.net/npm/chart.js@4.4.4/+esm").then(function (mod) {
       ChartLib = mod.Chart;

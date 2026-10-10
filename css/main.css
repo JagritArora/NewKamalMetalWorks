@@ -5811,6 +5811,32 @@ body.home a, body.home button { -webkit-tap-highlight-color: transparent; }
 /* Item / Material suggestions (themed like the dropdowns). */
 .pur-combo .nks-group:first-child { padding-top: 6px; }
 .pur-combo-name { display: block; font-weight: 600; }
+.pur-combo .nks-opt { display: flex; align-items: center; gap: 8px; }
+.pur-combo .nks-opt-text { flex: 1; min-width: 0; }
+.pur-combo-del {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  color: var(--ink-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity .15s ease, color .15s ease, border-color .15s ease, background .15s ease;
+}
+.pur-combo-del svg { width: 13px; height: 13px; }
+.pur-combo .nks-opt:hover .pur-combo-del,
+.pur-combo .nks-opt.is-active .pur-combo-del { opacity: 1; }
+.pur-combo-del:hover {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 50%, transparent);
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+}
+@media (hover: none) { .pur-combo-del { opacity: .7; } }
 .pur-combo-meta {
   display: block;
   margin-top: 2px;
@@ -5903,6 +5929,28 @@ body.home a, body.home button { -webkit-tap-highlight-color: transparent; }
 .pur-modal .pur-modal-dialog { max-width: 460px; }
 .pur-modal-dialog .login-status.is-visible { margin-top: 14px; }
 .pur-modal-dialog .confirm-dialog-actions { margin-top: 22px; }
+.pur-sup-delete {
+  margin-right: auto;
+  padding: 9px 4px;
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--danger);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: opacity .2s ease;
+}
+.pur-sup-delete[hidden] { display: none; }
+.pur-sup-delete:hover { text-decoration: underline; text-underline-offset: 3px; }
+.pur-sup-delete.is-armed {
+  padding: 9px 16px;
+  color: #fff;
+  background: var(--danger);
+  border-radius: 980px;
+  text-decoration: none;
+}
+.pur-sup-delete:disabled { opacity: .6; cursor: default; }
 .pur-modal-dialog .confirm-dialog-confirm:disabled { opacity: .6; cursor: default; transform: none; box-shadow: none; }
 
 /* GST-returns strip. */

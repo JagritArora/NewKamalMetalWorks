@@ -145,6 +145,13 @@ service cloud.firestore {
       allow read, write: if isMaster();
     }
 
+    // Purchase-form settings -- for now the Item / Material suggestions
+    // removed with the x in their dropdowns (past bills keep them; they
+    // just stop being offered). Master only.
+    match /purchaseSettings/{docId} {
+      allow read, write: if isMaster();
+    }
+
     // Queued by billing.html, sent by the sendMail Cloud Function (which
     // uses the Admin SDK and bypasses these rules entirely). Clients only
     // ever create here -- never read/update/delete -- so nobody but the
