@@ -241,12 +241,6 @@
           <span class="stat-tile-value mono" id="pur-stat-weight">—</span>
           <span class="stat-tile-sub" id="pur-stat-weight-sub">&nbsp;</span>
         </div>
-        <div class="stat-tile">
-          <span class="stat-tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></span>
-          <span class="stat-tile-label">Avg. Rate / kg</span>
-          <span class="stat-tile-value mono" id="pur-stat-rate">—</span>
-          <span class="stat-tile-sub" id="pur-stat-rate-sub">&nbsp;</span>
-        </div>
       </div>
 
       <p class="pur-adj-summary" id="pur-adj-summary"></p>
@@ -1866,22 +1860,19 @@ function billsOf(lines) {
 }
 
 function sumLines(lines) {
-  var s = { taxable: 0, kgTaxable: 0, cgst: 0, sgst: 0, igst: 0, gst: 0, total: 0, weight: 0, materials: {} };
+  var s = { taxable: 0, cgst: 0, sgst: 0, igst: 0, gst: 0, total: 0, weight: 0 };
   lines.forEach(function (l) {
     s.taxable += l.amount;
-    if (l.basis === "kg") s.kgTaxable += l.amount;
     s.cgst += l.cgst;
     s.sgst += l.sgst;
     s.igst += l.igst;
     s.gst += l.gst;
     s.total += l.total;
     s.weight += l.weightKg;
-    s.materials[normKey(l.material)] = true;
   });
   ["taxable", "cgst", "sgst", "igst", "gst", "total"].forEach(function (k) { s[k] = round2(s[k]); });
   s.weight = round3(s.weight);
   s.billCount = billsOf(lines).length;
-  s.materialCount = Object.keys(s.materials).length;
   return s;
 }
 
@@ -1912,10 +1903,6 @@ function renderStats(s) {
   setText("pur-stat-weight-sub", s.weight >= 1000
     ? "≈ " + (s.weight / 1000).toLocaleString("en-IN", { maximumFractionDigits: 2 }) + " tonnes · " + plural(s.billCount, "bill")
     : plural(s.billCount, "bill"));
-  setText("pur-stat-rate", s.weight ? formatRate(s.kgTaxable / s.weight) : "—");
-  setText("pur-stat-rate-sub", !s.weight ? "No weight in this view"
-    : s.materialCount > 1 ? "Mixed · " + s.materialCount + " materials"
-    : "Weighted, before GST");
 }
 
 // How much of this view is adjustment bills -- bought each month to
